@@ -22,7 +22,7 @@
 @layer components {
   .hero-bg {
     background-image: linear-gradient(rgba(23, 42, 43, 0.6), rgba(23, 42, 43, 0.8)),
-      url("./assets/ethio3.jpg");
+      url("./assets/rohalandscape.png");
     background-size: cover;
     background-position: center bottom;
     background-repeat: no-repeat;

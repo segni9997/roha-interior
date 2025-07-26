@@ -13,12 +13,12 @@ const Hero = () => {
             <div className="absolute inset-0 bg-[#172a2b]/40"></div>
 
             {/* Additional gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#172a2b] via-[#000000] to-[#395e63]/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#143236] via-[#143236] to-[#395e63]/30"></div>
           </div>
 
           {/* Skyscraper Background Pattern */}
           <div className="absolute inset-0">
-            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-[#000000]/90 via-transparent to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-[#143236] via-transparent to-transparent"></div>
             <div
               className="absolute inset-0 opacity-30"
               style={{
@@ -64,7 +64,7 @@ const Hero = () => {
           </div>
 
           {/* Decorative Elements */}
-          <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#000000] to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#172a2b] to-transparent"></div>
 
           {/* Floating particles effect */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
