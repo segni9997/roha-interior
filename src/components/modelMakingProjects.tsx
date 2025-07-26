@@ -1,8 +1,7 @@
 
-import { useEffect, useMemo, useState } from "react";
+import {  useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Eye, ExternalLink, Search, Filter } from "lucide-react";
-import logo from "../assets/roha.png";
 import ethio from "../assets/ethio3.jpg"
 
 interface Project {
@@ -107,7 +106,7 @@ export default function ModelProjects() {
 const [hoveredProject, setHoveredProject] = useState<number | null>(null);
 const [searchTerm, setSearchTerm] = useState("");
 const [selectedType, setSelectedType] = useState("All");
-
+console.log(hoveredProject)
 const types = ["All", ...Array.from(new Set(projects.map((p) => p.type)))];
 
 const filteredProjects = projects
@@ -133,10 +132,6 @@ console.log(filteredProjects)
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50">

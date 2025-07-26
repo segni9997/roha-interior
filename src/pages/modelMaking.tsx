@@ -1,4 +1,3 @@
-import ModelHero from '../components/modelmakingHero'
 import Navbar from '../components/modelMakingNavBar'
 import ModelProjects from '../components/modelMakingProjects'
 
