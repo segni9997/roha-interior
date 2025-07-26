@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, X, Phone, Mail } from "lucide-react";
 import logo from "../assets/roha.png";
+import ModelHero from "./modelmakingHero";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +13,9 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="relative bg-white shadow-lg">
+
+      <>
+          <nav className="relative bg-white shadow-lg">
       {/* Top contact bar */}
       <div className="bg-[#395e63] text-white py-2 px-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center text-sm">
@@ -86,7 +89,7 @@ export default function Navbar() {
                   "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
               }}
             >
-              <span className="relative z-10">Get Quote</span>
+              <span className="relative z-10">Get Intouch</span>
               <div
                 className="absolute inset-0 bg-[#395e63] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
                 style={{
@@ -152,7 +155,7 @@ export default function Navbar() {
           </a>
           <div className="px-3 py-2">
             <button className="w-full px-4 py-2 bg-[#395e63] text-white font-semibold rounded-md hover:bg-slate-900 transition-colors duration-200">
-              Get Quote
+              Get InTouch
             </button>
           </div>
         </div>
@@ -165,6 +168,10 @@ export default function Navbar() {
           clipPath: "polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%)",
         }}
       ></div>
-    </nav>
+          </nav>
+          
+          <ModelHero/>
+      </>
+
   );
 }

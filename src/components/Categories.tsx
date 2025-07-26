@@ -1,4 +1,3 @@
-"use client"
 
 import { motion } from "framer-motion"
 import { ArrowRight, Building2, Home } from "lucide-react"
@@ -45,24 +44,7 @@ const Category = () => {
     },
   }
 
-  const cardVariants = {
-    hidden: {
-      opacity: 0,
-      y: 100,
-      scale: 0.8,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.8,
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-      },
-    },
-  }
+ 
 
   return (
     <section className="relative py-20 bg-gradient-to-b from-[#172a2b] via-[#0a1a1b] to-[#1a2f32] overflow-hidden">

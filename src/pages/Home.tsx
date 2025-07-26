@@ -1,4 +1,3 @@
-import React from 'react'
 import Hero from '../components/hero';
 import About from '../components/About';
 import ParallaxImage from '../components/Parallax';

@@ -1,4 +1,3 @@
-"use client"
 import { motion } from "framer-motion"
 import { ExternalLink, Eye, ArrowUpRight } from "lucide-react"
 import { useState } from "react"
@@ -6,7 +5,7 @@ import { useState } from "react"
 const ProjectGallery = () => {
   const [activeFilter, setActiveFilter] = useState("all")
   const [hoveredProject, setHoveredProject] = useState<number | null>(null)
-
+console.log(hoveredProject);
   const projects = [
     {
       id: 1,
@@ -81,24 +80,6 @@ const ProjectGallery = () => {
       transition: {
         staggerChildren: 0.1,
         delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: {
-      opacity: 0,
-      y: 50,
-      scale: 0.9,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.6,
-        type: "spring",
-        stiffness: 100,
       },
     },
   }
