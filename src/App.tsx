@@ -1,18 +1,24 @@
-import About from "./components/About"
-import Category from "./components/Categories"
-import Hero from "./components/hero"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+
+import Interior from "./pages/interior"
+import ModelMaking from "./pages/modelMaking"
+import Home from "./pages/Home"
 
 
 function App() {
 
   return (
     <>
-      
-      <Hero />
-      <About />
-      <Category/>
+     
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home/>}/>
+          <Route path="/interior" element={<Interior />} />
+          <Route path="/model-making" element={<ModelMaking />} />
+        </Routes>
+      </BrowserRouter>
     </>
-  )
+  );
 }
 
 export default App
