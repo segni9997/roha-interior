@@ -9,6 +9,7 @@ const Hero = () => {
         <div className="relative min-h-screen overflow-hidden">
           {/* Background Image */}
           <div className="absolute inset-0 bg-cover bg-center bg-no-repeat hero-bg ">
+            
             {/* Dark overlay for better text contrast */}
             <div className="absolute inset-0 bg-[#172a2b]/40"></div>
 
