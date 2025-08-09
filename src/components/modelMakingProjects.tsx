@@ -3,6 +3,7 @@ import {  useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, Eye, ExternalLink, Search, Filter } from "lucide-react";
 import ethio from "../assets/ethio3.jpg"
+import { Link } from "react-router-dom";
 
 interface Project {
   id: number;
@@ -102,26 +103,25 @@ const projects: Project[] = [
 ];
 
 export default function ModelProjects() {
+  const [hoveredProject, setHoveredProject] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("All");
+  console.log(hoveredProject);
+  const types = ["All", ...Array.from(new Set(projects.map((p) => p.type)))];
 
-const [hoveredProject, setHoveredProject] = useState<number | null>(null);
-const [searchTerm, setSearchTerm] = useState("");
-const [selectedType, setSelectedType] = useState("All");
-console.log(hoveredProject)
-const types = ["All", ...Array.from(new Set(projects.map((p) => p.type)))];
-
-const filteredProjects = projects
-  .filter((project) => {
-    const search = searchTerm.trim().toLowerCase();
-    return (
-      !search ||
-      project.title.toLowerCase().includes(search) ||
-      project.description.toLowerCase().includes(search)
-    );
-  })
-  .filter((project) => {
-    return selectedType === "All" || project.type === selectedType;
-  });
-console.log(filteredProjects)
+  const filteredProjects = projects
+    .filter((project) => {
+      const search = searchTerm.trim().toLowerCase();
+      return (
+        !search ||
+        project.title.toLowerCase().includes(search) ||
+        project.description.toLowerCase().includes(search)
+      );
+    })
+    .filter((project) => {
+      return selectedType === "All" || project.type === selectedType;
+    });
+  console.log(filteredProjects);
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -131,7 +131,6 @@ console.log(filteredProjects)
       },
     },
   };
-
 
   return (
     <section className="py-20 bg-gradient-to-b from-white to-gray-50">
@@ -370,14 +369,11 @@ console.log(filteredProjects)
               whileHover={{ y: -10 }}
               onHoverStart={() => setHoveredProject(project.id)}
               onHoverEnd={() => setHoveredProject(null)}
-                  className="group cursor-pointer"
-                  
+              className="group cursor-pointer"
             >
-                  <div className="relative h-80 overflow-hidden  hover:border-[#395e63]/40 transition-all duration-500"
-                  
-                  >
+              <div className="relative h-80 overflow-hidden  hover:border-[#395e63]/40 transition-all duration-500">
                 {/* Clip-path container */}
-                <div className="absolute inset-0 overflow-hidden bg-gradient-to-t " >
+                <div className="absolute inset-0 overflow-hidden bg-gradient-to-t ">
                   {/* Main Image */}
                   <motion.img
                     src={project.image}
@@ -436,13 +432,14 @@ console.log(filteredProjects)
                         <Eye className="w-4 h-4" />
                         <span>View Details</span>
                       </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
+                      <Link
+                        to="/project-detail"
+                        // whileHover={{ scale: 1.05 }}
                         className="flex items-center space-x-2 bg-[#395e63]/60 backdrop-blur-sm px-3 py-1 rounded-full"
                       >
                         <ExternalLink className="w-4 h-4" />
                         <span>Full View</span>
-                      </motion.button>
+                      </Link>
                     </div>
                   </motion.div>
                 </div>

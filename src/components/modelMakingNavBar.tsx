@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Menu, X, Phone, Mail } from "lucide-react";
 import logo from "../assets/roha.png";
 import ModelHero from "./modelmakingHero";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,13 +71,12 @@ export default function Navbar() {
                 Projects
                 <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#395e63] group-hover:w-full transition-all duration-300"></div>
               </a>
-              <a
-                href="#"
+              <Link to="/view360"
                 className="relative group px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition-colors duration-300"
               >
                 360 Gallery
                 <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#395e63] group-hover:w-full transition-all duration-300"></div>
-              </a>
+              </Link>
             </div>
           </div>
 
