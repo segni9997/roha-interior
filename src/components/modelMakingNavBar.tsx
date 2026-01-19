@@ -1,177 +1,70 @@
-"use client";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Menu, X, Search } from 'lucide-react';
 
-import { useState } from "react";
-import { Menu, X, Phone, Mail } from "lucide-react";
-import logo from "../assets/roha.png";
-import ModelHero from "./modelmakingHero";
-import { Link } from "react-router-dom";
-
-export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+export default function MargaNavbar() {
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-
-      <>
-          <nav className="relative bg-white shadow-lg">
-      {/* Top contact bar */}
-      <div className="bg-[#395e63] text-white py-2 px-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2">
-              <Phone className="w-4 h-4" />
-              <span>+251 923-4567</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Mail className="w-4 h-4" />
-              <span>info@roha.com</span>
-            </div>
+    <nav className="fixed top-0 w-full z-[100] p-6 flex justify-center">
+      {/* Main Navbar Container */}
+      <div className="w-full max-w-7xl bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-full px-8 py-3 flex items-center justify-between shadow-sm">
+        
+        {/* Logo - Marga Style (Minimal Typography) */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#395e63] rounded-full flex items-center justify-center text-white font-bold text-lg">
+            R
           </div>
-          {/* <div className="hidden md:block text-xs">
-            {"Award-winning architectural design since 1995"}
-          </div> */}
+          <span className="text-xl font-black tracking-tighter text-slate-900 uppercase">
+            Roha<span className="font-light text-slate-400">Arch</span>
+          </span>
         </div>
-      </div>
 
-      {/* Main navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
-            <div className="relative">
-              <img src={logo} className="w-8 h-8" />
-            </div>
-            <div className="ml-3">
-              <h1 className="text-2xl font-bold text-slate-800">
-                Roha Model Makers
-              </h1>
-              <p className="text-xs text-slate-500 tracking-wider">
-                ARCHITECTURE & DESIGN
-              </p>
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              <a
-                href="#"
-                className="relative group px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition-colors duration-300"
-              >
-                Home
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#395e63] group-hover:w-full transition-all duration-300"></div>
+        {/* Desktop Links - Hover Effects like Marga */}
+        <div className="hidden lg:flex items-center gap-8">
+          {['Home', 'About', 'Modeling', 'Interior', 'Contact', ''].map((item) => (
+            <div key={item} className="group relative py-2">
+              <a href={`/${item.toLowerCase()}`} className="text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-[#395e63] transition-colors">
+                {item}
               </a>
-              <a
-                href="#"
-                className="relative group px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition-colors duration-300"
-              >
-                Projects
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#395e63] group-hover:w-full transition-all duration-300"></div>
-              </a>
-              <Link to="/view360"
-                className="relative group px-3 py-2 text-slate-700 hover:text-slate-900 font-medium transition-colors duration-300"
-              >
-                360 Gallery
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#395e63] group-hover:w-full transition-all duration-300"></div>
-              </Link>
+              {/* Animated underline like Marga templates */}
+              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#395e63] transition-all duration-300 group-hover:w-full"></span>
             </div>
-          </div>
-
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <button
-              className="relative px-6 py-3 bg-[#5b949b] text-white font-semibold overflow-hidden group transition-all duration-300 hover:bg-slate-900"
-              style={{
-                clipPath:
-                  "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
-              }}
-            >
-              <span className="relative z-10">Get Intouch</span>
-              <div
-                className="absolute inset-0 bg-[#395e63] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
-                style={{
-                  clipPath:
-                    "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
-                }}
-              ></div>
-            </button>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-950"
-            >
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" />
-              ) : (
-                <Menu className="block h-6 w-6" />
-              )}
-            </button>
-          </div>
+          ))}
         </div>
-      </div>
 
-      {/* Mobile Navigation Menu */}
-      <div
-        className={`md:hidden transition-all duration-300 ease-in-out ${
-          isMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        } overflow-hidden`}
-      >
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-slate-50 border-t">
-          <a
-            href="#"
-            className="block px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-md font-medium transition-colors duration-200"
-          >
-            Home
-          </a>
-          <a
-            href="#"
-            className="block px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-md font-medium transition-colors duration-200"
-          >
-            Projects
-          </a>
-          <a
-            href="#"
-            className="block px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-md font-medium transition-colors duration-200"
-          >
-            Services
-          </a>
-          <a
-            href="#"
-            className="block px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-md font-medium transition-colors duration-200"
-          >
-            About
-          </a>
-          <a
-            href="#"
-            className="block px-3 py-2 text-slate-700 hover:text-slate-900 hover:bg-white rounded-md font-medium transition-colors duration-200"
-          >
-            Contact
-          </a>
-          <div className="px-3 py-2">
-            <button className="w-full px-4 py-2 bg-[#395e63] text-white font-semibold rounded-md hover:bg-slate-900 transition-colors duration-200">
-              Get InTouch
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Decorative geometric element */}
-      <div
-        className="absolute top-0 right-0 w-96 h-7 bg-gradient-to-r from-[#395e63] to-[#5b949b] opacity-80"
-        style={{
-          clipPath: "polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%)",
-        }}
-      ></div>
-          </nav>
+        {/* Action Icons */}
+        <div className="flex items-center gap-4">
+          <button className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <Search className="w-5 h-5 text-slate-600" />
+          </button>
+          <button className="hidden md:block bg-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#395e63] transition-all">
+            Consult Now
+          </button>
           
-          <ModelHero/>
-      </>
+          {/* Mobile Menu Toggle */}
+          <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2">
+            {isOpen ? <X /> : <Menu />}
+          </button>
+        </div>
+      </div>
 
+      {/* Mobile Menu Reveal - Slide down animation */}
+      {isOpen && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-24 inset-x-6 bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl lg:hidden"
+        >
+          <div className="flex flex-col gap-6 text-center">
+            {['Home', 'About', 'Modeling', 'Interior', 'Contact'].map((item) => (
+              <a key={item} href="/" className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2">
+                {item}
+              </a>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </nav>
   );
 }

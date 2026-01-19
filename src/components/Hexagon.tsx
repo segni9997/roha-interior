@@ -1,5 +1,5 @@
 
-"use client";
+
 
 const hexagons = Array.from({ length: 12 }, (_, i) => i + 1);
 
