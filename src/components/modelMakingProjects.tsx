@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import  { useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpRight, Building2, Home, TreePine, GraduationCap, HeartPulse } from 'lucide-react';
+import { ArrowUpRight, Building2, Home, TreePine, GraduationCap, HeartPulse,  } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Use your provided Project interface and data
 const projects = [
@@ -14,8 +15,15 @@ const projects = [
   { id: 8, title: "Mixed-Use Development", type: "Mixed-Use", category: "Urban", year: "2023", day: "Monday", image: "https://images.unsplash.com/photo-1449156059431-787c5d7139b8", description: "Integrated development combining residential, commercial, and office spaces" },
 ];
 
+type ProjectType =
+  | "All"
+  | "Residential"
+  | "Commercial"
+  | "Public"
+  | "Educational"
+  | "Healthcare";
 // Map icons to types for a better UI
-const typeIcons = {
+const typeIcons: Record<ProjectType, ReactNode> = {
   All: <Building2 className="w-4 h-4" />,
   Residential: <Home className="w-4 h-4" />,
   Commercial: <Building2 className="w-4 h-4" />,
@@ -27,21 +35,26 @@ const typeIcons = {
 export default function SubCategoryModelGrid() {
   const [activeType, setActiveType] = useState('All');
   const types = ['All', ...new Set(projects.map(p => p.type))];
+  const navigate = useNavigate();
 
-  const filteredProjects = activeType === 'All' 
-    ? projects 
+  const filteredProjects = activeType === 'All'
+    ? projects
     : projects.filter(p => p.type === activeType);
 
+  const handleProjectClick = (projectId: number) => {
+    navigate(`/project-detail?id=${projectId}`);
+  };
+
   return (
-    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900">
+    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative">
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
-        <div className="flex flex-col mb-12 space-y-6">
+        <div className="flex flex-col mb-12 space-y-6 w-full">
           <motion.h2 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-5xl font-light tracking-tighter"
+            className="text-5xl font-light tracking-tighter absolute -top-2 z-30 text-center"
           >
             MODELING <span className="font-bold text-[#395e63]">ARCHIVE</span>
           </motion.h2>
@@ -58,7 +71,7 @@ export default function SubCategoryModelGrid() {
                   : "bg-white text-slate-400 border-slate-200 hover:border-slate-900 hover:text-slate-900"
                 }`}
               >
-                {typeIcons[type] || <Building2 className="w-3 h-3" />}
+                {typeIcons[type as ProjectType] || <Building2 className="w-3 h-3" />}
                 {type}
               </button>
             ))}
@@ -69,13 +82,15 @@ export default function SubCategoryModelGrid() {
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
             {filteredProjects.map((project) => (
-              <motion.div
+            <Link to="/project-detail">
+  <motion.div
                 layout
                 key={project.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="group relative h-[400px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200"
+                className="group relative h-[400px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer"
+                onClick={() => handleProjectClick(project.id)}
               >
                 {/* Image Layer */}
                 <img 
@@ -110,6 +125,8 @@ export default function SubCategoryModelGrid() {
                   </div>
                 </div>
               </motion.div>
+
+            </Link>
             ))}
           </AnimatePresence>
         </motion.div>

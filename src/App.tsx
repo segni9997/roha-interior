@@ -3,12 +3,15 @@ import { BrowserRouter, Route, Routes } from "react-router-dom"
 import Interior from "./pages/interior"
 import ModelMaking from "./pages/modelMaking"
 import Home from "./pages/Home"
-import ProjectDetail from "./components/Projectdetail";
+// import ProjectDetail from "./components/Projectdetail";
 import PanoramaGallery from "./components/Panaroma-gallery";
 import PanoramaViewer from "./components/PanaromaViewer";
+import { useSmoothScroll } from "./hook/useSmoothScroll";
+import ProjectDetails from "./components/ProjectDetails";
 
 
 function App() {
+useSmoothScroll()
 
   return (
     <>
@@ -20,9 +23,10 @@ function App() {
           <Route
             path="/project-detail"
             element={
-              <ProjectDetail  />
+              <ProjectDetails  />
             }
           />
+          
           <Route path="/gallery" element={<PanoramaGallery />} />
           <Route path="/view360" element={<PanoramaViewer/>}/>
         </Routes>

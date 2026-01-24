@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Move3D, MapPin, Calendar, Eye } from "lucide-react";
-import { sampleProjects } from "./Projectdetail";
+
 import { Link } from "react-router-dom";
 
 

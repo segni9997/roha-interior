@@ -50,7 +50,7 @@ export interface Project {
 }
 
 
-export const sampleProjects: Project[] = [
+ export const sampleProjects: Project[] = [
   {
     id: 1,
     title: "Modern Residential Complex",
