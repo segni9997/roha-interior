@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Categories() {
   return (
     <section className="w-full relative py-24 bg-[#f5f7f7]">
-      <div className="max-w-7xl mx-auto relative bg-white p-6 md:p-10 shadow-lg">
+      <div className="max-w-8xl mx-auto relative bg-white p-6 md:p-10 shadow-lg">
         
         {/* --- EXPERTISE LABEL --- */}
         <div className="absolute -top-12 left-1/2 md:left-10 flex items-center gap-4 z-30">
@@ -33,6 +33,7 @@ export default function Categories() {
                   EXPLORE MODEL
                 </button>
               </Link>
+              
             </div>
           </div>
 
