@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import  { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Maximize2, Layers, MapPin, Ruler } from "lucide-react";
@@ -114,8 +114,8 @@ const ParallaxGrid = () => {
   }, []);
 
   return (
-  <> <section className="w-full bg-[#fcfcfc] py-24 px-6 md:px-20 text-white contour-one">
-      <div className="max-w-7xl mx-auto">
+  <> <section className="w-full bg-[#1d424b] py-24 px-6 md:px-20 text-white contour-one">
+      <div className="max-w-6xl mx-auto">
         
         {/* Header Section */}
         <div className="border-b border-slate-200 pb-12 mb-12">
@@ -218,9 +218,10 @@ const ParallaxGrid = () => {
     className="w-full aspect-video"
     src="https://www.youtube.com/embed/_BZZkFzuLQs" 
     title="Architectural Portfolio Process" 
-    frameborder="0" 
+    // frameborder="0" 
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen>
+    // allowfullscreen
+    >
   </iframe>
 </div>
     </section>

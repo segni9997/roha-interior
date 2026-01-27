@@ -8,6 +8,9 @@ import PanoramaGallery from "./components/Panaroma-gallery";
 import PanoramaViewer from "./components/PanaromaViewer";
 import { useSmoothScroll } from "./hook/useSmoothScroll";
 import ProjectDetails from "./components/ProjectDetails";
+import ContactUs from "./components/ContactUs";
+import BlogPage from "./pages/BlogPage";
+import BlogDetail from "./components/BlogDetail";
 
 
 function App() {
@@ -29,6 +32,9 @@ useSmoothScroll()
           
           <Route path="/gallery" element={<PanoramaGallery />} />
           <Route path="/view360" element={<PanoramaViewer/>}/>
+          <Route path="/contactus" element= {<ContactUs/>}/>
+          <Route path = "/blog" element={<BlogPage/>}/>
+          <Route path = "/blog/:id" element ={<BlogDetail/>}/>
         </Routes>
       </BrowserRouter>
     </>
