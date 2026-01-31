@@ -1,8 +1,9 @@
-import { Mail, MapPin, Twitter, Instagram, Linkedin, Send } from 'lucide-react';
+import { Mail, MapPin, Twitter, Instagram, Linkedin } from 'lucide-react';
 import pattern from "/pattern-01.png"
+import GeoButton from './Buttons';
 const ContactUs = () => {
   return (
-    <div className="min-h-screen bg-[#172a2b] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen  bg-gradient-to-t from-[#172a2b] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Decorative Circles */}
       <div className="absolute top-20 right-[-5%] w-96 h-96 bg-cyan-400 rounded-full blur-[100px] opacity-30" />
       <div className="absolute bottom-[-10%] left-[-5%] w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-30" />
@@ -25,11 +26,11 @@ const ContactUs = () => {
   />
 </div>
       <div className="text-center mb-12 relative z-10">
-        <h1 className="text-5xl font-bold mb-2">Contact Us</h1>
+        <h1 className="text-5xl font-bold mb-2 text text-[#172a2b]">Contact Us</h1>
         <p className="text-gray-400">Any question or remarks? Just write us a message!</p>
       </div>
 
-      <div className="w-full max-w-5xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col md:flex-row p-4 gap-8 relative z-10 shadow-2xl">
+      <div className="w-full max-w-6xl bg-white/5 backdrop-blur-xl border border-white/10 border-t-0 rounded-2xl flex flex-col md:flex-row p-4 gap-8 relative z-10 shadow-2xl">
         {/* Left Side: Contact Information */}
         <div className="md:w-2/5 bg-white/10 rounded-xl p-10 flex flex-col justify-between relative overflow-hidden">
           <div>
@@ -65,20 +66,20 @@ const ContactUs = () => {
         <div className="md:w-3/5 p-4 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">First Name</label>
-              <input type="text" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-400 transition-colors" />
+              <label className="text-sm text-gray-100">First Name</label>
+              <input type="text" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-100 transition-colors" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Last Name</label>
-              <input type="text" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-400 transition-colors" />
+              <label className="text-sm text-gray-100">Last Name</label>
+              <input type="text" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-900 transition-colors" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Email</label>
-              <input type="email" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-400 transition-colors" />
+              <label className="text-sm text-gray-100">Email</label>
+              <input type="email" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-100 transition-colors" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Phone Number</label>
-              <input type="text" defaultValue="+251" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-400 transition-colors" />
+              <label className="text-sm text-gray-100">Phone Number</label>
+              <input type="text" defaultValue="+251" className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-800 transition-colors" />
             </div>
           </div>
 
@@ -95,15 +96,20 @@ const ContactUs = () => {
           </div> */}
 
           <div className="space-y-2">
-            <label className="text-sm text-gray-400">Message</label>
+            <label className="text-sm text-gray-100">Message</label>
             <textarea placeholder="Write your message.." className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-400 transition-colors resize-none h-20" />
           </div>
 
           <div className="flex justify-end pt-4">
-            <button className="bg-gray-700 hover:bg-gray-600 px-8 py-3 rounded-md flex items-center gap-2 transition-all">
-              Send Message
-              <Send size={16} />
-            </button>
+            <p className=" flex items-center gap-2 transition-all">
+         <GeoButton
+          label="Send " 
+          from="172a2b" 
+          to="fefefe" // Purple
+          textColor="#fff" // Cyan text
+          isuppercase="uppercase tracking-widest"
+        />
+            </p>
           </div>
         </div>
       </div>

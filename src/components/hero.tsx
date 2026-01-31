@@ -26,7 +26,7 @@ const Hero = () => {
     if (!canvasRef.current || !containerRef.current) return;
 
     const CONFIG: Config = {
-      color: "#ffffff",
+      color: "#f5f7f7",
       spread: 0.55,
     };
 

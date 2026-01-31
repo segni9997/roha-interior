@@ -1,0 +1,2 @@
+- [x] Update src/components/Buttons.tsx: Remove image imports and use direct paths for img src attributes
+- [x] Test the hover effect and image visibility after changes

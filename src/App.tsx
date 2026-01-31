@@ -11,6 +11,7 @@ import ProjectDetails from "./components/ProjectDetails";
 import ContactUs from "./components/ContactUs";
 import BlogPage from "./pages/BlogPage";
 import BlogDetail from "./components/BlogDetail";
+import AllBlogs from "./pages/AllBlogs";
 
 
 function App() {
@@ -35,6 +36,7 @@ useSmoothScroll()
           <Route path="/contactus" element= {<ContactUs/>}/>
           <Route path = "/blog" element={<BlogPage/>}/>
           <Route path = "/blog/:id" element ={<BlogDetail/>}/>
+          <Route path = "/allblogs" element= {<AllBlogs/>}/>
         </Routes>
       </BrowserRouter>
     </>

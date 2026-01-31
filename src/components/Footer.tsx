@@ -1,6 +1,7 @@
 import { Twitter, Instagram, Youtube, Twitch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import GeoButton from './Buttons';
 const Footer = () => {
   return (
     <div className="font-sans">
@@ -22,10 +23,20 @@ const Footer = () => {
             <h2 className="text-4xl md:text-5xl font-bold mb-4 ">Have a dream projects?</h2>
             <p className="opacity-80 mb-8">Let's talk to us, share your dream project and we will transform it into reality</p>
            <Link to="/contactus">
-            <button className="bg-white text-[#172a2b] font-bold py-3 px-8 rounded shadow-lg hover:bg-gray-100 transition-colors">
-              GET STARTED
-            </button>
+           <div className="flex flex-row justify-center">
+             <GeoButton label='Get Started' from='172a2b' to='ffffff' textColor='#ffffff' />
+           </div>
            </Link>
+             {/* <button className=' relative bg-transparent border-2 border-dashed rounded-full px-3 py-1 overflow- w-fit h-10'>
+                <div className="">
+                   segni
+                </div>
+                <div className="absolute">
+                  <img src={shape1} alt="" className='to transition -translate-y-32.5 w' />
+                  <img src={shape2} alt="" />
+                  <img src={shape3} alt="" />
+                </div>
+             </button> */}
           </div>
 
           {/* Image Circles (Right) */}
