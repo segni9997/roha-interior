@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <div className="font-sans">
       {/* CTA Section */}
-      <section className=" bg-gradient-to-b from-white to-[#172a2b] text-white py-16 px-6 relative overflow-hidden">
+      <section className=" bg-gradient-to-b from-[#f5f7f7] to-[#172a2b] text-white py-16 px-6 relative overflow-hidden">
         {/* Decorative Grid Lines */}
         {/* <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} /> */}
         
@@ -88,13 +88,12 @@ const Footer = () => {
         </div>
         
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-gray-800 text-center text-gray-500">
-          <p>Copyright 2023 Hirings. All rights reserved</p>
+          <p>Copyright 2026 ROHA. All rights reserved</p>
         </div>
       </footer>
       </section>
 
-      {/* Footer Section */}
-     
+
     </div>
   );
 };

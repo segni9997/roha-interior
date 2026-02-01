@@ -4,7 +4,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import pattern from "/public/PATTERN.jpg";
+import pattern from "/pattern-01.png";
 import { fragmentShader, vertexShader } from "../utils/shaders";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -117,7 +117,6 @@ const Hero = () => {
         {/* Pattern */}
         <div className="absolute rotate-90 right-0 -z-20 ">
           <img src={pattern} alt="pattern" />
-          <div className="absolute bg-[#205b63]/30 inset-0 w-10 h-full" />
         </div>
 
         {/* Background */}

@@ -395,8 +395,7 @@ const BlogPage = () => {
       </div>
 
       {/* Recent Posts Section */}
-      <div className="mb-10 flex justify-between items-end">
-        <h2 className="text-2xl font-bold">Recent Posts</h2>
+      <div className="mb-10 flex justify-end items-end">
         <Link to="/allblogs">
       <GeoButton label='all Posts' isuppercase='capitalize' from='172a2b' to='fff'/>
         </Link>
