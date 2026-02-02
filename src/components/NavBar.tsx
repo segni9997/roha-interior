@@ -8,10 +8,10 @@ const NavigationOverlay = () => {
 
   const navLinks = [
     { name: "HOME", path: "/" },
-    { name: "ABOUT ME", path: "/about" },
-    { name: "PROJECTS", path: "/projects" },
-    { name: "PLAYGROUND", path: "/playground" },
-    { name: "CONTACT", path: "/contact" },
+    // { name: "ABOUT ME", path: "/about" },
+    { name: "Blogs", path: "/allblogs" },
+    { name: "Gallery", path: "/gallery" },
+    { name: "CONTACT", path: "/contactus" },
   ];
 
   // Logic to handle scroll and click outside
@@ -40,9 +40,10 @@ const NavigationOverlay = () => {
   return (
     <div
       ref={navRef}
-      className={`fixed top-0 left-0 w-full overflow-hidden bg-black/90 backdrop-blur-md transition-all duration-700 ease-in-out border-b border-white/10 z-50 ${
+      className={`fixed top-0 left-0 w-full overflow-hidden bg-[#1d424b]/10 backdrop-blur-md transition-all duration-700 ease-in-out border-b border-[#1d424b]/10 z-50 ${
         isOpen ? "h-[50vh]" : "h-20"
       }`}
+      onClick={()=>setIsOpen(!isOpen)}
     >
       {/* 1. Top Bar Control */}
       <div className="absolute top-0 w-full flex justify-between items-center p-6 text-[10px] tracking-[0.3em] font-medium text-white uppercase z-20">
@@ -79,7 +80,7 @@ const NavigationOverlay = () => {
 
       {/* 3. Navigation Links */}
       <nav
-        className={`relative z-10 h-full flex flex-col items-center justify-center transition-all duration-500 ${
+        className={`relative z-10 h-full flex flex-col items-center justify-center transition-all duration-500 md:mt-4 ${
           isOpen
             ? "opacity-100 translate-y-0"
             : "opacity-0 -translate-y-10 pointer-events-none"

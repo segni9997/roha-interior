@@ -32,7 +32,7 @@ useSmoothScroll()
           />
           
           <Route path="/gallery" element={<PanoramaGallery />} />
-          <Route path="/view360" element={<PanoramaViewer/>}/>
+          <Route path="/view360/:id" element={<PanoramaViewer/>}/>
           <Route path="/contactus" element= {<ContactUs/>}/>
           <Route path = "/blog" element={<BlogPage/>}/>
           <Route path = "/blog/:id" element ={<BlogDetail/>}/>

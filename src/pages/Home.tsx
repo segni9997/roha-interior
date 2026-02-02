@@ -5,7 +5,7 @@ import Hero from '../components/hero';
 import Categories from '../components/category';
 import Footer from '../components/Footer';
 import BlogPage from './BlogPage';
-import MargaNavbar from '../components/modelMakingNavBar';
+// import MargaNavbar from '../components/modelMakingNavBar';
 import NavigationOverlay from '../components/NavBar';
 // import ProjectDetails from '../components/ProjectDetails';
 // import ParallaxGrid from '../components/ParallaxGrid';
