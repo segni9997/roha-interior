@@ -1,9 +1,8 @@
-"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { Move3D, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { sampleProjects } from "./Projectdetail";
+import { sampleProjects } from "./datas/sampleProjects";
 
 const PanoramaGallery = () => {
   const [scrollY, setScrollY] = useState(0);

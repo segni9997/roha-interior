@@ -202,12 +202,15 @@ const ParallaxGrid = () => {
             className="relative h-[60vh] md:h-[80vh] overflow-hidden group border border-white/5"
           >
             {/* Image Layer - Made taller (120%) to provide space for parallax shift */}
-            <img
-              ref={(el) => (imageRefs.current[index] = el)}
-              src={item.image}
-              alt={item.title}
-              className="absolute -top-[10%] left-0 w-full h-[120%] object-cover scale-110 will-change-transform"
-            />
+        <img
+  ref={(el) => {
+    imageRefs.current[index] = el;
+  }}
+  src={item.image}
+  alt={item.title}
+  className="absolute -top-[10%] left-0 w-full h-[120%] object-cover scale-110 will-change-transform"
+/>
+
 
             {/* Glassy Overlay & Content */}
           

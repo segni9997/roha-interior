@@ -1,7 +1,21 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
-export const BlogCard = ({ post, featured = false }) => {
+interface BlogPost {
+  image: string;
+  title: string;
+  category: string;
+  author: string;
+  readTime: string;
+  description: string;
+}
+
+interface BlogCardProps {
+  post: BlogPost;
+  featured?: boolean;
+}
+
+export const BlogCard: React.FC<BlogCardProps> = ({ post, featured = false }) => {
   return (
     <motion.div
       layout

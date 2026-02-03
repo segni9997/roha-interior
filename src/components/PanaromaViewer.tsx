@@ -1,114 +1,201 @@
-"use client";
-import { useEffect, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ZoomIn, ZoomOut, Move3D, } from "lucide-react";
-import { sampleProjects } from "./Projectdetail";
 
-declare global { interface Window { pannellum: any; } }
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, RotateCcw, ZoomIn, ZoomOut, Move3D } from "lucide-react";
+import {  type Project } from "./Projectdetail";
+import type { PannellumViewer } from "../types/pannellum";
+import { sampleProjects } from "./datas/sampleProjects";
+
+// Interfaces for strict typing
+interface Hotspot {
+  pitch: number;
+  yaw: number;
+  type: "scene" | "info";
+  text: string;
+  sceneId?: string;
+  targetYaw?: number;
+  targetPitch?: number;
+  cssClass?: string;
+}
+
+interface PanoramicScene {
+  id: string;
+  panorama: string;
+  name: string;
+  hotSpots?: Hotspot[];
+}
+
+interface PannellumSceneConfig {
+  type: "equirectangular";
+  panorama: string;
+  hotSpots?: Hotspot[];
+  autoLoad?: boolean;
+  showControls?: boolean;
+}
 
 const PanoramaViewer = () => {
-  const { projectId } = useParams();
-  const project = sampleProjects.find((p) => p.id === projectId) || sampleProjects[0];
-  const panoramicScenes = project.panoramicScenes || [];
+  const { projectId } = useParams<{ projectId: string }>();
 
-  const [currentSceneId, setCurrentSceneId] = useState<string | null>(panoramicScenes[0]?.id ?? null);
+  // FIX: Type-safe comparison by converting numeric ID to string
+  const project: Project = useMemo(() => {
+    return sampleProjects.find((p) => p.id.toString() === projectId) || sampleProjects[0];
+  }, [projectId]);
+
+  // FIX: Memoize scenes to prevent infinite useEffect loops
+  const panoramicScenes: PanoramicScene[] = useMemo(() => {
+    return project.panoramicScenes || [];
+  }, [project]);
+
+  const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewer, setViewer] = useState<any>(null);
+  
+  const viewerRef = useRef<PannellumViewer>(null);
   const panoramaRef = useRef<HTMLDivElement>(null);
 
+  // Initialize currentSceneId when panoramicScenes are available
   useEffect(() => {
-    const loadPannellum = () => {
+    if (panoramicScenes.length > 0 && !currentSceneId) {
+      setCurrentSceneId(panoramicScenes[0].id);
+    }
+  }, [panoramicScenes, currentSceneId]);
+
+  const initializePanorama = useCallback(() => {
+    if (!panoramaRef.current || !window.pannellum || panoramicScenes.length === 0) return;
+
+    const scenesConfig: Record<string, PannellumSceneConfig> = {};
+    panoramicScenes.forEach((s) => {
+      scenesConfig[s.id] = {
+        type: "equirectangular",
+        panorama: s.panorama,
+        hotSpots: s.hotSpots,
+        autoLoad: true,
+        showControls: false,
+      };
+    });
+
+    if (viewerRef.current) {
+      viewerRef.current.destroy();
+    }
+
+    try {
+      viewerRef.current = window.pannellum.viewer(panoramaRef.current, {
+        default: {
+          firstScene: currentSceneId || panoramicScenes[0].id,
+          sceneFadeDuration: 800,
+        },
+        scenes: scenesConfig,
+      });
+
+      viewerRef.current.on("scenechange", (id: string) => setCurrentSceneId(id));
+      viewerRef.current.on("load", () => setIsLoading(false));
+      viewerRef.current.on("error", (err: string) => console.error("Pannellum Error:", err));
+    } catch (error) {
+      console.error("Initialization Error:", error);
+    }
+  }, [panoramicScenes, currentSceneId]);
+
+  useEffect(() => {
+    const scriptId = "pannellum-script";
+    
+    const setup = () => {
       if (window.pannellum) {
         initializePanorama();
-        return;
       }
+    };
+
+    if (!document.getElementById(scriptId)) {
       const css = document.createElement("link");
       css.rel = "stylesheet";
       css.href = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css";
       document.head.appendChild(css);
 
       const script = document.createElement("script");
+      script.id = scriptId;
       script.src = "https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js";
-      script.onload = initializePanorama;
+      script.onload = setup;
       document.head.appendChild(script);
+    } else {
+      setup();
+    }
+
+    return () => {
+      if (viewerRef.current) {
+        viewerRef.current.destroy();
+        viewerRef.current = null;
+      }
     };
-
-    const initializePanorama = () => {
-      if (!panoramaRef.current || !window.pannellum) return;
-
-      const scenesConfig: any = {};
-      panoramicScenes.forEach((s) => {
-        scenesConfig[s.id] = {
-          type: "equirectangular",
-          panorama: s.panorama,
-          hotSpots: s.hotSpots,
-          autoLoad: true,
-          showControls: false,
-        };
-      });
-
-      const pv = window.pannellum.viewer(panoramaRef.current, {
-        default: { firstScene: currentSceneId, sceneFadeDuration: 800 },
-        scenes: scenesConfig,
-      });
-
-      pv.on("scenechange", (id: string) => setCurrentSceneId(id));
-      pv.on("load", () => setIsLoading(false));
-      setViewer(pv);
-    };
-
-    loadPannellum();
-    return () => viewer?.destroy();
-  }, [project.id]);
+  }, [initializePanorama]);
 
   const handleZoom = (delta: number) => {
-    if (viewer) viewer.setHfov(Math.min(Math.max(viewer.getHfov() + delta, 30), 120));
+    if (viewerRef.current) {
+      const hfov = viewerRef.current.getHfov();
+      viewerRef.current.setHfov(Math.min(Math.max(hfov + delta, 30), 120));
+    }
+  };
+
+  const handleReset = () => {
+    if (viewerRef.current) {
+      viewerRef.current.setPitch(0);
+      viewerRef.current.setYaw(0);
+      viewerRef.current.setHfov(100);
+    }
   };
 
   return (
     <div className="h-screen bg-black relative overflow-hidden">
       <style>{`
-        .custom-hotspot { background: #395e63; border: 2px solid white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; transition: 0.3s; }
-        .custom-hotspot:hover { transform: scale(1.2); background: #72f88e; }
+        .custom-hotspot { background: #395e63; border: 2px solid white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .custom-hotspot:hover { transform: scale(1.2) rotate(10deg); background: #72f88e; }
+        .pnlm-load-box { display: none !important; } /* Hide default loader */
       `}</style>
 
-      {/* Nav */}
+      {/* Navigation */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-black/80 backdrop-blur-md h-16 flex items-center px-8 justify-between border-b border-white/10">
-        <Link to="/gallery" className="text-white flex items-center gap-2 hover:text-[#395e63] transition-colors">
-          <ArrowLeft size={20}/> Back
+        <Link to="/gallery" className="text-white flex items-center gap-2 hover:text-[#395e63] transition-colors group">
+          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform"/> Back to Gallery
         </Link>
         <div className="text-white font-bold flex items-center gap-2">
-          <Move3D size={20} className="text-[#395e63]"/> {project.title}
+          <Move3D size={20} className="text-[#395e63] animate-pulse"/> {project.title}
         </div>
-        <div className="text-gray-400 text-sm">{panoramicScenes.find(s => s.id === currentSceneId)?.name}</div>
+        <div className="hidden md:block text-gray-400 text-sm tracking-wide uppercase">
+          {panoramicScenes.find(s => s.id === currentSceneId)?.name || "Interactive Tour"}
+        </div>
       </nav>
 
-      {/* Viewer Container */}
-      <div ref={panoramaRef} className="w-full h-full" />
+      {/* Viewer Wrapper */}
+      <div ref={panoramaRef} className="w-full h-full bg-neutral-900" />
 
-      {/* Controls */}
+      {/* UI Controls */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 bg-black/60 backdrop-blur-xl p-3 rounded-full border border-white/10 z-50">
-        <button onClick={() => handleZoom(10)} className="text-white p-2 hover:bg-white/10 rounded-full"><ZoomOut/></button>
-        <button onClick={() => { viewer.setPitch(0); viewer.setYaw(0); }} className="text-white p-2 hover:bg-white/10 rounded-full"><RotateCcw/></button>
-        <button onClick={() => handleZoom(-10)} className="text-white p-2 hover:bg-white/10 rounded-full"><ZoomIn/></button>
+        <button onClick={() => handleZoom(10)} title="Zoom Out" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomOut size={24}/></button>
+        <button onClick={handleReset} title="Reset View" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><RotateCcw size={24}/></button>
+        <button onClick={() => handleZoom(-10)} title="Zoom In" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomIn size={24}/></button>
       </div>
 
-      {/* Scene Thumbnails */}
-      <div className="absolute bottom-10 right-10 flex flex-col gap-3 z-50">
+      {/* Scene Selector Thumbnails */}
+      <div className="absolute bottom-10 right-6 md:right-10 flex flex-col gap-3 z-50">
         {panoramicScenes.map((s) => (
           <button 
             key={s.id} 
-            onClick={() => viewer.loadScene(s.id)}
-            className={`w-16 h-12 rounded-lg border-2 overflow-hidden transition-all ${currentSceneId === s.id ? 'border-[#395e63] scale-110' : 'border-white/20'}`}
+            onClick={() => viewerRef.current?.loadScene(s.id)}
+            className={`w-16 h-12 md:w-20 md:h-14 rounded-lg border-2 overflow-hidden transition-all duration-300 group relative ${
+              currentSceneId === s.id ? 'border-[#395e63] scale-110 shadow-lg shadow-[#395e63]/40' : 'border-white/20 hover:border-white/60'
+            }`}
           >
-            <img src={s.panorama} className="w-full h-full object-cover" alt={s.name} />
+            <img src={s.panorama} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={s.name} />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
           </button>
         ))}
       </div>
 
+      {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-black z-[100] flex items-center justify-center text-white">
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#395e63]"/>
+        <div className="absolute inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center text-white">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#395e63]"></div>
+            <Move3D className="absolute inset-0 m-auto text-white/50" size={24} />
+          </div>
+          <p className="mt-6 text-sm tracking-[0.3em] uppercase text-gray-400 animate-pulse">Initializing Virtual Space</p>
         </div>
       )}
     </div>

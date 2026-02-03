@@ -2,11 +2,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar } from 'lucide-react';
-import { posts } from '../pages/BlogPage';
+import { posts } from './datas/posts';
 
 const BlogDetail = () => {
-  const { id } = useParams();
-  const post = posts.find((p) => p.id === parseInt(id));
+  const { id } = useParams<{ id: string }>();
+  const post = id ? posts.find((p) => p.id === parseInt(id)) : undefined;
 
   if (!post) return <div className="h-screen flex items-center justify-center">Post not found</div>;
 

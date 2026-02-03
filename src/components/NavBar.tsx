@@ -12,6 +12,7 @@ const NavigationOverlay = () => {
     { name: "Blogs", path: "/allblogs" },
     { name: "Gallery", path: "/gallery" },
     { name: "CONTACT", path: "/contactus" },
+    { name: "Model", path: "/model-making" },
   ];
 
   // Logic to handle scroll and click outside

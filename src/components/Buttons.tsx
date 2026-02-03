@@ -57,7 +57,7 @@ const GeoButton: React.FC<GeoButtonProps> = ({
       </div>
 
       {/* Button label with scaling */}
-      <p className={`z-10 transition-transform duration-500 group-hover:scale-110 ${fontweight} ${isuppercase} text-${buttonStyle.color}`}>
+      <p className={`z-10 transition-transform duration-500 group-hover:scale-110 ${fontweight} ${isuppercase}`}>
         {label}
       </p>
     </button>

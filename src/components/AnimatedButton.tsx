@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import "../assets/css/style.css"
+
 interface AnimatedButtonProps {
   to: string;
   children: React.ReactNode;
@@ -12,16 +13,23 @@ interface AnimatedButtonProps {
 const AnimatedButton: React.FC<AnimatedButtonProps> = ({
   to,
   children,
-
+  primaryColor = '#149CEA',
+  containerBg = '#212121',
+  className = '',
 }) => {
   return (
     <Link
       to={to}
-     >
-<button>
-    {children}
-</button>
-        
+      className={className}
+    >
+      <button
+        style={{
+          backgroundColor: containerBg,
+          color: primaryColor,
+        }}
+      >
+        {children}
+      </button>
     </Link>
   );
 };
