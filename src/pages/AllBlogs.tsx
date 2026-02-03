@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import type { Post } from '../utils/types';
-import { posts } from './BlogPage';
 import { BlogCard } from '../components/BlogCard';
+import { posts } from '../components/datas/posts';
 
 
 const AllBlogs: React.FC = () => {
