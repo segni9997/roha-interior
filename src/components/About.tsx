@@ -1,4 +1,4 @@
-  "use client"
+
   import { motion } from "framer-motion"
   import { Building2, Users, Award, Target, Eye, Heart } from "lucide-react"
 

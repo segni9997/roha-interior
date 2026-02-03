@@ -1,12 +1,8 @@
-"use client"
 
 import { useRef } from "react"
 import { MapPin, Calendar, Tag, Building2, Users, Clock, DollarSign } from "lucide-react"
-import ethio from "../assets/ethio3.jpg";
-import ethio1 from "../assets/ethio4.jpg";
-import ethio3 from "../../public/ethio 2.jpg"
-import ethio4 from "../../public/ethio1.jpg";
-import img5 from "../../public/pexels-chudin-alexey-26964541.jpg";
+import { sampleProjects } from "./datas/sampleProjects";
+
 
 
 export interface Project {
@@ -50,449 +46,45 @@ export interface Project {
 }
 
 
- export const sampleProjects: Project[] = [
-  {
-    id: 1,
-    title: "Modern Residential Complex",
-    category: "Residential",
-    location: "New York, USA",
-    year: "2024",
-    description:
-      "A cutting-edge residential complex that redefines urban living through innovative design and sustainable architecture. This project seamlessly blends modern aesthetics with functional living spaces, creating a harmonious environment for residents.",
-     images: [
-     ethio,
-    ethio1,
-      ethio,
-     ethio3,
-     ethio4,
-      img5,
-    ],
-    panoramicScenes: [
-      {
-        id: "livingRoom",
-        name: "Living Room",
-        panorama: "https://pannellum.org/images/alma.jpg",
-        hotSpots: [
-          {
-            pitch: 10,
-            yaw: 150,
-            type: "scene",
-            text: "Go to Kitchen",
-            sceneId: "kitchen",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-          {
-            pitch: -5,
-            yaw: -90,
-            type: "info",
-            text: "Cozy Fireplace",
-            cssClass: "custom-info-hotspot",
-          },
-        ],
-      },
-      {
-        id: "kitchen",
-        name: "Kitchen",
-        panorama: "https://pannellum.org/images/cerro-toco-0.jpg",
-        hotSpots: [
-          {
-            pitch: 5,
-            yaw: -170,
-            type: "scene",
-            text: "Back to Living Room",
-            sceneId: "livingRoom",
-            targetYaw: 150,
-            targetPitch: 10,
-            cssClass: "custom-hotspot",
-          },
-          {
-            pitch: 0,
-            yaw: 90,
-            type: "scene",
-            text: "Go to Bedroom",
-            sceneId: "bedroom",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "bedroom",
-        name: "Bedroom",
-        panorama: "https://pannellum.org/images/jfk.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: 10,
-            type: "scene",
-            text: "Back to Kitchen",
-            sceneId: "kitchen",
-            targetYaw: 90,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-          {
-            pitch: 10,
-            yaw: -100,
-            type: "scene",
-            text: "Go to Bathroom",
-            sceneId: "bathroom",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "bathroom",
-        name: "Bathroom",
-        panorama: "https://pannellum.org/images/from-tree.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: 170,
-            type: "scene",
-            text: "Back to Bedroom",
-            sceneId: "bedroom",
-            targetYaw: -100,
-            targetPitch: 10,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-    ],
-    featured: true,
-    specifications: {
-      area: "15,500 m²",
-      floors: 12,
-      density: "85 units/hectare",
-      projectType: "Mixed-Use Residential",
-      duration: "36 months",
-      budget: "$45M",
-      architect: "ARCHSTUDIO Team",
-      client: "Urban Development Corp",
-      status: "Completed",
-      sustainability: "LEED Platinum",
-    },
-  },
-  {
-    id: 2,
-    title: "Corporate Headquarters",
-    category: "Commercial",
-    location: "London, UK",
-    year: "2023",
-    description:
-      "An iconic corporate headquarters that embodies innovation and sustainability. The design features a striking glass facade with integrated green spaces, creating an inspiring work environment that promotes collaboration and creativity.",
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=500&width=700",
-      "/placeholder.svg?height=400&width=600",
-      "/placeholder.svg?height=550&width=750",
-      "/placeholder.svg?height=450&width=650",
-      "/placeholder.svg?height=500&width=700",
-    ],
-    panoramicScenes: [
-      {
-        id: "lobby",
-        name: "Main Lobby",
-        panorama: "https://pannellum.org/images/from-tree.jpg",
-        hotSpots: [
-          {
-            pitch: 5,
-            yaw: 100,
-            type: "scene",
-            text: "Go to Office Floor",
-            sceneId: "officeFloor",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "officeFloor",
-        name: "Office Floor",
-        panorama: "https://pannellum.org/images/alma.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: -10,
-            type: "scene",
-            text: "Back to Lobby",
-            sceneId: "lobby",
-            targetYaw: 100,
-            targetPitch: 5,
-            cssClass: "custom-hotspot",
-          },
-          {
-            pitch: 10,
-            yaw: 50,
-            type: "info",
-            text: "Collaboration Zone",
-            cssClass: "custom-info-hotspot",
-          },
-        ],
-      },
-    ],
-    featured: true,
-    specifications: {
-      area: "28,000 m²",
-      floors: 18,
-      density: "120 employees/floor",
-      projectType: "Corporate Office",
-      duration: "42 months",
-      budget: "$85M",
-      architect: "ARCHSTUDIO International",
-      client: "Global Tech Solutions",
-      status: "Completed",
-      sustainability: "BREEAM Excellent",
-    },
-  },
-  {
-    id: 3,
-    title: "Cultural Arts Center",
-    category: "Cultural",
-    location: "Tokyo, Japan",
-    year: "2023",
-    description:
-      "A dynamic cultural arts center that serves as a beacon for creativity and community engagement. The fluid architectural forms and innovative use of materials create spaces that inspire artistic expression and cultural exchange.",
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=500&width=700",
-      "/placeholder.svg?height=400&width=600",
-      "/placeholder.svg?height=550&width=750",
-      "/placeholder.svg?height=450&width=650",
-      "/placeholder.svg?height=500&width=700",
-    ],
-    panoramicScenes: [
-      {
-        id: "mainHall",
-        name: "Main Hall",
-        panorama: "https://pannellum.org/images/cerro-toco-0.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: 120,
-            type: "scene",
-            text: "Exhibition Area",
-            sceneId: "exhibition",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "exhibition",
-        name: "Exhibition Area",
-        panorama: "https://pannellum.org/images/jfk.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: -10,
-            type: "scene",
-            text: "Back to Main Hall",
-            sceneId: "mainHall",
-            targetYaw: 120,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-    ],
-    specifications: {
-      area: "12,000 m²",
-      floors: 4,
-      density: "N/A",
-      projectType: "Cultural Center",
-      duration: "30 months",
-      budget: "$60M",
-      architect: "Kengo Kuma & Associates",
-      client: "Tokyo Metropolitan Government",
-      status: "Completed",
-      sustainability: "CASBEE A Rank",
-    },
-  },
-  {
-    id: 4,
-    title: "Sustainable Office Tower",
-    category: "Commercial",
-    location: "Singapore",
-    year: "2024",
-    description:
-      "A pioneering sustainable office tower that sets new standards for green architecture. Featuring advanced energy systems, vertical gardens, and innovative climate control, this building represents the future of environmentally conscious design.",
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=500&width=700",
-      "/placeholder.svg?height=400&width=600",
-      "/placeholder.svg?height=550&width=750",
-      "/placeholder.svg?height=450&width=650",
-      "/placeholder.svg?height=500&width=700",
-    ],
-    panoramicScenes: [
-      {
-        id: "rooftopGarden",
-        name: "Rooftop Garden",
-        panorama: "https://pannellum.org/images/from-tree.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: 0,
-            type: "info",
-            text: "Green Oasis",
-            cssClass: "custom-info-hotspot",
-          },
-        ],
-      },
-    ],
-    specifications: {
-      area: "35,000 m²",
-      floors: 25,
-      density: "150 employees/floor",
-      projectType: "Office Tower",
-      duration: "48 months",
-      budget: "$120M",
-      architect: "Foster + Partners",
-      client: "Green Future Investments",
-      status: "Under Construction",
-      sustainability: "Green Mark Platinum",
-    },
-  },
-  {
-    id: 5,
-    title: "Luxury Resort Complex",
-    category: "Hospitality",
-    location: "Maldives",
-    year: "2023",
-    description:
-      "An exclusive luxury resort that harmoniously integrates with its natural surroundings. The design celebrates the beauty of the tropical environment while providing world-class amenities and unparalleled comfort for guests.",
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=500&width=700",
-      "/placeholder.svg?height=400&width=600",
-      "/placeholder.svg?height=550&width=750",
-      "/placeholder.svg?height=450&width=650",
-      "/placeholder.svg?height=500&width=700",
-    ],
-    panoramicScenes: [
-      {
-        id: "beachVilla",
-        name: "Beach Villa",
-        panorama: "https://pannellum.org/images/alma.jpg",
-        hotSpots: [
-          {
-            pitch: 5,
-            yaw: 10,
-            type: "scene",
-            text: "Overwater Bungalow",
-            sceneId: "overwaterBungalow",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "overwaterBungalow",
-        name: "Overwater Bungalow",
-        panorama: "https://pannellum.org/images/from-tree.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: -10,
-            type: "scene",
-            text: "Back to Beach Villa",
-            sceneId: "beachVilla",
-            targetYaw: 10,
-            targetPitch: 5,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-    ],
-    featured: true,
-    specifications: {
-      area: "50,000 m²",
-      floors: 3,
-      density: "50 villas",
-      projectType: "Luxury Resort",
-      duration: "36 months",
-      budget: "$150M",
-      architect: "Jean-Michel Gathy",
-      client: "Paradise Resorts Ltd.",
-      status: "Completed",
-      sustainability: "Green Globe Certified",
-    },
-  },
-  {
-    id: 6,
-    title: "Educational Campus",
-    category: "Educational",
-    location: "California, USA",
-    year: "2024",
-    description:
-      "A forward-thinking educational campus designed to foster learning and innovation. The interconnected buildings create collaborative spaces while maintaining individual identity, promoting both focused study and community interaction.",
-    images: [
-      "/placeholder.svg?height=600&width=800",
-      "/placeholder.svg?height=500&width=700",
-      "/placeholder.svg?height=400&width=600",
-      "/placeholder.svg?height=550&width=750",
-      "/placeholder.svg?height=450&width=650",
-      "/placeholder.svg?height=500&width=700",
-    ],
-    panoramicScenes: [
-      {
-        id: "library",
-        name: "Campus Library",
-        panorama: "https://pannellum.org/images/jfk.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: 10,
-            type: "scene",
-            text: "Lecture Hall",
-            sceneId: "lectureHall",
-            targetYaw: 0,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-      {
-        id: "lectureHall",
-        name: "Lecture Hall",
-        panorama: "https://pannellum.org/images/cerro-toco-0.jpg",
-        hotSpots: [
-          {
-            pitch: 0,
-            yaw: -10,
-            type: "scene",
-            text: "Back to Library",
-            sceneId: "library",
-            targetYaw: 10,
-            targetPitch: 0,
-            cssClass: "custom-hotspot",
-          },
-        ],
-      },
-    ],
-    specifications: {
-      area: "40,000 m²",
-      floors: 5,
-      density: "N/A",
-      projectType: "University Campus",
-      duration: "60 months",
-      budget: "$200M",
-      architect: "Skidmore, Owings & Merrill",
-      client: "California State University",
-      status: "Under Construction",
-      sustainability: "LEED Gold",
-    },
-  },
-];
+export interface Project {
+  id: number;
+  title: string;
+  category: string;
+  location: string;
+  year: string;
+  description: string;
+  images: string[];
+  featured?: boolean;
+  panoramicScenes?: {
+    id: string;
+    panorama: string;
+    name: string;
+    hotSpots?: {
+      pitch: number;
+      yaw: number;
+      type: "scene" | "info";
+      text: string;
+      sceneId?: string;
+      targetYaw?: number;
+      targetPitch?: number;
+      cssClass?: string;
+    }[];
+  }[];
+  specifications: {
+    area: string;
+    floors: number;
+    density: string;
+    projectType: string;
+    duration: string;
+    budget: string;
+    architect: string;
+    client: string;
+    status: string;
+    sustainability: string;
+  };
+}
+
+
 const ProjectDetail = () => {
   const containerRef = useRef<HTMLDivElement>(null)
 

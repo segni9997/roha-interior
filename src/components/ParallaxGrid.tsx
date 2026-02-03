@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import  { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Maximize2, Layers, MapPin, Ruler } from "lucide-react";
@@ -114,8 +114,9 @@ const ParallaxGrid = () => {
   }, []);
 
   return (
-  <> <section className="w-full bg-[#fcfcfc] py-24 px-6 md:px-20 text-white contour-one">
-      <div className="max-w-7xl mx-auto">
+  <> 
+  <section className="w-full bg-gradient-to-b from-[#172a2b] via-[#1d424b] to-[#f5f7f7] py-24 px-6 md:px-20 text-white contour-one">
+      <div className="max-w-6xl mx-auto">
         
         {/* Header Section */}
         <div className="border-b border-slate-200 pb-12 mb-12">
@@ -187,12 +188,13 @@ const ParallaxGrid = () => {
         </div>
       </div>
     </section>
-    <section ref={containerRef} className="w-full bg-[#f0f0f0] py-20  md:px-10">
+    <section ref={containerRef} className="w-full bg-[#f5f7f7] py-20 relative">
       {/* Grid Configuration:
           - grid-cols-1: Single column on mobile
           - md:grid-cols-2: Two columns on desktop
           - gap-4: Tight architectural spacing
       */}
+      <div className="absolute bg-gradient-to-b from-[#f0f0f0] from-35%  h-96 top-0 inset-0 z-10"></div>
       <div className="grid grid-cols-1 md:grid-cols-2  max-w-[1600px] mx-auto">
         {gridData.map((item, index) => (
           <div 
@@ -200,12 +202,15 @@ const ParallaxGrid = () => {
             className="relative h-[60vh] md:h-[80vh] overflow-hidden group border border-white/5"
           >
             {/* Image Layer - Made taller (120%) to provide space for parallax shift */}
-            <img
-              ref={(el) => (imageRefs.current[index] = el)}
-              src={item.image}
-              alt={item.title}
-              className="absolute -top-[10%] left-0 w-full h-[120%] object-cover scale-110 will-change-transform"
-            />
+        <img
+  ref={(el) => {
+    imageRefs.current[index] = el;
+  }}
+  src={item.image}
+  alt={item.title}
+  className="absolute -top-[10%] left-0 w-full h-[120%] object-cover scale-110 will-change-transform"
+/>
+
 
             {/* Glassy Overlay & Content */}
           
@@ -213,14 +218,15 @@ const ParallaxGrid = () => {
         ))}
       </div>
 
-<div className="w-full h-[30%] shadow-2xl overflow-hidden rounded-xl">
+<div className="w-full h-[25%]  overflow-hidden rounded-xl px-10 py-20">
   <iframe 
     className="w-full aspect-video"
     src="https://www.youtube.com/embed/_BZZkFzuLQs" 
     title="Architectural Portfolio Process" 
-    frameborder="0" 
+    // frameborder="0" 
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    allowfullscreen>
+    // allowfullscreen
+    >
   </iframe>
 </div>
     </section>

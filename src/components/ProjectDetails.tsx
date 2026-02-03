@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, Home, Landmark, type LucideIcon } from "lucide-react"
+import {  Building2, Home, Landmark, type LucideIcon } from "lucide-react"
 import home from "/confrence1.png";
 // import forest from "/🔥 Free download Nature Winter 4k Ultra HD Wallpaper on WallpaperSafari.jpg"
 
@@ -19,6 +19,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { fragmentShader, vertexShader } from "../utils/shaders";
 import ParallaxGrid from "./ParallaxGrid";
+import Footer from "./Footer";
+import GeoButton from "./Buttons";
+import { Link } from "react-router-dom";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -40,7 +43,7 @@ function ProjectDetails() {
     if (!canvasRef.current || !containerRef.current) return;
 
     const CONFIG: Config = {
-      color: "#f0f0f0",
+      color: "#172a2b",
       spread: 0.55,
     };
 
@@ -124,7 +127,7 @@ function ProjectDetails() {
   return (
 
     <>
-        <section ref={containerRef} className="relative h-screen w-full bg-[#0c1a1f] overflow-hidden flex items-center justify-center">
+        <section ref={containerRef} className="relative h-screen w-full bg-gradient-to-t from-[#f5f7f7] to-[#172a2b] overflow-hidden flex items-center justify-center">
                <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none z-50"
@@ -161,10 +164,9 @@ function ProjectDetails() {
             <p className="text-lg font-medium mb-6 leading-tight opacity-80">
               Start building your <br /> dream home today
             </p>
-            <button className="group bg-white hover:border-white text-[#0c1a1f] font-bold py-4 px-8 rounded-full flex items-center gap-2 transition-all duration-300 shadow-xl shadow-white/20">
-              Get Started 
-              <ArrowRight size={20} className="-rotate-45 group-hover:rotate-0 transition-transform" />
-            </button>
+            <Link to="/contactus">
+              <GeoButton label="Get Started" from="f0f0f0" to="1d424b"/>
+            </Link>
           </div>
 
           {/* MIDDLE: THE HERO IMAGE */}
@@ -186,7 +188,7 @@ function ProjectDetails() {
                 <div
                   key={index}
                   className="flex items-center gap-4 py-3 px-6 rounded-full 
-                             bg-white/5 backdrop-blur-xl border border-white/10 
+                             bg-black/15 backdrop-blur-xl border border-white/10 
                              hover:bg-white/10 transition-colors cursor-pointer group"
                 >
                   <Icon size={20} className="text-amber-500 group-hover:scale-110 transition-transform" />
@@ -197,10 +199,10 @@ function ProjectDetails() {
               );
             })}
             
-            <div className="mt-8 flex items-center gap-2 border-b border-white/30 pb-1 cursor-pointer hover:border-amber-500 transition-colors">
+            {/* <div className="mt-8 flex items-center gap-2 border-b border-white/30 pb-1 cursor-pointer hover:border-amber-500 transition-colors">
                <span className="text-white font-black text-xs uppercase tracking-widest">Explore</span>
                <ArrowRight size={14} className="text-white" />
-            </div>
+            </div> */}
           </div>
 
         </div>
@@ -208,6 +210,7 @@ function ProjectDetails() {
     </section>
 
     <ParallaxGrid/>
+    <Footer/>
     </>
 
   )

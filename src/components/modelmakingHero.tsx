@@ -103,7 +103,7 @@
 
 import bg from "/1.jpg";
 import model from "/as.png";
-import pattern from "/PATTERN.jpg";
+import pattern from "/pattern-01.png";
 import roha from "../assets/roha.png";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -214,7 +214,7 @@ export function ModelHero() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative h-screen w-full bg-[#f8f9fa] overflow-hidden flex items-center justify-center">
+    <section ref={containerRef} className="relative h-screen w-full bg-[#f5f7f7] overflow-hidden flex items-center justify-center">
       {/* 1. Background Image Wrapper */}
       <div className="absolute inset-0 z-0 flex items-center justify-center">
         <img
@@ -225,9 +225,9 @@ export function ModelHero() {
         <img
           src={pattern}
           alt="Pattern Background"
-          className="w-full h-full object-contain absolute - skew-x-2 -translate-y-0 scale-z-50 object-center"
+          className=" h-full object-contain absolute   -translate-y-0  scale-z-125 object-center"
         />
-        <div className="absolute w-full h-full bg-white/80"></div>
+        <div className="absolute w-full h-full bg-white/75"></div>
         <div className="absolute h-full bg-gradient-to-tl   from-[#305B63]/80 to-white/20 border-0 w-1/2 right-0"></div>
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           <img

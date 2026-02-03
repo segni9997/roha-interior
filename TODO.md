@@ -1,0 +1,23 @@
+- [x] Fix TypeScript issues in About.tsx
+- [x] Fix TypeScript issues in AnimatedButton.tsx
+- [x] Fix TypeScript issues in BlogCard.tsx
+- [ ] Fix TypeScript issues in BlogDetail.tsx
+- [ ] Fix TypeScript issues in Buttons.tsx
+- [ ] Fix TypeScript issues in Categories.tsx
+- [ ] Fix TypeScript issues in category.tsx
+- [ ] Fix TypeScript issues in ContactUs.tsx
+- [ ] Fix TypeScript issues in Footer.tsx
+- [ ] Fix TypeScript issues in Gallery.tsx
+- [ ] Fix TypeScript issues in hero.tsx
+- [ ] Fix TypeScript issues in Hexagon.tsx
+- [ ] Fix TypeScript issues in modelmakingHero.tsx
+- [ ] Fix TypeScript issues in modelMakingNavBar.tsx
+- [ ] Fix TypeScript issues in modelMakingProjects.tsx
+- [ ] Fix TypeScript issues in NavBar.tsx
+- [ ] Fix TypeScript issues in Panaroma-gallery.tsx
+- [ ] Fix TypeScript issues in PanaromaViewer.tsx
+- [ ] Fix TypeScript issues in Parallax.tsx
+- [ ] Fix TypeScript issues in ParallaxGrid.tsx
+- [ ] Fix TypeScript issues in Projectdetail.tsx
+- [ ] Fix TypeScript issues in ProjectDetails.tsx
+- [ ] Run TypeScript check to verify all issues are fixed
