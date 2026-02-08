@@ -92,7 +92,7 @@
           ))}
         </div>
 
-        <div className="relative z-10 px-6 py-20">
+        <div className="relative z-10 px-4 sm:px-6 py-12 sm:py-16 md:py-20">
           <div className="max-w-7xl mx-auto">
             {/* Section Header with Clip-Path */}
             <motion.div
@@ -100,11 +100,11 @@
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="text-center mb-20 relative"
+              className="text-center mb-12 sm:mb-16 md:mb-20 relative"
             >
               {/* Header background with clip-path */}
               <div 
-                className="absolute inset-0 bg-gradient-to-r from-[#395e63]/20 via-[#022024]/30 to-[#395e63]/20 -mx-20"
+                className="absolute inset-0 bg-gradient-to-r from-[#395e63]/20 via-[#022024]/30 to-[#395e63]/20 -mx-10 sm:-mx-20"
                 style={{
                   clipPath: "polygon(10% 0%, 90% 0%, 95% 100%, 5% 100%)"
                 }}
@@ -115,7 +115,7 @@
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="relative text-5xl md:text-7xl font-bold text-white mb-3 py-8 font-primary"
+                className="relative text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-2 sm:mb-3 py-6 sm:py-8 font-primary"
               >
                 About <span className="text-[#395e63] ">Roha</span>
               </motion.h2>
@@ -124,33 +124,33 @@
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 viewport={{ once: true }}
-                className="relative text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto p-1"
+                className="relative text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto p-1 px-4"
               >
                 Shaping spaces with vision and precision
               </motion.p>
             </motion.div>
 
             {/* Main Content Grid with Clip-Path Cards */}
-            <div className="grid lg:grid-cols-2 gap-16 mb-20">
+            <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 mb-12 sm:mb-16 md:mb-20">
               {/* Left Column - Story */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
                 viewport={{ once: true }}
-                className="space-y-8"
+                className="space-y-6 sm:space-y-8"
               >
                 <div 
-                  className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-8 border border-[#395e63]/20 overflow-hidden"
+                  className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-5 sm:p-6 md:p-8 border border-[#395e63]/20 overflow-hidden"
                   style={{
                     clipPath: "polygon(0% 0%, 95% 0%, 100% 100%, 5% 100%)"
                   }}
                 >
-                  <h3 className="text-3xl font-bold text-white mb-6">Our Story</h3>
-                  <p className="text-gray-300 text-lg leading-relaxed mb-6">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-6">Our Story</h3>
+                  <p className="text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6">
                     Founded with a vision to revolutionize architectural design, Roha has been at the forefront of creating extraordinary spaces that blend functionality with artistic expression. Our journey began with a simple belief: architecture should not just shelter, but inspire.
                   </p>
-                  <p className="text-gray-300 text-lg leading-relaxed">
+                  <p className="text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed">
                     Over the years, we've evolved into a team of passionate architects, designers, and visionaries who understand that every space tells a story. We don't just design buildings; we craft experiences that resonate with the human spirit.
                   </p>
                 </div>
@@ -162,21 +162,21 @@
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 viewport={{ once: true }}
-                className="space-y-8"
+                className="space-y-6 sm:space-y-8"
               >
                 <div 
-                  className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-8 border border-[#395e63]/20 overflow-hidden"
+                  className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-5 sm:p-6 md:p-8 border border-[#395e63]/20 overflow-hidden"
                   style={{
                     clipPath: "polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%)"
                   }}
                 >
-                  <h3 className="text-3xl font-bold text-white mb-6">Our Mission</h3>
-                  <p className="text-gray-300 text-lg leading-relaxed mb-8">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-6">Our Mission</h3>
+                  <p className="text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed mb-6 sm:mb-8">
                     To create architectural masterpieces that stand the test of time while pushing the boundaries of innovation, sustainability, and human-centered design.
                   </p>
                   
-                  <h3 className="text-3xl font-bold text-white mb-6">Our Vision</h3>
-                  <p className="text-gray-300 text-lg leading-relaxed">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4 sm:mb-6">Our Vision</h3>
+                  <p className="text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed">
                     To be the world's most respected architectural firm, known for transforming communities through spaces that inspire, connect, and elevate the human experience.
                   </p>
                 </div>
@@ -189,9 +189,9 @@
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="mb-20"
+              className="mb-12 sm:mb-16 md:mb-20"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
                 {stats.map((stat, index) => (
                   <motion.div
                     key={index}
@@ -200,14 +200,14 @@
                     transition={{ duration: 0.6, delay: index * 0.1 }}
                     viewport={{ once: true }}
                     whileHover={{ scale: 1.05 }}
-                    className="relative bg-gradient-to-br from-[#395e63]/30 to-[#022024]/40 backdrop-blur-lg p-6 border border-[#395e63]/30 text-center group hover:border-[#395e63]/50 transition-all duration-300 overflow-hidden"
+                    className="relative bg-gradient-to-br from-[#395e63]/30 to-[#022024]/40 backdrop-blur-lg p-4 sm:p-5 md:p-6 border border-[#395e63]/30 text-center group hover:border-[#395e63]/50 transition-all duration-300 overflow-hidden"
                     style={{
                       clipPath: "polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%)"
                     }}
                   >
-                    <stat.icon className="w-8 h-8 text-[#395e63] mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
-                    <div className="text-4xl font-bold text-white mb-2">{stat.number}</div>
-                    <div className="text-gray-300 text-sm">{stat.label}</div>
+                    <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#395e63] mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1.5 sm:mb-2">{stat.number}</div>
+                    <div className="text-gray-300 text-xs sm:text-sm">{stat.label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -219,10 +219,10 @@
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
-              className="mb-20"
+              className="mb-12 sm:mb-16 md:mb-20"
             >
-              <h3 className="text-4xl font-bold text-white text-center mb-16">Our Core Values</h3>
-              <div className="grid md:grid-cols-3 gap-8">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-10 sm:mb-12 md:mb-16">Our Core Values</h3>
+              <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
                 {values.map((value, index) => (
                   <motion.div
                     key={index}
@@ -231,7 +231,7 @@
                     transition={{ duration: 0.6, delay: index * 0.2 }}
                     viewport={{ once: true }}
                     whileHover={{ scale: 1.02, y: -5 }}
-                    className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-8 border border-[#395e63]/20 hover:border-[#395e63]/40 transition-all duration-300 overflow-hidden"
+                    className="relative bg-gradient-to-br from-[#395e63]/20 to-[#022024]/30 backdrop-blur-lg p-5 sm:p-6 md:p-8 border border-[#395e63]/20 hover:border-[#395e63]/40 transition-all duration-300 overflow-hidden"
                     style={{
                       clipPath: index === 0 
                         ? "polygon(0% 0%, 90% 0%, 100% 100%, 10% 100%)"
@@ -240,9 +240,9 @@
                         : "polygon(0% 0%, 100% 0%, 100% 90%, 0% 100%)"
                     }}
                   >
-                    <value.icon className="w-12 h-12 text-[#395e63] mb-6" />
-                    <h4 className="text-2xl font-bold text-white mb-4">{value.title}</h4>
-                    <p className="text-gray-300 leading-relaxed">{value.description}</p>
+                    <value.icon className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 text-[#395e63] mb-4 sm:mb-6" />
+                    <h4 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-3 sm:mb-4">{value.title}</h4>
+                    <p className="text-sm sm:text-base text-gray-300 leading-relaxed">{value.description}</p>
                   </motion.div>
                 ))}
               </div>
@@ -257,19 +257,19 @@
               className="text-center"
             >
               <div 
-                className="relative bg-gradient-to-r from-[#395e63]/30 to-[#022024]/40 backdrop-blur-lg p-12 border border-[#395e63]/30 overflow-hidden"
+                className="relative bg-gradient-to-r from-[#395e63]/30 to-[#022024]/40 backdrop-blur-lg p-6 sm:p-8 md:p-12 border border-[#395e63]/30 overflow-hidden"
                 style={{
                   clipPath: "polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)"
                 }}
               >
-                <h3 className="text-4xl font-bold text-white mb-6">Ready to Create Something Extraordinary?</h3>
-                <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6 px-4">Ready to Create Something Extraordinary?</h3>
+                <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
                   Let's collaborate to bring your architectural vision to life. Every great space begins with a conversation.
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative bg-gradient-to-r from-[#395e63] to-[#4a7c82] text-white px-12 py-4 text-lg font-semibold hover:from-[#4a7c82] hover:to-[#395e63] transition-all duration-300 shadow-2xl overflow-hidden"
+                  className="relative bg-gradient-to-r from-[#395e63] to-[#4a7c82] text-white px-8 sm:px-10 md:px-12 py-3 sm:py-3.5 md:py-4 text-base sm:text-lg font-semibold hover:from-[#4a7c82] hover:to-[#395e63] transition-all duration-300 shadow-2xl overflow-hidden"
                   style={{
                     clipPath: "polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)"
                   }}
