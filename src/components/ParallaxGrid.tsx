@@ -115,27 +115,27 @@ const ParallaxGrid = () => {
 
   return (
   <> 
-  <section className="w-full bg-gradient-to-b from-[#172a2b] via-[#1d424b] to-[#f5f7f7] py-24 px-6 md:px-20 text-white contour-one">
+  <section className="w-full bg-gradient-to-b from-[#172a2b] via-[#1d424b] to-[#f5f7f7] py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-20 text-white contour-one">
       <div className="max-w-6xl mx-auto">
         
         {/* Header Section */}
-        <div className="border-b border-slate-200 pb-12 mb-12">
-          <h2 className="text-sm uppercase tracking-[0.4em] font-bold text- mb-4">
+        <div className="border-b border-slate-200 pb-8 sm:pb-10 md:pb-12 mb-8 sm:mb-10 md:mb-12">
+          <h2 className="text-xs sm:text-sm uppercase tracking-[0.3em] sm:tracking-[0.4em] font-bold text- mb-3 sm:mb-4">
             Project Overview
           </h2>
-          <h3 className="text-5xl md:text-7xl font-black tracking-tighter italic">
+          <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter italic">
             THE MONOLITH
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-12 md:gap-16">
           
           {/* Narrative Content (Left 2/3) */}
-          <div className="lg:col-span-2 space-y-8">
-            <p className="text-2xl md:text-3xl font-medium leading-tight text-slate-50 italic">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-medium leading-tight text-slate-50 italic">
               A study in raw concrete and natural light, designed to blur the line between content and interaction.
             </p>
-            <div className="space-y-6 text-slate-100 leading-relaxed text-lg max-w-2xl">
+            <div className="space-y-4 sm:space-y-6 text-slate-100 leading-relaxed text-sm sm:text-base md:text-lg max-w-2xl">
               <p>
                 Inspired by Swiss modernism, this project focuses on exceptional design and clean typography within the physical space. The structure utilizes a minimal color palette—mostly whites, grays, and blacks—to let the natural surroundings shine.
               </p>
@@ -151,31 +151,31 @@ const ParallaxGrid = () => {
     relative
     bg-white/10
     backdrop-blur-xl
-    p-8
-    rounded-2xl
+    p-4 sm:p-6 md:p-8
+    rounded-xl sm:rounded-2xl
     border border-white/20
     shadow-[0_8px_32px_rgba(0,0,0,0.12)]
   "
 >
   {/* glass highlight */}
-  <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
+  <div className="pointer-events-none absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
 
-  <h4 className="relative text-xs uppercase tracking-widest font-black mb-8 border-b border-white/20 pb-4 text-white/80">
+  <h4 className="relative text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest font-black mb-6 sm:mb-8 border-b border-white/20 pb-3 sm:pb-4 text-white/80">
     Technical Data
   </h4>
 
-  <ul className="relative space-y-8">
+  <ul className="relative space-y-4 sm:space-y-6 md:space-y-8">
     {specs.map((spec, i) => (
-      <li key={i} className="flex items-start gap-4">
-        <div className="bg-white/20 backdrop-blur-md p-2 rounded-lg shadow-sm border border-white/30">
-          <spec.icon size={18} className="text-white/70" />
+      <li key={i} className="flex items-start gap-3 sm:gap-4">
+        <div className="bg-white/20 backdrop-blur-md p-1.5 sm:p-2 rounded-lg shadow-sm border border-white/30">
+          <spec.icon size={16} className="sm:w-[18px] sm:h-[18px] text-white/70" />
         </div>
 
         <div>
-          <p className="text-[10px] uppercase font-bold tracking-wider text-white/60">
+          <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/60">
             {spec.label}
           </p>
-          <p className="text-lg font-black tracking-tight text-white">
+          <p className="text-base sm:text-lg font-black tracking-tight text-white">
             {spec.value}
           </p>
         </div>
@@ -188,14 +188,14 @@ const ParallaxGrid = () => {
         </div>
       </div>
     </section>
-    <section ref={containerRef} className="w-full bg-[#f5f7f7] py-20 relative">
+    <section ref={containerRef} className="w-full bg-[#f5f7f7] py-12 sm:py-16 md:py-20 relative">
       {/* Grid Configuration:
           - grid-cols-1: Single column on mobile
           - md:grid-cols-2: Two columns on desktop
           - gap-4: Tight architectural spacing
       */}
-      <div className="absolute bg-gradient-to-b from-[#f0f0f0] from-35%  h-96 top-0 inset-0 z-10"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2  max-w-[1600px] mx-auto">
+      <div className="absolute bg-gradient-to-b from-[#f0f0f0] from-35% h-48 sm:h-64 md:h-96 top-0 inset-0 z-10"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 max-w-[1600px] mx-auto">
         {gridData.map((item, index) => (
           <div 
             key={item.id}
@@ -218,9 +218,9 @@ const ParallaxGrid = () => {
         ))}
       </div>
 
-<div className="w-full h-[25%]  overflow-hidden rounded-xl px-10 py-20">
+<div className="w-full h-[25%] overflow-hidden rounded-lg sm:rounded-xl px-4 sm:px-6 md:px-10 py-10 sm:py-16 md:py-20">
   <iframe 
-    className="w-full aspect-video"
+    className="w-full aspect-video rounded-lg"
     src="https://www.youtube.com/embed/_BZZkFzuLQs" 
     title="Architectural Portfolio Process" 
     // frameborder="0" 

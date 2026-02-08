@@ -150,14 +150,17 @@ const PanoramaViewer = () => {
       `}</style>
 
       {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-black/80 backdrop-blur-md h-16 flex items-center px-8 justify-between border-b border-white/10">
-        <Link to="/gallery" className="text-white flex items-center gap-2 hover:text-[#395e63] transition-colors group">
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform"/> Back to Gallery
+      <nav className="fixed top-0 inset-x-0 z-50 bg-black/80 backdrop-blur-md h-14 sm:h-16 flex items-center px-4 sm:px-6 md:px-8 justify-between border-b border-white/10">
+        <Link to="/gallery" className="text-white flex items-center gap-1.5 sm:gap-2 hover:text-[#395e63] transition-colors group text-sm sm:text-base">
+          <ArrowLeft size={18} className="sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform"/> 
+          <span className="hidden sm:inline">Back to Gallery</span>
+          <span className="sm:hidden">Back</span>
         </Link>
-        <div className="text-white font-bold flex items-center gap-2">
-          <Move3D size={20} className="text-[#395e63] animate-pulse"/> {project.title}
+        <div className="text-white font-bold flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+          <Move3D size={18} className="sm:w-5 sm:h-5 text-[#395e63] animate-pulse"/> 
+          <span className="truncate max-w-[120px] sm:max-w-none">{project.title}</span>
         </div>
-        <div className="hidden md:block text-gray-400 text-sm tracking-wide uppercase">
+        <div className="hidden md:block text-gray-400 text-xs sm:text-sm tracking-wide uppercase">
           {panoramicScenes.find(s => s.id === currentSceneId)?.name || "Interactive Tour"}
         </div>
       </nav>
@@ -166,19 +169,19 @@ const PanoramaViewer = () => {
       <div ref={panoramaRef} className="w-full h-full bg-neutral-900" />
 
       {/* UI Controls */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 bg-black/60 backdrop-blur-xl p-3 rounded-full border border-white/10 z-50">
-        <button onClick={() => handleZoom(10)} title="Zoom Out" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomOut size={24}/></button>
-        <button onClick={handleReset} title="Reset View" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><RotateCcw size={24}/></button>
-        <button onClick={() => handleZoom(-10)} title="Zoom In" className="text-white p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomIn size={24}/></button>
+      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-4 bg-black/60 backdrop-blur-xl p-2 sm:p-3 rounded-full border border-white/10 z-50">
+        <button onClick={() => handleZoom(10)} title="Zoom Out" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomOut size={20} className="sm:w-6 sm:h-6"/></button>
+        <button onClick={handleReset} title="Reset View" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><RotateCcw size={20} className="sm:w-6 sm:h-6"/></button>
+        <button onClick={() => handleZoom(-10)} title="Zoom In" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomIn size={20} className="sm:w-6 sm:h-6"/></button>
       </div>
 
       {/* Scene Selector Thumbnails */}
-      <div className="absolute bottom-10 right-6 md:right-10 flex flex-col gap-3 z-50">
+      <div className="absolute bottom-6 sm:bottom-10 right-4 sm:right-6 md:right-10 flex flex-col gap-2 sm:gap-3 z-50">
         {panoramicScenes.map((s) => (
           <button 
             key={s.id} 
             onClick={() => viewerRef.current?.loadScene(s.id)}
-            className={`w-16 h-12 md:w-20 md:h-14 rounded-lg border-2 overflow-hidden transition-all duration-300 group relative ${
+            className={`w-12 h-10 sm:w-16 sm:h-12 md:w-20 md:h-14 rounded-md sm:rounded-lg border-2 overflow-hidden transition-all duration-300 group relative ${
               currentSceneId === s.id ? 'border-[#395e63] scale-110 shadow-lg shadow-[#395e63]/40' : 'border-white/20 hover:border-white/60'
             }`}
           >
@@ -190,12 +193,12 @@ const PanoramaViewer = () => {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center text-white">
+        <div className="absolute inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center text-white px-4">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#395e63]"></div>
-            <Move3D className="absolute inset-0 m-auto text-white/50" size={24} />
+            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-2 border-b-2 border-[#395e63]"></div>
+            <Move3D className="absolute inset-0 m-auto text-white/50" size={20} />
           </div>
-          <p className="mt-6 text-sm tracking-[0.3em] uppercase text-gray-400 animate-pulse">Initializing Virtual Space</p>
+          <p className="mt-4 sm:mt-6 text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-gray-400 animate-pulse text-center">Initializing Virtual Space</p>
         </div>
       )}
     </div>

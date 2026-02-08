@@ -6,16 +6,16 @@ export default function MargaNavbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 w-full z-[100] p-6 flex justify-center">
+    <nav className="fixed top-0 w-full z-[100] p-3 sm:p-6 flex justify-center">
       {/* Main Navbar Container */}
-      <div className="w-full max-w-7xl bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-full px-8 py-3 flex items-center justify-between shadow-sm">
+      <div className="w-full max-w-7xl bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-full px-4 sm:px-8 py-2 sm:py-3 flex items-center justify-between shadow-sm">
         
         {/* Logo - Marga Style (Minimal Typography) */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#395e63] rounded-full flex items-center justify-center text-white font-bold text-lg">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#395e63] rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg">
             R
           </div>
-          <span className="text-xl font-black tracking-tighter text-slate-900 uppercase">
+          <span className="text-base sm:text-xl font-black tracking-tighter text-slate-900 uppercase">
             Roha<span className="font-light text-slate-400">Arch</span>
           </span>
         </div>
@@ -34,11 +34,11 @@ export default function MargaNavbar() {
         </div>
 
         {/* Action Icons */}
-        <div className="flex items-center gap-4">
-          <button className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <Search className="w-5 h-5 text-slate-600" />
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
           </button>
-          <button className="hidden md:block bg-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#395e63] transition-all">
+          <button className="hidden md:block bg-slate-900 text-white px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest hover:bg-[#395e63] transition-all">
             Consult Now
           </button>
           
@@ -54,11 +54,11 @@ export default function MargaNavbar() {
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute top-24 inset-x-6 bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl lg:hidden"
+          className="absolute top-16 sm:top-24 inset-x-3 sm:inset-x-6 bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl lg:hidden"
         >
-          <div className="flex flex-col gap-6 text-center">
+          <div className="flex flex-col gap-4 sm:gap-6 text-center">
             {['Home', 'About', 'Modeling', 'Interior', 'Contact'].map((item) => (
-              <a key={item} href="/" className="text-lg font-bold text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-2">
+              <a key={item} href="/" className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-wider sm:tracking-widest border-b border-slate-100 pb-2">
                 {item}
               </a>
             ))}

@@ -107,12 +107,12 @@ const BlogPage = () => {
 
 
   return (
-    <div className="relative max-w-full mx-auto px-6 py-12 bg-[#f5f7f7]">
+    <div className="relative max-w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 bg-[#f5f7f7]">
       {/* Header */}
 
-         <div className="absolute -top-12 left-1/2 md:left-10 flex items-center gap-4 z-30">
-          <div className="h-[6px] w-12 bg-[#205b63]"></div>
-          <span className="md:text-4xl text-xs font-black uppercase tracking-[0.5em] text-[#205b63]">
+         <div className="absolute -top-8 sm:-top-12 left-4 sm:left-1/2 md:left-10 flex items-center gap-2 sm:gap-4 z-30">
+          <div className="h-[4px] sm:h-[6px] w-8 sm:w-12 bg-[#205b63]"></div>
+          <span className="text-xs sm:text-2xl md:text-4xl font-black uppercase tracking-[0.2em] sm:tracking-[0.5em] text-[#205b63]">
             Featured stories
           </span>
         </div>
@@ -123,7 +123,7 @@ const BlogPage = () => {
       </div> */}
 
       {/* Hero Section: Large Card + Side List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-20">
         <div className="lg:col-span-2">
            <Link to={`/blog/${featuredPost.id}`}>
             <BlogCard post={featuredPost} featured={true} />
@@ -131,14 +131,14 @@ const BlogPage = () => {
         </div>
         
         {/* Side List (Other featured posts) */}
-        <div className="flex flex-col gap-6">
-          <h2 className="text-xl font-bold border-b pb-2">Other featured posts</h2>
+        <div className="flex flex-col gap-4 sm:gap-6">
+          <h2 className="text-lg sm:text-xl font-bold border-b pb-2">Other featured posts</h2>
           {sidePosts.map(post => (
-           <Link to={`/blog/${post.id}`}>
- <div key={post.id} className="flex gap-4 group cursor-pointer">
-              <img src={post.image} className="w-20 h-20 object-cover rounded-lg" alt="" />
+           <Link to={`/blog/${post.id}`} key={post.id}>
+ <div className="flex gap-3 sm:gap-4 group cursor-pointer">
+              <img src={post.image} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" alt="" />
               <div>
-                <h4 className="text-sm font-bold leading-snug group-hover:text-[#7db3b8] transition-colors">
+                <h4 className="text-xs sm:text-sm font-bold leading-snug group-hover:text-[#7db3b8] transition-colors line-clamp-3">
                   {post.title}
                 </h4>
               </div>
