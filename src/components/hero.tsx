@@ -122,7 +122,7 @@ const Hero = () => {
           <h1 className="md:text-7xl text-6xl  md:w-[33%]   p-10 z-10 text-white font-extrabold">
             ROHA INTERIOR AND ARCHITECTS
           </h1>
-          <img src={pattern} alt="pattern"className="w-full ml-5  h-16"  />
+          <img src={pattern} alt="pattern"className="w-full md:scale-105 h-16 md:h-fit ml-6 md:ml-0"  />
         </div>
 
         {/* Background */}
