@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Move3D, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { sampleProjects } from "./datas/sampleProjects";
+import { NavigationOverlay } from "./NavBar";
 
 const PanoramaGallery = () => {
   const [scrollY, setScrollY] = useState(0);
@@ -55,6 +56,8 @@ const PanoramaGallery = () => {
     <div className="relative bg-black text-white min-h-screen">
       {/* -------------------------------- NAVBAR -------------------------------- */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800">
+      <NavigationOverlay/>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-3">

@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import pattern from "/pattern-01.png";
+import hero from "/roha.png"
 import { fragmentShader, vertexShader } from "../utils/shaders";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -115,12 +116,25 @@ const Hero = () => {
       <div className="sticky top-0 min-h-screen overflow-hidden">
 
         {/* Pattern */}
-        <div className="absolute rotate-90 right-0 -z-20 ">
+        <div className="absolute bottom-12 right-0 z-10  p-2">
+          <img src={hero} alt="pattern" className="w-80 h-80 ml-8" />
+
+          <h1 className="text-7xl  w-[33%] f  p-10 z-10 text-white font-extrabold">
+            ROHA INTERIOR AND ARCHITECTS
+          </h1>
           <img src={pattern} alt="pattern" />
         </div>
 
         {/* Background */}
-        <div className="absolute inset-0 hero-bg bg-cover bg-center" />
+       <video
+  className="absolute inset-0 w-full h-full object-cover"
+  autoPlay
+  loop
+  muted
+  playsInline
+>
+  <source src="/rohabg.mp4" type="video/mp4" />
+</video>
 
         {/* SHADER CANVAS (Destroyer Layer) */}
         <canvas
@@ -129,8 +143,8 @@ const Hero = () => {
         />
 
         {/* CONTENT */}
-        {/* <div className="relative z-20 flex flex-col justify-center items-center min-h-screen px-6 text-center">
-          <motion.h1
+        <div className="relative z-20 flex flex-col justify-center items-center min-h-screen px-6 text-center">
+          {/* <motion.h1
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -146,8 +160,8 @@ const Hero = () => {
             className="mt-4 text-xl tracking-[0.3em] text-white mix-blend-difference"
           >
             PRECISION MODEL MAKING
-          </motion.p>
-        </div> */}
+          </motion.p> */}
+        </div>
 
         {/* PARTICLES */}
         <div className="absolute inset-0 pointer-events-none z-30">

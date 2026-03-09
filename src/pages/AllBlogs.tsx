@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { Post } from '../utils/types';
 import { BlogCard } from '../components/BlogCard';
 import { posts } from '../components/datas/posts';
+import { NavigationOverlay } from '../components/NavBar';
 
 
 const AllBlogs: React.FC = () => {
@@ -56,6 +57,7 @@ const AllBlogs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white px-4 sm:px-6 py-8 sm:py-12">
+      <NavigationOverlay/>
 <header className="max-w-7xl mx-auto mb-10 sm:mb-16 text-center">
   <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3 sm:mb-4 tracking-tighter">
     Built Stories
