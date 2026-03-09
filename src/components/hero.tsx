@@ -116,13 +116,13 @@ const Hero = () => {
       <div className="sticky top-0 min-h-screen overflow-hidden">
 
         {/* Pattern */}
-        <div className="absolute bottom-12 right-0 z-10  p-2">
-          <img src={hero} alt="pattern" className="w-80 h-80 ml-8" />
+        <div className="absolute md:bottom-12 top-24 right-0 z-10  p-2">
+          <img src={hero} alt="pattern" className="w-80 h-80 md:ml-8 mx-auto " />
 
-          <h1 className="text-7xl  w-[33%] f  p-10 z-10 text-white font-extrabold">
+          <h1 className="md:text-7xl text-6xl  md:w-[33%]   p-10 z-10 text-white font-extrabold">
             ROHA INTERIOR AND ARCHITECTS
           </h1>
-          <img src={pattern} alt="pattern" />
+          <img src={pattern} alt="pattern"className="w-full ml-5  h-16"  />
         </div>
 
         {/* Background */}
