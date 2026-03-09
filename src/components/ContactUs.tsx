@@ -1,9 +1,12 @@
 import { Mail, MapPin, Twitter, Instagram, Linkedin } from 'lucide-react';
 import pattern from "/pattern-01.png"
 import GeoButton from './Buttons';
+import { NavigationOverlay } from './NavBar';
 const ContactUs = () => {
   return (
     <div className="min-h-screen  bg-gradient-to-t from-[#172a2b] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <NavigationOverlay/>
+
       {/* Background Decorative Circles */}
       <div className="absolute top-20 right-[-5%] w-96 h-96 bg-cyan-400 rounded-full blur-[100px] opacity-30" />
       <div className="absolute bottom-[-10%] left-[-5%] w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-30" />
@@ -26,6 +29,7 @@ const ContactUs = () => {
   />
 </div>
       <div className="text-center mb-12 relative z-10">
+
         <h1 className="text-5xl font-bold mb-2 text text-[#172a2b]">Contact Us</h1>
         <p className="text-gray-400">Any question or remarks? Just write us a message!</p>
       </div>

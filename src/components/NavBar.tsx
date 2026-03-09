@@ -1,126 +1,217 @@
-import { Phone } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
-const NavigationOverlay = () => {
+export function NavigationOverlay() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("HOME");
-  const navRef = useRef<HTMLDivElement>(null);
+  const [showNav, setShowNav] = useState(true);
 
   const navLinks = [
-    { name: "HOME", path: "/" },
+    { name: "Home", path: "/" },
     // { name: "ABOUT ME", path: "/about" },
     { name: "Blogs", path: "/allblogs" },
     { name: "Gallery", path: "/gallery" },
-    { name: "CONTACT", path: "/contactus" },
+    { name: "Contact", path: "/contactus" },
     { name: "Model", path: "/model-making" },
     { name: "Interior", path: "/interior" },
   ];
 
-  // Logic to handle scroll and click outside
+  /* ===========================
+     HIDE NAVBAR ON SCROLL
+  =========================== */
   useEffect(() => {
+    let lastScroll = window.scrollY;
+
     const handleScroll = () => {
-      if (isOpen) setIsOpen(false);
-    };
+      const currentScroll = window.scrollY;
 
-    const handleClickOutside = (event: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      if (currentScroll > lastScroll && currentScroll > 100) {
+        setShowNav(false);
+      } else {
+        setShowNav(true);
       }
+
+      lastScroll = currentScroll;
     };
 
-    if (isOpen) {
-      window.addEventListener("scroll", handleScroll);
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  /* ===========================
+     ANIMATION VARIANTS
+  =========================== */
+
+  const container: Variants = {
+    hidden: {},
+    show: {
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const item: Variants = {
+    hidden: {
+      x: 80,
+      opacity: 0,
+    },
+    show: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+    exit: {
+      x: 80,
+      opacity: 0,
+      transition: {
+        duration: 0.3,
+      },
+    },
+  };
 
   return (
-    <div
-      ref={navRef}
-      className={`fixed top-0 left-0 w-full overflow-hidden bg-[#fff]/0 backdrop-blur-md transition-all duration-700 ease-in-out border-b border-[#1d424b]/0 z-50 ${
-        isOpen ? "h-[60vh] sm:h-[55vh] bg-transparent border-0 " : "h-16 sm:h-20"
-      }`}
-      onClick={()=>setIsOpen(!isOpen)}
-    >
-      {/* 1. Top Bar Control */}
-      <div className="absolute top-0 w-full flex justify-between items-center p-4 sm:p-6 text-[9px] sm:text-[10px] tracking-[0.25em] sm:tracking-[0.3em] font-medium text-white uppercase z-20">
-        <span className="cursor-default">
-          <img src="/roha.png" alt="" className="w-12 h-12 top-1/2" />
-        </span>
+    <>
+      {/* ===========================
+          NAVBAR
+      =========================== */}
 
-        {/* Toggle Button */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex flex-col items-center gap-1 cursor-pointer group focus:outline-none"
-        >
-          <div
-            className={`h-[1px] bg-[#5b949b] transition-all duration-500 ${
-              isOpen ? "w-24 sm:w-14 h-10" : "w-12 sm:w-8 h-10"
-            }`}
-          ></div>
-          <span className="mt-1 text-[7px]  text-[#5b949b] sm:text-[8px] transition-opacity duration-300">
-            {isOpen ? "CLOSE" : "MENU"}
-          </span>
-        </button>
-
-        <Link to="/contact" className="hover:opacity-70 transition-opacity text-[#5b949b] text-lg md:;text-xl">
-          <Phone/>
-        </Link>
-      </div>
-
-      {/* 2. Background Glow */}
-      <div
-        className={`absolute w-[300px] h-[300px] rounded-full bg-white opacity-10 blur-[100px] pointer-events-none transition-all duration-1000 ${
-          isOpen
-            ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100"
-            : "top-0 scale-0"
-        }`}
-      />
-
-      {/* 3. Navigation Links */}
-      <nav
-        className={`relative z-10 h-full py-2 flex flex-col items-center justify-center transition-all duration-500 sm:mt-2 md:mt-8 ${
-          isOpen
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-10 pointer-events-none"
+      <motion.nav
+        initial={{ y: 0 }}
+        animate={{ y: showNav ? 0 : -100 }}
+        transition={{ duration: 0.3 }}
+        className={`fixed top-0 left-0 right-0 h-full z-40 ${
+          isOpen ? "backdrop-blur-xl" : ""
         }`}
       >
-        {navLinks.map((link) => (
-          <Link
-            key={link.name}
-            to={link.path}
-            onClick={() => {
-              setActiveTab(link.name);
-              setIsOpen(false); // Collapse on link click
-            }}
-            className={`
-              text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tighter transition-all duration-300 py-1.5 sm:py-2
-              ${
-                activeTab === link.name
-                  ? "text-[#5b949b] scale-110 italic"
-                  : "text-[#5b949b]/30 hover:text-[#5b949b]/80"
-              }
-            `}
+        <div
+          className={`px-6 flex justify-between items-center ${
+            isOpen ? "py-11" : "py-4"
+          }`}
+        >
+          {/* Logo */}
+
+          {isOpen ? (
+            <img src="/roha.png" alt="Roha Logo" className="h-12 w-auto" />
+          ) : (
+            <h2 className="text-sm font-semibold text-white"></h2>
+          )}
+
+          <button
+            onClick={() => setIsOpen(true)}
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            {link.name}
-          </Link>
-        ))}
-      </nav>
+            {!isOpen && (
+              <Menu
+                size={34}
+                className="text-white bg-[#0b272b] rounded-full p-2"
+              />
+            )}
+          </button>
+        </div>
+      </motion.nav>
 
-      {/* 4. Bottom Decor */}
-      <div
-        className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-32 sm:w-48 h-8 sm:h-10 bg-gradient-to-t from-white/10 to-transparent transition-opacity duration-700 ${
-          isOpen ? "opacity-100" : "opacity-0"
-        }`}
-      />
-    </div>
+      {/* ===========================
+          OVERLAY
+      =========================== */}
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ===========================
+          SLIDE MENU
+      =========================== */}
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+            className="fixed top-0 right-0 h-screen w-full z-50"
+          >
+            {/* Close Button */}
+
+            <div className="p-6 flex justify-between items-center">
+              <h2></h2>
+
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-white/20 rounded-lg"
+              >
+                <X
+                  size={34}
+                  className="text-white bg-[#0b272b] rounded-full p-2"
+                />
+              </button>
+            </div>
+
+            {/* ===========================
+                MENU CONTENT
+            =========================== */}
+
+            <div className="flex flex-col md:flex-row h-[calc(100vh-190px)]">
+
+              {/* LEFT LINKS */}
+
+              <div className="flex-1 p-8 flex flex-col justify-center">
+                <motion.nav
+                  variants={container}
+                  initial="hidden"
+                  animate="show"
+                  exit="hidden"
+                  className="space-y-8"
+                >
+                  {navLinks.map((link) => (
+                    <motion.div key={link.path} variants={item}>
+                      <Link
+                        to={link.path}
+                        onClick={() => setIsOpen(false)}
+                        className="text-7xl font-bold text-white hover:text-gray-300 transition-colors block"
+                      >
+                        {link.name}
+                      </Link>
+                    </motion.div>
+                  ))}
+                </motion.nav>
+              </div>
+
+              {/* RIGHT LOGO */}
+
+              <div className="flex-1 p-8 items-center justify-center hidden md:flex">
+                <div className="text-center h-[100vh]">
+                  <img
+                    src="/roha.png"
+                    alt="Roha Logo"
+                    className="h-[70%] w-auto mx-auto mt-20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* MOBILE LOGO */}
+
+            <div className="md:hidden p-8 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+              <img src="/roha.png" alt="Roha Logo" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
-};
-
-export default NavigationOverlay;
+}
