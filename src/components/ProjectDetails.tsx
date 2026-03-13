@@ -22,6 +22,7 @@ import ParallaxGrid from "./ParallaxGrid";
 import Footer from "./Footer";
 import GeoButton from "./Buttons";
 import { Link } from "react-router-dom";
+import { NavigationOverlay } from "./NavBar";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -127,10 +128,11 @@ function ProjectDetails() {
   return (
 
     <>
+    <NavigationOverlay/>
         <section ref={containerRef} className="relative h-screen w-full bg-gradient-to-t from-[#f5f7f7] to-[#172a2b] overflow-hidden flex items-center justify-center">
                <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full pointer-events-none z-50"
+          className="absolute inset-0 w-full h-full pointer-events-none z-40"
         />
       <div className="absolute  w-full bottom-0 opacity-15">
       <img src={home} alt="" className="w-full "/>
