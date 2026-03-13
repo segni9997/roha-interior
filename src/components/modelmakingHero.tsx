@@ -236,9 +236,9 @@ export function ModelHero() {
             className="w-full h-full object-contain skew-x-2 -translate-y-0 scale-z-50 object-center"
           />
         </div>
-        <div className="absolute bottom-0 z-50 bg-linear-to-t from-[#162e31] via-[#205B63]/20 to-white/20  inset-0 h-"></div>
+        <div className="absolute bottom-0 z-40 bg-linear-to-t from-[#162e31] via-[#205B63]/20 to-white/20  inset-0 h-"></div>
       </div>
-      <div className="content flex flex-col md:flex-row gap-32  justify-between z-50 w-full p-10">
+      <div className="content flex flex-col md:flex-row gap-32  justify-between z-40 w-full p-10">
         <div className=" space-y-10 w-1/2 ">
           <div className="space-y-32">
             <div className="flex items-center gap-2 text-[#395e63] font-medium tracking-widest uppercase text-xs">

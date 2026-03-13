@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 
 import GeoButton from '../components/Buttons';
 import { posts } from '../components/datas/posts';
-import { NavigationOverlay } from '../components/NavBar';
 
 
 const BlogPage = () => {
@@ -110,7 +109,7 @@ const BlogPage = () => {
   return (
     <div className="relative max-w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 bg-[#f5f7f7]">
       {/* Header */}
-<NavigationOverlay/>
+{/* <NavigationOverlay/> */}
          <div className="absolute -top-8 sm:-top-12 left-4 sm:left-1/2 md:left-10 flex items-center gap-2 sm:gap-4 z-30">
           <div className="h-[4px] sm:h-[6px] w-8 sm:w-12 bg-[#205b63]"></div>
           <span className="text-xs sm:text-2xl md:text-4xl font-black uppercase tracking-[0.2em] sm:tracking-[0.5em] text-[#205b63]">
