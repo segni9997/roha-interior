@@ -134,7 +134,7 @@ function ProjectDetails() {
           ref={canvasRef}
           className="absolute inset-0 w-full h-full pointer-events-none z-40"
         />
-      <div className="absolute  w-full bottom-0 opacity-15">
+      <div className="absolute  w-full md:bottom-0 top-60 scale-105 opacity-10">
       <img src={home} alt="" className="w-full "/>
       <div className="absolute">
         <img src="" alt="" />
@@ -149,65 +149,94 @@ function ProjectDetails() {
         
         {/* 2. BACKGROUND TEXT (The Large Heading) */}
         {/* Placed at a lower z-index so the house image can overlap it */}
-        <div className="flex flex-col items-center text-white pt-10 h-1/2 select-none">
-          <span className="text-xl font-light tracking-[0.4em] uppercase opacity-70 mb-4">
+        <div className="flex flex-col  items-center text-white pt-10 h-1/2 select-none">
+          <span className="md:text-xl font-light tracking-[0.4em] uppercase opacity-70 mb-4 ">
             Transforming the Future of Home Living
           </span>
-          <h1 className="text-[11vw] font-black tracking-tighter  leading-none opacity-45">
+          <h1 className="text-[11.5vw] font-black tracking-tighter md:relative absolute  top-64 md:top-24  leading-none opacity-45">
             PRESENTATIONAL
           </h1>
         </div>
 
         {/* 3. INTERACTIVE LAYER (Middle and Sides) */}
-        <div className="flex flex-row h-2/3 relative -mt-20">
+     <div className="flex flex-row h-2/3 relative -mt-20">
 
-          {/* LEFT SIDE: Call to Action */}
-          <div className="flex flex-col items-start w-[25%] justify-center text-white z-30">
-            <p className="text-lg font-medium mb-6 leading-tight opacity-80">
-              Start building your <br /> dream home today
-            </p>
-            <Link to="/contactus">
-              <GeoButton label="Get Started" from="f0f0f0" to="1d424b"/>
-            </Link>
-          </div>
+  {/* LEFT SIDE: Call to Action - hidden on mobile */}
+  <div className="hidden md:flex flex-col items-start w-[25%] justify-center text-[#172a2b] z-30">
+    <p className="text-lg font-medium mb-6 leading-tight opacity-80  w-52">
+      Start building your <br /> dream home today
+    </p>
+    <Link to="/contactus">
+      <GeoButton label="Get Started" from="f0f0f0" to="1d424b"/>
+    </Link>
+  </div>
 
-          {/* MIDDLE: THE HERO IMAGE */}
-          <div className="w-[50%] relative z-20">
-            <div className="absolute -top-40 h-[130%] w-full flex justify-center">
-              <img 
-                src={home} 
-                alt="Architectural Model" 
-                className="h-full object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]" 
-              />
-            </div>
-          </div>
+  {/* MIDDLE: THE HERO IMAGE */}
+  <div className="md:w-[50%] w-full relative z-20">
+    <div className="absolute md:-top-40 -top-32 h-[130%] w-full flex justify-center">
+      <img 
+        src={home} 
+        alt="Architectural Model" 
+        className="h-full object-contain md:scale-100 scale-125 drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]" 
+      />
+    </div>
+  </div>
 
-          {/* RIGHT SIDE: GLASSY TAGS */}
-          <div className="flex flex-col items-end w-[25%] justify-center gap-4 z-30">
-            {typesOfProjects.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 py-3 px-6 rounded-full 
-                             bg-black/15 backdrop-blur-xl border border-white/10 
-                             hover:bg-white/10 transition-colors cursor-pointer group"
-                >
-                  <Icon size={20} className="text-amber-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-white text-sm font-bold uppercase tracking-widest">
-                    {item.name}
-                  </span>
-                </div>
-              );
-            })}
-            
-            {/* <div className="mt-8 flex items-center gap-2 border-b border-white/30 pb-1 cursor-pointer hover:border-amber-500 transition-colors">
-               <span className="text-white font-black text-xs uppercase tracking-widest">Explore</span>
-               <ArrowRight size={14} className="text-white" />
-            </div> */}
-          </div>
-
+  {/* RIGHT SIDE: GLASSY TAGS - hidden on mobile */}
+  <div className="hidden md:flex flex-col items-end w-[25%] justify-center gap-4 z-30">
+    {typesOfProjects.map((item, index) => {
+      const Icon = item.icon;
+      return (
+        <div
+          key={index}
+          className="flex items-center gap-4 py-3 px-6 rounded-full 
+                     bg-black/15 backdrop-blur-xl border border-white/10 
+                     hover:bg-white/10 transition-colors cursor-pointer group"
+        >
+          <Icon size={20} className="text-amber-500 group-hover:scale-110 transition-transform" />
+          <span className="text-white text-sm font-bold uppercase tracking-widest">
+            {item.name}
+          </span>
         </div>
+      );
+    })}
+  </div>
+</div>
+
+{/* MOBILE VERSION: left & right sections stacked under the hero */}
+<div className="flex flex-col md:hidden mt-6 px-4 gap-6">
+  
+  {/* MOBILE CALL TO ACTION */}
+  <div className="flex flex-col items-center text-center">
+    <p className="text-lg font-medium mb-4 leading-tight opacity-80  w-full max-w-xs">
+      Start building your dream home today
+    </p>
+    <Link to="/contactus">
+      <GeoButton label="Get Started" from="f0f0f0" to="1d424b"/>
+    </Link>
+  </div>
+
+  {/* MOBILE TAGS */}
+  <div className="flex flex-wrap justify-center gap-3">
+    {typesOfProjects.map((item, index) => {
+      const Icon = item.icon;
+      return (
+        <div
+          key={index}
+          className="flex items-center gap-2 py-2 px-4 rounded-full 
+                     bg-black/15 backdrop-blur-xl border border-white/10 
+                     hover:bg-white/10 transition-colors cursor-pointer group"
+        >
+          <Icon size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
+          <span className="text-white text-xs font-bold uppercase tracking-widest">
+            {item.name}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+
+</div>
       </div>
     </section>
 

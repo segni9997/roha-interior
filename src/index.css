@@ -28,7 +28,7 @@
     background-repeat: no-repeat;  
   }
   .contour-one {
-     background-image: linear-gradient(rgba(23, 42, 43, 0.6), rgba(23, 42, 43, 0.8)),
+     background-image: linear-gradient(rgba(23, 42, 43, 0.6), rgba(23, 42, 43, 0.3)),
       url("./public/6be50c0d-a739-4d4f-abc7-ff428ea1f0a2.jpg");
     background-size: fill;
     background-position: right center;

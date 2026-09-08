@@ -56,7 +56,7 @@ const AllBlogs: React.FC = () => {
   }, [loadMorePosts, hasMore]);
 
   return (
-    <div className="min-h-screen bg-white px-4 sm:px-6 py-8 sm:py-12">
+    <div className="min-h-screen  bg-hero to-white px-4 sm:px-6 py-8 sm:py-12">
       <NavigationOverlay/>
 <header className="max-w-7xl mx-auto mb-10 sm:mb-16 text-center">
   <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-3 sm:mb-4 tracking-tighter">
@@ -67,7 +67,7 @@ const AllBlogs: React.FC = () => {
   </p>
 </header>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-8xl mx-auto">
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <AnimatePresence mode="popLayout">
             {displayedPosts.map((post) => (

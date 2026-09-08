@@ -47,7 +47,7 @@ export default function SubCategoryModelGrid() {
 
   return (
     <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-8xl mx-auto">
         
         {/* Header Section */}
         <div className="flex flex-col mb-12 space-y-6 w-full">

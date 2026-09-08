@@ -112,6 +112,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 
 import { fragmentShader, vertexShader } from "../utils/shaders";
+import SubCategoryModelGrid from "./modelMakingProjects";
+import { NavigationOverlay } from "./NavBar";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -214,7 +216,10 @@ export function ModelHero() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative h-screen w-full bg-[#f5f7f7] overflow-hidden flex items-center justify-center">
+ <>
+          <NavigationOverlay/>
+
+    <section id="main" ref={containerRef} className="relative h-screen w-full bg-[#f5f7f7] overflow-hidden flex items-center justify-center">
       {/* 1. Background Image Wrapper */}
       <div className="absolute inset-0 z-0 flex items-center justify-center">
         <img
@@ -236,40 +241,45 @@ export function ModelHero() {
             className="w-full h-full object-contain skew-x-2 -translate-y-0 scale-z-50 object-center"
           />
         </div>
-        <div className="absolute bottom-0 z-40 bg-linear-to-t from-[#162e31] via-[#205B63]/20 to-white/20  inset-0 h-"></div>
+        <div className="absolute bottom-0 z-40 bg-linear-to-t from-[#162e31] via-[#205B63]/70 to-white/20  inset-0 h-"></div>
       </div>
       <div className="content flex flex-col md:flex-row gap-32  justify-between z-40 w-full p-10">
         <div className=" space-y-10 w-1/2 ">
           <div className="space-y-32">
-            <div className="flex items-center gap-2 text-[#395e63] font-medium tracking-widest uppercase text-xs">
+            <div className="hidden relative  md:flex items-center gap-2 text-[#395e63] font-medium tracking-widest uppercase text-xs">
               <span className="w-8 h-[1px] bg-[#395e63]"></span>
               Master Craftsmanship
             </div>
-            <h1 className="text-6xl lg:text-9xl font-light text-slate-900 leading-[0.9] tracking-tighter">
-              Precision <br />
+            <h1 className="md:relative absolute  top-3 text-2xl left-2    md:text-9xl md:font-light text-slate-900 font-bold leading-[0.9] tracking-tighter">
+              Precision <br className="hidden md:visible" />
               <span className="font-bold bg-gradient-to-r from-[#253d41] to-[#36575c] bg-clip-text text-transparent">
                 Modeling.
               </span>
             </h1>
           </div>
         </div>
-        <div className="right w-1/2 p-6 mx-8  h-full  flex justify-center">
-          <img
-            src={roha}
-            alt="Model Detail"
-            className="w-[80%] h-[80%] object-cover  hover:grayscale-0 transition-all duration-700 scale-75 group-hover:scale-100"
-          />
-        </div>
+    <div className="right md:w-1/2 w-full p-6 md:mx-8  relative h-full md:flex justify-center">
+  <img
+    src={roha}
+    alt="Model Detail"
+    className="
+      w-full h-full md:w-[80%]  md:h-[80%] object-cover
+      scale-100 md:scale-75
+      hover:scale-105 md:hover:scale-100
+      transition-all duration-700
+    "
+  />
+</div>
       </div>
 
       <div className="foot  z-50 h-1/3 w-full absolute bottom-0 flex md:flex-row flex-col text-white justify-evenly">
-        <div className="w-[60%] p-3">
-          <h1 className="text-4xl font-extrabold font-primary ">WE Are.</h1>
-          <p className="text-left">
+        <div className="md:w-[60%] p-3">
+          <h1 className="md:text-4xl text-5xl font-extrabold font-primary">We Are</h1>
+          <p className="md:text-left text-justify">
             Lorem ipsum dolor sit, amet consectetur adipisicing elit.
             Praesentium sapiente temporibus distinctio, ipsa quas repellendus in
             quidem nulla velit vel aut exercitationem autem quibusdam omnis
-            eligendi quod quo, vitae  className=" Lorem ipsum dolor sit, amet consectetur adipisicing elit.
+            eligendi quod quo, vitae  Lorem ipsum dolor sit, amet consectetur adipisicing elit.
             Praesentium sapiente temporibus distinctio, ipsa quas repellendus in
             quidem nulla velit vel aut exercitationem autem quibusdam omnis
             eligendi quod quo, vitae amet!"
@@ -278,7 +288,7 @@ export function ModelHero() {
        <div className="w-full md:w-[40%] flex flex-col md:flex-row items-center gap-8 md:gap-0 relative">
   
   {/* Vertical Divider for Desktop */}
-  <div className="hidden md:block absolute left-0 h-1/2 w-[1px] bg-white/20"></div>
+  <div className=" md:block md:absolute md:left-0 md:h-1/2 w-[2px] bg-white/20"></div>
 
   {/* Experience Block */}
   <div className="flex flex-col items-center md:items-start px-10 group">
@@ -319,6 +329,7 @@ export function ModelHero() {
 
 </div>
       </div>
+      
             <div className="absolute inset-0 pointer-events-none z-30">
           {[...Array(20)].map((_, i) => (
             <motion.div
@@ -344,6 +355,8 @@ export function ModelHero() {
 
    
     </section>
+    <SubCategoryModelGrid/>
+ </>
   );
 }
 

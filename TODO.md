@@ -1,0 +1,1 @@
+# Task: Fix page not scrolling to top on route changes&#10;&#10;## Steps:&#10;- [x] Step 1: Edit src/App.tsx to wrap Routes in <div id="main"> for scroll target.&#10;- [ ] Step 2: Verify scrollToTop.tsx targets #main correctly (no change needed).&#10;- [ ] Step 3: Test navigation between pages (Home -> /interior -> /model-making).&#10;- [ ] Step 4: Mark complete.

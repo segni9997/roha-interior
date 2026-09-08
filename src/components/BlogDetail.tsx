@@ -1,4 +1,3 @@
-
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar } from 'lucide-react';
@@ -14,10 +13,22 @@ const BlogDetail = () => {
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="min-h-screen bg-white pb-20"
+      className="relative min-h-screen  object-contain pb-20"
     >
+      {/* Absolute Background */}
+      <div className="absolute inset-0 z-0">
+        {/* Background Image from public directory */}
+        <img 
+          src="/roha.png" 
+          alt="Background" 
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-l from-[#205b63]/80 via-white/20 to-cyan-800/40"></div>
+      </div>
+
       {/* Navigation Bar */}
-      <nav className="max-w-7xl mx-auto px-6 py-8 flex items-center gap-4">
+      <nav className="relative z-10 max-w-7xl mx-auto px-6 py-8 flex items-center gap-4">
         <Link to="/blog" className="flex items-center gap-2 text-slate-500 hover:text-black transition-colors">
           <ArrowLeft size={18} />
           <span className="text-sm font-medium">Back to articles</span>
@@ -25,9 +36,9 @@ const BlogDetail = () => {
       </nav>
 
       {/* Hero Section */}
-      <header className="max-w-5xl mx-auto px-6 mb-12">
+      <header className="relative z-10 max-w-5xl mx-auto px-6 mb-12">
         <div className="flex gap-2 mb-6">
-          <span className="px-3 py-1 bg-slate-100 text-[#7db3b8] text-[10px] font-black uppercase rounded-full">
+          <span className="px-3 py-1 bg-slate-100 text-[#205b63] text-[10px] font-black uppercase rounded-full">
             {post.category}
           </span>
           <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-full">
@@ -49,7 +60,7 @@ const BlogDetail = () => {
       </header>
 
       {/* Content Layout */}
-      <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12">
         
         {/* Sidebar Info - Glass Style */}
         <aside className="lg:col-span-4 order-2 lg:order-1">
@@ -60,18 +71,18 @@ const BlogDetail = () => {
                    <img src={`https://ui-avatars.com/api/?name=${post.author}`} alt={post.author} />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Written by</p>
+                  <p className="text-[10px] text-[#205b63] uppercase font-bold">Written by</p>
                   <p className="text-sm font-bold text-slate-900">{post.author}</p>
                 </div>
               </div>
               <hr className="border-slate-200" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Date</p>
+                  <p className="text-[10px] text-[#205b63] uppercase font-bold mb-1">Date</p>
                   <p className="text-sm font-medium flex items-center gap-2"><Calendar size={14}/> {post.year}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Reading Time</p>
+                  <p className="text-[10px] text-[#205b63] uppercase font-bold mb-1">Reading Time</p>
                   <p className="text-sm font-medium flex items-center gap-2"><Clock size={14}/> {post.readTime}</p>
                 </div>
               </div>
