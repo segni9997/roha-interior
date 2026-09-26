@@ -1,171 +1,125 @@
+import { useState, useEffect } from 'react';
 import { BlogCard } from '../components/BlogCard';
 import { Link } from 'react-router-dom';
-
-// data.ts
-
-import GeoButton from '../components/Buttons';
-import { posts } from '../components/datas/posts';
-
+import { posts as fallbackPosts } from '../components/datas/posts';
+import { api, resolveImageUrl, type BlogPostItem } from '../services/api';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 const BlogPage = () => {
-  // Mock Data
-//   const posts = [
-//   {
-//     id: 1,
-//     title: "Unlocking Business Efficiency with SaaS Solutions",
-//     description: "Discover how modern cloud-based software is transforming traditional workflows and driving unprecedented growth in the digital age.",
-//     category: "Business",
-//     type: "Guide",
-//     year: "2024",
-//     author: "Jennifer Taylor",
-//     readTime: "8 min read",
-//     image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000",
-//   },
-//   {
-//     id: 2,
-//     title: "Revolutionizing industries through SaaS implementation",
-//     description: "A deep dive into industry-specific transformations.",
-//     category: "Tech",
-//     type: "Case Study",
-//     year: "2024",
-//     author: "Marcus Chen",
-//     readTime: "5 min read",
-//     image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400",
-//   },
-//   {
-//     id: 3,
-//     title: "Synergizing SaaS and UX design for elevating experiences",
-//     description: "Bridging the gap between functionality and user delight.",
-//     category: "Design",
-//     type: "Analysis",
-//     year: "2024",
-//     author: "Sarah Jenkins",
-//     readTime: "6 min read",
-//     image: "https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?auto=format&fit=crop&q=80&w=400",
-//   },
-//   {
-//     id: 4,
-//     title: "Navigating SaaS waters with intuitive UI and UX",
-//     description: "Best practices for dashboard navigation.",
-//     category: "UX",
-//     type: "Trends",
-//     year: "2024",
-//     author: "Alex Rivers",
-//     readTime: "4 min read",
-//     image: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=400",
-//   },
-//   {
-//     id: 5,
-//     title: "Sculpting SaaS success - the art of UI and UX design",
-//     description: "Why design is the secret weapon of top companies.",
-//     category: "Product",
-//     type: "Opinion",
-//     year: "2023",
-//     author: "Elena Rossi",
-//     readTime: "7 min read",
-//     image: "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&q=80&w=400",
-//   },
-//   {
-//     id: 6,
-//     title: "Mastering UI Elements: A Practical Guide for Designers",
-//     description: "Dive into the world of user interfaces with our expert guides, latest trends, and practical tips for buttons, cards, and more.",
-//     category: "Design",
-//     type: "Tutorial",
-//     year: "2024",
-//     author: "Jennifer Taylor",
-//     readTime: "3 min read",
-//     image: "https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=800",
-//   },
-//   {
-//     id: 7,
-//     title: "Crafting Seamless Experiences: The Art of Intuitive UI",
-//     description: "Explore the principles and techniques that drive user-centric UI design, ensuring a seamless and intuitive journey for users.",
-//     category: "UX Research",
-//     type: "Research",
-//     year: "2024",
-//     author: "Jennifer Taylor",
-//     readTime: "5 min read",
-//     image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800",
-//   },
-//   {
-//     id: 8,
-//     title: "Beyond Aesthetics: The Power of Emotional UX Design",
-//     description: "Delve into the realm of emotional design and discover how incorporating empathy and psychology impacts retention.",
-//     category: "Psychology",
-//     type: "Feature",
-//     year: "2024",
-//     author: "Ryan A.",
-//     readTime: "2 min read",
-//     image: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&q=80&w=800",
-//   }
-// ];
+  const [posts, setPosts] = useState<BlogPostItem[]>(() => 
+    fallbackPosts.map(p => ({
+      ...p,
+      slug: String(p.id),
+      image: resolveImageUrl(p.image, '/pexels-chudin-alexey-26964541.jpg')
+    }))
+  );
+  const [loading, setLoading] = useState<boolean>(true);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadJournalPosts() {
+      try {
+        setLoading(true);
+        const livePosts = await api.getBlogPosts();
+        if (isMounted && livePosts && livePosts.length > 0) {
+          const mapped = livePosts.map(lp => ({
+            ...lp,
+            image: resolveImageUrl(lp.image, '/pexels-chudin-alexey-26964541.jpg')
+          }));
+          setPosts(mapped);
+        }
+      } catch (err) {
+        console.warn('Using local posts fallback:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadJournalPosts();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const featuredPost = posts[0];
+  const featuredPost = posts[0] || fallbackPosts[0];
   const sidePosts = posts.slice(1, 6);
-  // const recentPosts = posts.slice(6);
-
 
   return (
-    <div className="relative max-w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 bg-[#f5f7f7]">
-      {/* Header */}
-{/* <NavigationOverlay/> */}
-         <div className="absolute -top-8 sm:-top-12 left-4 sm:left-1/2 md:left-10 flex items-center gap-2 sm:gap-4 z-30">
-          <div className="h-[4px] sm:h-[6px] w-8 sm:w-12 bg-[#205b63]"></div>
-          <span className="text-xs sm:text-2xl md:text-4xl font-black uppercase tracking-[0.2em] sm:tracking-[0.5em] text-[#205b63]">
-            Featured stories
-          </span>
-        </div>
-      {/* <div className="flex justify-between items-center mb-10">
-        <h1 className="text-3xl font-bold text-slate-900">Featured stories</h1>
-        <nav className="hidden md:flex gap-6 text-sm font-medium text-slate-600">
-        </nav>
-      </div> */}
-
-      {/* Hero Section: Large Card + Side List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-20">
-        <div className="lg:col-span-2">
-           <Link to={`/blog/${featuredPost.id}`}>
-            <BlogCard post={featuredPost} featured={true} />
-           </Link>
-        </div>
+    <section className="w-full relative py-16 sm:py-24 bg-[#f5f7f7] text-slate-900 font-sans border-t border-slate-200">
+      <div className="w-full px-4 sm:px-8 md:px-12">
         
-        {/* Side List (Other featured posts) */}
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <h2 className="text-lg sm:text-xl font-bold border-b pb-2">Other featured posts</h2>
-          {sidePosts.map(post => (
-           <Link to={`/blog/${post.id}`} key={post.id}>
- <div className="flex gap-3 sm:gap-4 group cursor-pointer">
-              <img src={post.image} className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0" alt="" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold leading-snug group-hover:text-[#7db3b8] transition-colors line-clamp-3">
-                  {post.title}
-                </h4>
-              </div>
+        {/* Header (Full Width & Light Aesthetic) */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-8 sm:w-12 h-[3px] bg-[#205b63]"></span>
+              <span className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] font-bold text-[#205b63]">
+                Editorial & Insights
+              </span>
+              {loading && <Loader2 className="w-4 h-4 animate-spin text-[#205b63] ml-2" />}
             </div>
-            
-           </Link>
-          ))}
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900">
+              FEATURED STORIES
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-600 font-light max-w-md">
+            Architectural perspectives, fabrication engineering insights, and spatial case studies.
+          </p>
         </div>
-      </div>
 
-      {/* Recent Posts Section */}
-      <div className="mb-10 flex justify-end items-end">
-        <Link to="/allblogs">
-      <GeoButton label='all Posts' isuppercase='capitalize' from='172a2b' to='fff'/>
-        </Link>
-      </div>
+        {/* Hero Section: Full Width Large Card + Side List */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
+          {/* Main Featured Post */}
+          <div className="lg:col-span-2">
+            <Link to={`/blog/${featuredPost.id}`} className="block h-full">
+              <BlogCard
+                post={{
+                  ...featuredPost,
+                  image: resolveImageUrl(featuredPost.image, '/pexels-chudin-alexey-26964541.jpg')
+                }}
+                featured={true}
+              />
+            </Link>
+          </div>
+          
+          {/* Side List (Other featured posts) in Light Card */}
+          <div className="flex flex-col gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-100 pb-3 font-mono">
+              Other Featured Posts
+            </h3>
+            <div className="flex flex-col gap-4 overflow-y-auto max-h-[480px]">
+              {sidePosts.map(post => (
+                <Link to={`/blog/${post.id}`} key={post.id} className="group">
+                  <div className="flex gap-3 sm:gap-4 p-2 rounded-xl transition-all duration-300 hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                    <img 
+                      src={resolveImageUrl(post.image, '/1.jpg')} 
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg flex-shrink-0 shadow-sm" 
+                      alt={post.title} 
+                    />
+                    <div className="flex flex-col justify-center">
+                      <span className="text-[10px] text-[#205b63] font-mono font-semibold uppercase tracking-wider mb-1">
+                        {post.category} • {post.readTime}
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-bold leading-snug text-slate-800 group-hover:text-[#205b63] transition-colors line-clamp-2">
+                        {post.title}
+                      </h4>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
 
-      {/* <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <AnimatePresence mode="popLayout">
-          {recentPosts.map((post) => (
-             <Link to={`/blog/${post.id}`}>
-                 <BlogCard key={post.id} post={post} />
-             </Link>
-          ))}
-        </AnimatePresence>
-      </motion.div> */}
-    </div>
+        {/* Footer Link to All Blogs */}
+        <div className="flex justify-end items-center pt-4">
+          <Link to="/allblogs" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#205b63] hover:bg-[#18454b] text-white font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-md group">
+            <span>Explore All Stories</span>
+            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+
+      </div>
+    </section>
   );
 };
 

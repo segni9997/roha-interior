@@ -1,12 +1,22 @@
-
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, RotateCcw, ZoomIn, ZoomOut, Move3D } from "lucide-react";
-import {  type Project } from "./Projectdetail";
+import {
+  ArrowLeft,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  Play,
+  Pause,
+  Maximize,
+  Loader2,
+  Image as ImageIcon,
+  X,
+} from "lucide-react";
 import type { PannellumViewer } from "../types/pannellum";
 import { sampleProjects } from "./datas/sampleProjects";
+import { api, resolveImageUrl, type PanoramicTourItem } from "../services/api";
+import { ResponsiveContentGallery } from "./ResponsiveContentGallery";
 
-// Interfaces for strict typing
 interface Hotspot {
   pitch: number;
   yaw: number;
@@ -34,31 +44,98 @@ interface PannellumSceneConfig {
 }
 
 const PanoramaViewer = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { id, projectId } = useParams<{ id?: string; projectId?: string }>();
+  const activeId = id || projectId || "1";
 
-  // FIX: Type-safe comparison by converting numeric ID to string
-  const project: Project = useMemo(() => {
-    return sampleProjects.find((p) => p.id.toString() === projectId) || sampleProjects[0];
-  }, [projectId]);
+  // Initial fallback tour
+  const defaultTour = useMemo<PanoramicTourItem>(() => {
+    const fb =
+      sampleProjects.find((p) => p.id.toString() === activeId) ||
+      sampleProjects[0];
+    return {
+      id: fb.id,
+      title: fb.title,
+      slug: String(fb.id),
+      description: fb.description,
+      cover_image: fb.images[0],
+      is_featured: true,
+      panoramicScenes: (fb.panoramicScenes || []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        panorama: s.panorama,
+        initial_yaw: 0,
+        initial_pitch: 0,
+        hotSpots: (s.hotSpots || []) as any,
+      })),
+    };
+  }, [activeId]);
 
-  // FIX: Memoize scenes to prevent infinite useEffect loops
-  const panoramicScenes: PanoramicScene[] = useMemo(() => {
-    return project.panoramicScenes || [];
-  }, [project]);
-
+  const [tour, setTour] = useState<PanoramicTourItem>(defaultTour);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const viewerRef = useRef<PannellumViewer>(null);
+  const [isAutoRotating, setIsAutoRotating] = useState(false);
+  const [isGalleryDrawerOpen, setIsGalleryDrawerOpen] = useState(false);
+
+  const viewerRef = useRef<PannellumViewer | null>(null);
   const panoramaRef = useRef<HTMLDivElement>(null);
 
-  // Initialize currentSceneId when panoramicScenes are available
+  // Sync fallback tour when activeId changes
   useEffect(() => {
-    if (panoramicScenes.length > 0 && !currentSceneId) {
-      setCurrentSceneId(panoramicScenes[0].id);
+    setTour(defaultTour);
+  }, [defaultTour]);
+
+  // Fetch live tour from backend
+  useEffect(() => {
+    let isMounted = true;
+    async function loadTourData() {
+      try {
+        const liveTour = await api.getPanoramicTour(parseInt(activeId));
+        if (isMounted && liveTour && liveTour.panoramicScenes && liveTour.panoramicScenes.length > 0) {
+          setTour(liveTour);
+        }
+      } catch (err) {
+        console.warn("Using local fallback tour data for ID:", activeId, err);
+      }
+    }
+    loadTourData();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeId]);
+
+  // Resolve scene assets
+  const panoramicScenes: PanoramicScene[] = useMemo(() => {
+    if (!tour || !tour.panoramicScenes || tour.panoramicScenes.length === 0) {
+      return (defaultTour.panoramicScenes || []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        panorama: resolveImageUrl(s.panorama, "/tr/279A1002.JPG"),
+        hotSpots: s.hotSpots?.map((h) => ({
+          ...h,
+          type: h.type as "scene" | "info",
+        })),
+      }));
+    }
+    return tour.panoramicScenes.map((s) => ({
+      id: s.id,
+      name: s.name,
+      panorama: resolveImageUrl(s.panorama, "/tr/279A1002.JPG"),
+      hotSpots: s.hotSpots?.map((h) => ({
+        ...h,
+        type: h.type as "scene" | "info",
+      })),
+    }));
+  }, [tour, defaultTour]);
+
+  useEffect(() => {
+    if (panoramicScenes.length > 0) {
+      if (!currentSceneId || !panoramicScenes.some((s) => s.id === currentSceneId)) {
+        setCurrentSceneId(panoramicScenes[0].id);
+      }
     }
   }, [panoramicScenes, currentSceneId]);
 
+  // Initialize Pannellum
   const initializePanorama = useCallback(() => {
     if (!panoramaRef.current || !window.pannellum || panoramicScenes.length === 0) return;
 
@@ -74,7 +151,12 @@ const PanoramaViewer = () => {
     });
 
     if (viewerRef.current) {
-      viewerRef.current.destroy();
+      try {
+        viewerRef.current.destroy();
+      } catch {
+        // ignore
+      }
+      viewerRef.current = null;
     }
 
     try {
@@ -82,24 +164,42 @@ const PanoramaViewer = () => {
         default: {
           firstScene: currentSceneId || panoramicScenes[0].id,
           sceneFadeDuration: 800,
+          autoRotate: isAutoRotating ? -2 : 0,
+          compass: true,
         },
         scenes: scenesConfig,
       });
 
-      viewerRef.current.on("scenechange", (id: string) => setCurrentSceneId(id));
-      viewerRef.current.on("load", () => setIsLoading(false));
-      viewerRef.current.on("error", (err: string) => console.error("Pannellum Error:", err));
+      viewerRef.current.on("scenechange", (sid: string) => {
+        setCurrentSceneId(sid);
+      });
+      viewerRef.current.on("load", () => {
+        setIsLoading(false);
+      });
+      viewerRef.current.on("error", (err: string) => {
+        console.error("Pannellum Error:", err);
+        setIsLoading(false);
+      });
     } catch (error) {
       console.error("Initialization Error:", error);
+      setIsLoading(false);
     }
-  }, [panoramicScenes, currentSceneId]);
+  }, [panoramicScenes]);
 
   useEffect(() => {
     const scriptId = "pannellum-script";
-    
+
     const setup = () => {
       if (window.pannellum) {
         initializePanorama();
+      } else {
+        const interval = setInterval(() => {
+          if (window.pannellum) {
+            clearInterval(interval);
+            initializePanorama();
+          }
+        }, 100);
+        setTimeout(() => clearInterval(interval), 5000);
       }
     };
 
@@ -120,12 +220,17 @@ const PanoramaViewer = () => {
 
     return () => {
       if (viewerRef.current) {
-        viewerRef.current.destroy();
+        try {
+          viewerRef.current.destroy();
+        } catch {
+          // ignore
+        }
         viewerRef.current = null;
       }
     };
   }, [initializePanorama]);
 
+  // Controls
   const handleZoom = (delta: number) => {
     if (viewerRef.current) {
       const hfov = viewerRef.current.getHfov();
@@ -141,64 +246,171 @@ const PanoramaViewer = () => {
     }
   };
 
+  const toggleAutoRotate = () => {
+    if (!viewerRef.current) return;
+    if (isAutoRotating) {
+      viewerRef.current.stopAutoRotate();
+      setIsAutoRotating(false);
+    } else {
+      viewerRef.current.startAutoRotate(-2);
+      setIsAutoRotating(true);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (viewerRef.current) {
+      viewerRef.current.toggleFullscreen();
+    }
+  };
+
+  const handleSceneChange = (sid: string) => {
+    if (viewerRef.current && sid !== currentSceneId) {
+      setIsLoading(true);
+      viewerRef.current.loadScene(sid);
+      setCurrentSceneId(sid);
+    }
+  };
+
   return (
-    <div className="h-screen bg-black relative overflow-hidden">
-      <style>{`
-        .custom-hotspot { background: #395e63; border: 2px solid white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .custom-hotspot:hover { transform: scale(1.2) rotate(10deg); background: #72f88e; }
-        .pnlm-load-box { display: none !important; } /* Hide default loader */
-      `}</style>
-
-      {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-black/80 backdrop-blur-md h-14 sm:h-16 flex items-center px-4 sm:px-6 md:px-8 justify-between border-b border-white/10">
-        <Link to="/gallery" className="text-white flex items-center gap-1.5 sm:gap-2 hover:text-[#395e63] transition-colors group text-sm sm:text-base">
-          <ArrowLeft size={18} className="sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform"/> 
-          <span className="hidden sm:inline">Back to Gallery</span>
-          <span className="sm:hidden">Back</span>
+    <div className="relative w-screen h-screen bg-black overflow-hidden select-none font-sans">
+      {/* ----------------- TOP CONTROLS ----------------- */}
+      <div className="absolute top-0 inset-x-0 z-30 p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/90 via-black/40 to-transparent pointer-events-none">
+        <Link
+          to="/gallery"
+          className="pointer-events-auto flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/10 transition-all text-xs sm:text-sm font-medium shadow-lg"
+        >
+          <ArrowLeft size={16} />
+          <span>Exit Tour</span>
         </Link>
-        <div className="text-white font-bold flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
-          <Move3D size={18} className="sm:w-5 sm:h-5 text-[#395e63] animate-pulse"/> 
-          <span className="truncate max-w-[120px] sm:max-w-none">{project.title}</span>
-        </div>
-        <div className="hidden md:block text-gray-400 text-xs sm:text-sm tracking-wide uppercase">
-          {panoramicScenes.find(s => s.id === currentSceneId)?.name || "Interactive Tour"}
-        </div>
-      </nav>
 
-      {/* Viewer Wrapper */}
-      <div ref={panoramaRef} className="w-full h-full bg-neutral-900" />
+        <div className="text-center">
+          <h1 className="text-white text-sm sm:text-lg font-bold tracking-tight">
+            {tour?.title || defaultTour.title}
+          </h1>
+          <p className="text-cyan-400 text-[11px] sm:text-xs font-mono">
+            Active Scene: {panoramicScenes.find((s) => s.id === currentSceneId)?.name || "Living Room"}
+          </p>
+        </div>
 
-      {/* UI Controls */}
-      <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-4 bg-black/60 backdrop-blur-xl p-2 sm:p-3 rounded-full border border-white/10 z-50">
-        <button onClick={() => handleZoom(10)} title="Zoom Out" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomOut size={20} className="sm:w-6 sm:h-6"/></button>
-        <button onClick={handleReset} title="Reset View" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><RotateCcw size={20} className="sm:w-6 sm:h-6"/></button>
-        <button onClick={() => handleZoom(-10)} title="Zoom In" className="text-white p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-colors"><ZoomIn size={20} className="sm:w-6 sm:h-6"/></button>
+        <div className="pointer-events-auto flex items-center gap-2">
+          {tour?.gallery_images && tour.gallery_images.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsGalleryDrawerOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#205b63]/90 hover:bg-[#205b63] text-white backdrop-blur-md border border-cyan-500/30 transition-all text-xs sm:text-sm font-bold shadow-lg cursor-pointer"
+              title="View Companion Photo Gallery"
+            >
+              <ImageIcon size={15} />
+              <span>Gallery ({tour.gallery_images.length})</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Scene Selector Thumbnails */}
-      <div className="absolute bottom-6 sm:bottom-10 right-4 sm:right-6 md:right-10 flex flex-col gap-2 sm:gap-3 z-50">
-        {panoramicScenes.map((s) => (
-          <button 
-            key={s.id} 
-            onClick={() => viewerRef.current?.loadScene(s.id)}
-            className={`w-12 h-10 sm:w-16 sm:h-12 md:w-20 md:h-14 rounded-md sm:rounded-lg border-2 overflow-hidden transition-all duration-300 group relative ${
-              currentSceneId === s.id ? 'border-[#395e63] scale-110 shadow-lg shadow-[#395e63]/40' : 'border-white/20 hover:border-white/60'
-            }`}
-          >
-            <img src={s.panorama} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={s.name} />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
-          </button>
-        ))}
-      </div>
+      {/* ----------------- PANNELLUM CANVAS ----------------- */}
+      <div ref={panoramaRef} className="w-full h-full" />
 
-      {/* Loading Overlay */}
+      {/* ----------------- LOADING INDICATOR ----------------- */}
       {isLoading && (
-        <div className="absolute inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center text-white px-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-2 border-b-2 border-[#395e63]"></div>
-            <Move3D className="absolute inset-0 m-auto text-white/50" size={20} />
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/75 backdrop-blur-md">
+          <Loader2 className="w-10 h-10 animate-spin text-cyan-400 mb-4" />
+          <p className="text-white text-xs sm:text-sm uppercase tracking-widest font-mono">
+            Rendering 360° Spherical Projection...
+          </p>
+        </div>
+      )}
+
+      {/* ----------------- SCENE SELECTOR TABS ----------------- */}
+      {panoramicScenes.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 max-w-[90vw] overflow-x-auto shadow-2xl">
+          {panoramicScenes.map((scene) => (
+            <button
+              key={scene.id}
+              onClick={() => handleSceneChange(scene.id)}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                currentSceneId === scene.id
+                  ? "bg-[#395e63] text-white shadow-lg border border-cyan-400/40"
+                  : "text-gray-400 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {scene.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ----------------- FLOATING UTILITY CONTROLS ----------------- */}
+      <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 bg-black/60 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-2xl">
+        <button
+          onClick={() => handleZoom(-10)}
+          className="p-2.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-all cursor-pointer"
+          title="Zoom In"
+        >
+          <ZoomIn size={18} />
+        </button>
+        <button
+          onClick={() => handleZoom(10)}
+          className="p-2.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-all cursor-pointer"
+          title="Zoom Out"
+        >
+          <ZoomOut size={18} />
+        </button>
+        <button
+          onClick={handleReset}
+          className="p-2.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-all cursor-pointer"
+          title="Reset Perspective"
+        >
+          <RotateCcw size={18} />
+        </button>
+        <button
+          onClick={toggleAutoRotate}
+          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+            isAutoRotating
+              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/30"
+              : "text-white/80 hover:text-white hover:bg-white/15"
+          }`}
+          title={isAutoRotating ? "Pause Auto-Rotation" : "Start Auto-Rotation"}
+        >
+          {isAutoRotating ? <Pause size={18} /> : <Play size={18} />}
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          className="p-2.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-all cursor-pointer"
+          title="Toggle Fullscreen"
+        >
+          <Maximize size={18} />
+        </button>
+      </div>
+
+      {/* ----------------- COMPANION GALLERY DRAWER MODAL ----------------- */}
+      {isGalleryDrawerOpen && tour?.gallery_images && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col p-4 sm:p-8 overflow-y-auto">
+          <div className="flex items-center justify-between pb-4 border-b border-white/10 max-w-7xl mx-auto w-full">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                {tour.title} // Companion Architectural Stills
+              </h2>
+              <p className="text-xs font-mono text-cyan-400">
+                High-Resolution Architectural Perspectives & Details
+              </p>
+            </div>
+            <button
+              onClick={() => setIsGalleryDrawerOpen(false)}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
           </div>
-          <p className="mt-4 sm:mt-6 text-xs sm:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase text-gray-400 animate-pulse text-center">Initializing Virtual Space</p>
+
+          <div className="max-w-7xl mx-auto w-full py-6">
+            <ResponsiveContentGallery
+              images={tour.gallery_images}
+              title=""
+              subtitle=""
+              theme="dark"
+              columns={3}
+            />
+          </div>
         </div>
       )}
     </div>

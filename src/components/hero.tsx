@@ -3,9 +3,11 @@ import { motion } from "framer-motion";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Link } from "react-router-dom";
+import { Sparkles, ArrowUpRight, Compass } from "lucide-react";
 
 import pattern from "/pattern-01.png";
-import hero from "/roha.png"
+import hero from "/roha.png";
 import { fragmentShader, vertexShader } from "../utils/shaders";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -112,29 +114,47 @@ const Hero = () => {
      JSX
   ============================ */
   return (
-    <section ref={containerRef} className="relative min-h-[150vh]">
+    <section ref={containerRef} className="relative min-h-[140vh] bg-black font-sans selection:bg-[#395e63] selection:text-white">
       <div className="sticky top-0 min-h-screen overflow-hidden">
+        {/* Background Video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/rohabg.mp4" type="video/mp4" />
+        </video>
 
-        {/* Pattern */}
-        <div className="absolute md:bottom-12 top-24 right-0 z-10  p-2">
-          <img src={hero} alt="pattern" className="w-80 h-80 md:ml-8 mx-auto " />
+        {/* Eye-Catching Multi-Layer Cinematic Scrim & Ambient Glow */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/75 z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(32,91,99,0.35)_0%,transparent_75%)] z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.6)_0%,transparent_50%,rgba(0,0,0,0.6)_100%)] z-10 pointer-events-none" />
 
-          <h1 className="md:text-7xl text-6xl  md:w-[33%]   p-10 z-10 text-white font-extrabold">
-            ROHA INTERIOR AND ARCHITECTS
-          </h1>
-          <img src={pattern} alt="pattern"className="w-full md:scale-105 h-16 md:h-fit ml-6 md:ml-0"  />
+        {/* Architectural HUD Viewfinder Brackets */}
+        <div className="absolute top-8 left-8 z-20 hidden md:block text-cyan-500/50 font-mono text-[10px] tracking-widest pointer-events-none">
+          <div className="border-t-2 border-l-2 border-cyan-400/40 w-8 h-8 mb-1" />
+          <span>ROHA // SYS.01</span>
+        </div>
+        <div className="absolute top-8 right-8 z-20 hidden md:block text-cyan-500/50 font-mono text-[10px] tracking-widest text-right pointer-events-none">
+          <div className="border-t-2 border-r-2 border-cyan-400/40 w-8 h-8 ml-auto mb-1" />
+          <span>EST. ADDIS ABABA</span>
+        </div>
+        <div className="absolute bottom-8 left-8 z-20 hidden md:block text-cyan-500/50 font-mono text-[10px] tracking-widest pointer-events-none">
+          <span>LAT: 9.0320° N // LON: 38.7483° E</span>
+          <div className="border-b-2 border-l-2 border-cyan-400/40 w-8 h-8 mt-1" />
+        </div>
+        <div className="absolute bottom-8 right-8 z-20 hidden md:block text-cyan-500/50 font-mono text-[10px] tracking-widest text-right pointer-events-none">
+          <span>HIGH-FIDELITY SPATIAL DESIGN</span>
+          <div className="border-b-2 border-r-2 border-cyan-400/40 w-8 h-8 ml-auto mt-1" />
         </div>
 
-        {/* Background */}
-       <video
-  className="absolute inset-0 w-full h-full object-cover"
-  autoPlay
-  loop
-  muted
-  playsInline
->
-  <source src="/rohabg.mp4" type="video/mp4" />
-</video>
+        {/* Pattern & Emblem Decor */}
+        <div className="absolute md:bottom-8 top-16 right-0 z-20 p-2 pointer-events-none opacity-80">
+          <img src={hero} alt="pattern" className="w-56 h-56 md:w-80 md:h-80 md:ml-8 mx-auto object-contain filter drop-shadow-[0_0_30px_rgba(57,94,99,0.4)]" />
+          <img src={pattern} alt="pattern" className="w-full md:scale-105 h-12 md:h-fit ml-6 md:ml-0 opacity-60" />
+        </div>
 
         {/* SHADER CANVAS (Destroyer Layer) */}
         <canvas
@@ -142,40 +162,82 @@ const Hero = () => {
           className="absolute inset-0 w-full h-full pointer-events-none z-10"
         />
 
-        {/* CONTENT */}
-        <div className="relative z-20 flex flex-col justify-center items-center min-h-screen px-6 text-center">
-          {/* <motion.h1
-            initial={{ opacity: 0, y: 40 }}
+        {/* HERO CONTENT */}
+        <div className="relative z-20 flex flex-col justify-center items-start min-h-screen px-6 sm:px-12 md:px-20 max-w-7xl mx-auto">
+          {/* Glowing Status Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-8xl font-black text-white mix-blend-difference"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/40 backdrop-blur-md mb-6 shadow-[0_0_20px_rgba(6,182,212,0.25)]"
           >
-            ROHA
+            <Sparkles size={14} className="text-cyan-400 animate-pulse" />
+            <span className="text-[11px] font-mono font-semibold tracking-widest text-cyan-200 uppercase">
+              Architectural & Interior Excellence
+            </span>
+          </motion.div>
+
+          {/* Main Headline */}
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tight mb-6 max-w-7xl"
+          >
+            ROHA 
+            <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
+              INTERIOR & ARCHITECTS
+            </span>
           </motion.h1>
 
+          {/* Narrative */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mt-4 text-xl tracking-[0.3em] text-white mix-blend-difference"
+            transition={{ duration: 0.8, delay: 0.35 }}
+            className="text-base sm:text-xl text-gray-300 font-light max-w-2xl mb-8 leading-relaxed"
           >
-            PRECISION MODEL MAKING
-          </motion.p> */}
+            Sculpting physical scale models, bespoke interior environments, and immersive 360° virtual reality tours with master precision.
+          </motion.p>
+
+          {/* Interactive CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="flex flex-wrap items-center gap-4"
+          >
+            <Link
+              to="/gallery"
+              className="px-7 py-3.5 rounded-full bg-gradient-to-r from-[#205b63] to-[#395e63] hover:from-[#2a757f] hover:to-[#49777e] text-white font-bold text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_25px_rgba(32,91,99,0.5)] flex items-center gap-2 group"
+            >
+              <Compass size={16} className="group-hover:rotate-45 transition-transform" />
+              <span>Explore 360° Tours</span>
+            </Link>
+
+            <Link
+              to="/interior"
+              className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-sm tracking-wider uppercase backdrop-blur-md border border-white/20 transition-all duration-300 flex items-center gap-2 group"
+            >
+              <span>Our Portfolio</span>
+              <ArrowUpRight size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Link>
+          </motion.div>
         </div>
 
-        {/* PARTICLES */}
+        {/* FLOATING PARTICLES */}
         <div className="absolute inset-0 pointer-events-none z-30">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(24)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-[#5b949b]/90 rounded-full"
+              className="absolute w-2 h-2 bg-cyan-400/70 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.8)]"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
               }}
               animate={{ y: [-20, -120], opacity: [0, 1, 0] }}
               transition={{
-                duration: Math.random() * 3 + 2,
+                duration: Math.random() * 3 + 2.5,
                 repeat: Infinity,
                 delay: Math.random() * 2,
               }}

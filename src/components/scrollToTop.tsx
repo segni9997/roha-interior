@@ -1,37 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { resetSmoothScroll } from "../hook/useSmoothScroll";
 
 export function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+
+  useLayoutEffect(() => {
+    resetSmoothScroll();
+  }, [pathname, search]);
 
   useEffect(() => {
-    const scrollToTop = () => {
-      // Scroll window (body/html)
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "smooth"
-      });
-      
-      // Scroll main container if exists (for overflow cases)
-      const mainEl = document.getElementById("main");
-      if (mainEl) {
-        mainEl.scrollTo({
-          top: 0,
-          left: 0,
-          behavior: "smooth"
-        });
-      }
-    };
-
-    // Immediate scroll
-    scrollToTop();
-
-    // Fallback for smooth behavior timing
-    const timeoutId = setTimeout(scrollToTop, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [pathname]);
+    // Secondary safety trigger after route component has mounted
+    resetSmoothScroll();
+    const frameId = requestAnimationFrame(() => {
+      resetSmoothScroll();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [pathname, search]);
 
   return null;
 }

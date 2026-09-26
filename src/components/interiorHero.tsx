@@ -1,5 +1,5 @@
-import bg from "/1.jpg";
-import model from "/as.png";
+import bg from "/3.jpg";
+import interiorImg from "/home1.png";
 import pattern from "/pattern-01.png";
 import rohaLogo from "../assets/roha.png";
 import { useEffect, useRef } from "react";
@@ -7,10 +7,10 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
-import { Layers, ArrowDown } from "lucide-react";
+import { ArrowDown, Compass } from "lucide-react";
 
 import { fragmentShader, vertexShader } from "../utils/shaders";
-import SubCategoryModelGrid from "./modelMakingProjects";
+import SubCategoryInteriorGrid from "./interiorProjects";
 import { NavigationOverlay } from "./NavBar";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -20,7 +20,7 @@ interface Config {
   spread: number;
 }
 
-export function ModelHero() {
+export function InteriorHero() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -114,7 +114,7 @@ export function ModelHero() {
   }, []);
 
   const scrollToArchive = () => {
-    const el = document.getElementById("models-archive");
+    const el = document.getElementById("interior-archive");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
     }
@@ -127,23 +127,23 @@ export function ModelHero() {
       <section
         id="main"
         ref={containerRef}
-        className="relative min-h-screen w-full bg-[#0d1415] text-white overflow-hidden flex items-center justify-center font-sans"
+        className="relative min-h-screen w-full bg-[#0b1213] text-white overflow-hidden flex items-center justify-center font-sans"
       >
         {/* 1. Background Visuals & Atmospheric Scrims */}
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
           <img
             src={bg}
-            alt="Architectural Blueprint Background"
-            className="w-full h-full object-cover opacity-20"
+            alt="Interior Architecture Background"
+            className="w-full h-full object-cover opacity-25"
           />
           <img
             src={pattern}
-            alt="Geometric Pattern"
+            alt="Pattern Background"
             className="h-full object-contain absolute opacity-10"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1415] via-[#0d1415]/80 to-[#0d1415]/60" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0d1415] via-transparent to-[#0d1415]/75" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(57,94,99,0.35)_0%,transparent_70%)]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0b1213] via-[#0b1213]/80 to-[#0b1213]/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b1213] via-transparent to-[#0b1213]/75" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(32,91,99,0.35)_0%,transparent_70%)]" />
         </div>
 
         {/* 2. CENTERED SHOWCASE IMAGE STARTING FROM THE BOTTOM */}
@@ -152,9 +152,9 @@ export function ModelHero() {
             initial={{ opacity: 0, y: 60, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-            src={model}
-            alt="Physical Scale Model Prototype"
-            className="w-auto h-full max-h-[84vh] object-contain object-bottom filter drop-shadow-[0_0_60px_rgba(57,94,99,0.45)] select-none"
+            src={interiorImg}
+            alt="Interior Architectural Showcase"
+            className="w-auto h-full max-h-[84vh] object-contain object-bottom filter drop-shadow-[0_0_60px_rgba(32,91,99,0.5)] select-none"
           />
         </div>
 
@@ -167,10 +167,10 @@ export function ModelHero() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#395e63]/40 backdrop-blur-md border border-cyan-400/30 text-cyan-300 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(6,182,212,0.25)]"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#205b63]/40 backdrop-blur-md border border-emerald-400/30 text-emerald-300 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(16,185,129,0.25)]"
             >
-              {/* <Box size={14} className="text-cyan-400 animate-pulse" /> */}
-              <span>Master Craftsmanship & 3D Fabrication</span>
+              {/* <Sparkles size={14} className="text-emerald-400 animate-pulse" /> */}
+              <span>Interior Architecture & Spatial Curation</span>
             </motion.div>
 
             {/* Title */}
@@ -180,9 +180,9 @@ export function ModelHero() {
               transition={{ duration: 0.8, delay: 0.15 }}
               className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight text-white leading-[0.95] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
             >
-              PRECISION <br />
-              <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
-                MODELING.
+              INHABIT THE <br />
+              <span className="bg-gradient-to-r from-emerald-300 via-[#5b949b] to-[#205b63] bg-clip-text text-transparent">
+                SPACE.
               </span>
             </motion.h1>
 
@@ -193,7 +193,7 @@ export function ModelHero() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="text-base sm:text-lg text-gray-200 font-light leading-relaxed max-w-lg backdrop-blur-md bg-black/30 p-4 rounded-2xl border border-white/10 shadow-lg"
             >
-              Translating visionary blueprints into tangible, high-fidelity physical realities. Combining laser micro-cutting, high-resolution stereolithography, and artisanal hand-finishing with 0.1mm tolerance.
+              We shape spaces that evoke emotion and elevate human experience. From bespoke residential sanctuaries to high-performance corporate headquarters, synthesizing raw materiality, biophilic lighting, and ergonomic harmony.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -208,7 +208,7 @@ export function ModelHero() {
                 onClick={scrollToArchive}
                 className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#205b63] to-[#395e63] hover:from-[#2a757f] hover:to-[#49777e] text-white font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_25px_rgba(32,91,99,0.5)] flex items-center gap-2 cursor-pointer"
               >
-                <span>Explore Physical Archive</span>
+                <span>Explore Curated Archive</span>
                 <ArrowDown size={16} />
               </button>
             </motion.div>
@@ -221,11 +221,11 @@ export function ModelHero() {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
             className="hidden lg:flex items-center justify-center p-6 relative pointer-events-none"
           >
-            <div className="absolute inset-0 bg-cyan-500/10 rounded-full filter blur-3xl transform scale-90" />
+            <div className="absolute inset-0 bg-emerald-500/10 rounded-full filter blur-3xl transform scale-90" />
             <img
               src={rohaLogo}
               alt="ROHA Architectural Emblem"
-              className="w-72 h-72 md:w-96 md:h-96 lg:w-[400px] lg:h-[400px] object-contain filter drop-shadow-[0_0_50px_rgba(57,94,99,0.5)] opacity-90 hover:opacity-100 transition-all duration-700 select-none"
+              className="w-72 h-72 md:w-96 md:h-96 lg:w-[400px] lg:h-[400px] object-contain filter drop-shadow-[0_0_50px_rgba(32,91,99,0.5)] opacity-90 hover:opacity-100 transition-all duration-700 select-none"
             />
           </motion.div>
         </div>
@@ -239,35 +239,35 @@ export function ModelHero() {
         >
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <Layers className="text-cyan-400" size={24} />
+              <Compass className="text-emerald-400" size={24} />
               <div>
                 <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Physical Scale Models
+                  Spatial Harmony
                 </h4>
                 <p className="text-xs text-gray-400">
-                  Urban Masterplans, Towers & Industrial Facilities
+                  Residential, Corporate, Commercial & Cultural
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-8 sm:gap-16">
               <div className="text-center md:text-left">
-                <span className="text-2xl sm:text-3xl font-black text-white">08</span>
-                <span className="text-xs font-mono text-cyan-400 ml-1">YRS</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">12</span>
+                <span className="text-xs font-mono text-emerald-400 ml-1">YRS</span>
                 <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                   Experience
                 </p>
               </div>
               <div className="text-center md:text-left">
-                <span className="text-2xl sm:text-3xl font-black text-white">500+</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">350+</span>
                 <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-                  Physical Models
+                  Curated Projects
                 </p>
               </div>
               <div className="text-center md:text-left">
-                <span className="text-2xl sm:text-3xl font-black text-white">1:50</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">100%</span>
                 <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-                  Max Fidelity
+                  Custom Detailing
                 </p>
               </div>
             </div>
@@ -279,7 +279,7 @@ export function ModelHero() {
           {[...Array(20)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-cyan-400/60 rounded-full"
+              className="absolute w-2 h-2 bg-emerald-400/60 rounded-full"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -300,12 +300,12 @@ export function ModelHero() {
         />
       </section>
 
-      {/* Filterable Model Projects Grid */}
-      <div id="models-archive">
-        <SubCategoryModelGrid />
+      {/* Filterable Interior Grid */}
+      <div id="interior-archive">
+        <SubCategoryInteriorGrid />
       </div>
     </>
   );
 }
 
-export default ModelHero;
+export default InteriorHero;

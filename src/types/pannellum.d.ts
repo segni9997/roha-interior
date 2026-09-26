@@ -17,6 +17,11 @@ interface PannellumViewerConfig {
   default?: {
     firstScene?: string;
     sceneFadeDuration?: number;
+    autoRotate?: number;
+    autoRotateInactivityDelay?: number;
+    autoRotateStopDelay?: number;
+    compass?: boolean;
+    mouseZoom?: boolean;
   };
   scenes: Record<string, PannellumScene>;
 }
@@ -27,6 +32,9 @@ interface PannellumScene {
   hotSpots?: unknown[];
   autoLoad?: boolean;
   showControls?: boolean;
+  hfov?: number;
+  pitch?: number;
+  yaw?: number;
 }
 
 export interface PannellumViewer {
@@ -38,6 +46,13 @@ export interface PannellumViewer {
 
   getHfov(): number;
   setHfov(value: number): void;
+  getPitch(): number;
   setPitch(value: number): void;
+  getYaw(): number;
   setYaw(value: number): void;
+  getScene(): string;
+  toggleFullscreen(): void;
+  startAutoRotate(speed?: number): void;
+  stopAutoRotate(): void;
+  isLoaded(): boolean;
 }

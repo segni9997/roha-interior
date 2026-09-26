@@ -1,12 +1,13 @@
-import { NavigationOverlay } from "../components/NavBar"
+import InteriorHero from '../components/interiorHero';
+import Footer from '../components/Footer';
 
 const Interior = () => {
   return (
-    <div>
-      <NavigationOverlay/>
-      Interior
-    </div>
-  )
-}
+    <>
+      <InteriorHero />
+      <Footer />
+    </>
+  );
+};
 
-export default Interior
+export default Interior;

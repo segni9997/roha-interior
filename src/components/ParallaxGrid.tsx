@@ -1,101 +1,74 @@
-import  { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Maximize2, Layers, MapPin, Ruler } from "lucide-react";
+import { Maximize2, Layers, MapPin, Ruler, Compass, Sparkles } from "lucide-react";
+import { resolveImageUrl } from '../services/api';
+
 gsap.registerPlugin(ScrollTrigger);
-interface GridItem {
-    id:number;
-    title:string;
-    subtitle:string;
-    image:string;
+
+export interface ParallaxGridItem {
+  id: number | string;
+  title: string;
+  subtitle: string;
+  image: string;
 }
-// ... (GridItem interface and gridData remain the same)
-const gridData: GridItem[] = [
-  {
-    id: 1,
-    title: "VORTEX",
-    subtitle: "Parametric Design",
-      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80"
 
-  },
-  {
-    id: 2,
-    title: "ZENITH",
-    subtitle: "Skyscraper Concept",
-    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 3,
-    title: "SILVA",
-    subtitle: "Sustainable Timber",
-       image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&q=80"
+export interface ParallaxGridProps {
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  location?: string;
+  year?: string;
+  area?: string;
+  floorsOrScale?: string;
+  materialPalette?: string;
+  styleName?: string;
+  statusName?: string;
+  parallaxImages?: ParallaxGridItem[];
+  videoUrl?: string;
+}
 
-  },
-  {
-    id: 4,
-    title: "BRUTAL",
-    subtitle: "Raw Concrete Form",
-    image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 5,
-    title: "EQUINOX",
-    subtitle: "Light & Shadow",
-    image: "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 6,
-    title: "AQUA",
-    subtitle: "Waterside Pavilion",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 7,
-    title: "OSCURA",
-    subtitle: "Dark Minimalism",
-    image: "https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 8,
-    title: "MARMOR",
-    subtitle: "Stone Textures",
-    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 9,
-    title: "KINETIC",
-    subtitle: "Dynamic Facades",
-    image: "https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 10,
-    title: "ORIGAMI",
-    subtitle: "Folded Geometry",
-     image: "https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&q=80"
-
-  }
-];
-
-const specs = [
-    { label: "Location", value: "Reykjavík, Iceland", icon: MapPin },
-    { label: "Total Area", value: "4,200 sq.ft", icon: Maximize2 },
-    { label: "Floor Count", value: "03 Levels", icon: Layers },
-    { label: "Project Year", value: "2024", icon: Ruler },
-  ];
-const ParallaxGrid = () => {
+export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
+  title = "",
+  subtitle = "",
+  description = "",
+  location = "",
+  year = "",
+  area = "",
+  floorsOrScale = "",
+  materialPalette = "",
+  styleName = "",
+  statusName = "",
+  parallaxImages = [],
+  videoUrl = "",
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
+
+  const displayImages = parallaxImages;
+
+  const rawSpecs = [
+    { label: "Location", value: location, icon: MapPin },
+    { label: "Spatial Area", value: area, icon: Maximize2 },
+    { label: "Scale / Levels", value: floorsOrScale, icon: Layers },
+    { label: "Project Year", value: year, icon: Ruler },
+    { label: "Materiality", value: materialPalette, icon: Compass },
+    { label: "Execution Status", value: statusName, icon: Sparkles },
+  ];
+
+  const activeSpecs = rawSpecs.filter((s) => Boolean(s.value && s.value.trim()));
+  const hasSpecsOrMeta = activeSpecs.length > 0 || Boolean(styleName?.trim() || statusName?.trim());
+  const hasOverviewHeader = Boolean(title?.trim() || subtitle?.trim());
+  const hasDescription = Boolean(description?.trim());
+  const showOverviewSection = hasOverviewHeader || hasDescription || hasSpecsOrMeta;
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       imageRefs.current.forEach((img, index) => {
         if (!img) return;
 
-        // Parallax Logic: 
-        // We trigger based on the individual parent <div> rather than the whole container
-        // to ensure the movement happens only when that specific row is in view.
         const parent = img.parentElement;
-        const yValue = index % 2 === 0 ? "15%" : "-15%";
+        const yValue = index % 2 === 0 ? "14%" : "-14%";
 
         gsap.to(img, {
           y: yValue,
@@ -110,128 +83,191 @@ const ParallaxGrid = () => {
       });
     }, containerRef);
 
-    return () => ctx.revert();
-  }, []);
+    // Refresh scrolltrigger when images render
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      ctx.revert();
+    };
+  }, [displayImages]);
 
   return (
-  <> 
-  <section className="w-full bg-gradient-to-b from-[#172a2b] via-[#1d424b] to-[#f5f7f7] py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-20 text-white contour-one">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Header Section */}
-        <div className="border-b border-slate-200 pb-8 sm:pb-10 md:pb-12 mb-8 sm:mb-10 md:mb-12">
-          <h2 className="text-xs sm:text-sm uppercase tracking-[0.3em] sm:tracking-[0.4em] font-bold text- mb-3 sm:mb-4">
-            Project Overview
-          </h2>
-          <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter italic">
-            THE MONOLITH
-          </h3>
-        </div>
+    <>
+      {/* -------------------- OVERVIEW & SPECS SECTION (HIDDEN IF NO TITLE/SUBTITLE/DETAILS) -------------------- */}
+      {showOverviewSection && (
+        <section className="w-full bg-gradient-to-b from-[#172a2b] via-[#1d424b] to-[#f5f7f7] py-12 sm:py-16 md:py-24 px-4 sm:px-6 md:px-20 text-white contour-one">
+          <div className="max-w-6xl mx-auto">
+            {/* Header Section — only if title or subtitle has content */}
+            {hasOverviewHeader && (
+              <div className="border-b border-white/20 pb-8 sm:pb-10 md:pb-12 mb-8 sm:mb-10 md:mb-12">
+                {subtitle?.trim() && (
+                  <h2 className="text-xs sm:text-sm uppercase tracking-[0.3em] sm:tracking-[0.4em] font-bold text-cyan-300 mb-3 sm:mb-4">
+                    {subtitle.trim()}
+                  </h2>
+                )}
+                {title?.trim() && (
+                  <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter uppercase italic">
+                    {title.trim()}
+                  </h3>
+                )}
+              </div>
+            )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-12 md:gap-16">
-          
-          {/* Narrative Content (Left 2/3) */}
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-medium leading-tight text-slate-50 italic">
-              A study in raw concrete and natural light, designed to blur the line between content and interaction.
-            </p>
-            <div className="space-y-4 sm:space-y-6 text-slate-100 leading-relaxed text-sm sm:text-base md:text-lg max-w-2xl">
-              <p>
-                Inspired by Swiss modernism, this project focuses on exceptional design and clean typography within the physical space. The structure utilizes a minimal color palette—mostly whites, grays, and blacks—to let the natural surroundings shine.
-              </p>
-              <p>
-                The interior flow was designed with a focus on purposeful motion. Every angle was sketched as a wireframe before jumping into construction to ensure the final result was pixel-perfect.
-              </p>
+            <div className={`grid grid-cols-1 ${hasSpecsOrMeta && hasDescription ? "lg:grid-cols-3" : ""} gap-10 sm:gap-12 md:gap-16`}>
+              {/* Narrative Content */}
+              {hasDescription && (
+                <div className={`${hasSpecsOrMeta ? "lg:col-span-2" : "w-full"} space-y-6 sm:space-y-8`}>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-medium leading-tight text-slate-50 italic">
+                    {description.trim()}
+                  </p>
+                </div>
+              )}
+
+              {/* Technical Specs */}
+              {hasSpecsOrMeta && (
+                <div className={`relative bg-white/10 backdrop-blur-xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.15)] flex flex-col justify-between ${!hasDescription ? "lg:col-span-3 max-w-xl mx-auto w-full" : ""}`}>
+                  <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
+
+                  <div>
+                    <h4 className="relative text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest font-black mb-6 sm:mb-8 border-b border-white/20 pb-3 sm:pb-4 text-cyan-300">
+                      Architectural Specifications
+                    </h4>
+
+                    {activeSpecs.length > 0 && (
+                      <ul className="relative space-y-5 sm:space-y-6">
+                        {activeSpecs.map((spec, i) => (
+                          <li key={i} className="flex items-start gap-3 sm:gap-4">
+                            <div className="bg-white/20 backdrop-blur-md p-2 rounded-xl shadow-sm border border-white/30 shrink-0">
+                              <spec.icon size={16} className="text-cyan-200" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-slate-300">
+                                {spec.label}
+                              </p>
+                              <p className="text-sm sm:text-base font-bold tracking-tight text-white line-clamp-2">
+                                {spec.value}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {(styleName?.trim() || statusName?.trim()) && (
+                    <div className="relative mt-8 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] font-mono text-cyan-200">
+                      {styleName?.trim() ? <span>STYLE: {styleName.trim()}</span> : <span />}
+                      {statusName?.trim() ? <span className="text-[#d4af37] font-bold">{statusName.trim()}</span> : null}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+        </section>
+      )}
 
-          {/* Technical Specs (Right 1/3) */}
-         <div
-  className="
-    relative
-    bg-white/10
-    backdrop-blur-xl
-    p-4 sm:p-6 md:p-8
-    rounded-xl sm:rounded-2xl
-    border border-white/20
-    shadow-[0_8px_32px_rgba(0,0,0,0.12)]
-  "
->
-  {/* glass highlight */}
-  <div className="pointer-events-none absolute inset-0 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
+      {/* -------------------- PARALLAX IMAGE GRID SECTION (FULL SCREEN) -------------------- */}
+      {displayImages.length > 0 && (
+        <section ref={containerRef} className="w-full bg-[#f0f0f0] py-0 relative overflow-hidden">
+          <div className="absolute bg-gradient-to-b from-[#f0f0f0] from-35% h-48 sm:h-72 md:h-96 top-0 inset-0 z-10 pointer-events-none" />
 
-  <h4 className="relative text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest font-black mb-6 sm:mb-8 border-b border-white/20 pb-3 sm:pb-4 text-white/80">
-    Technical Data
-  </h4>
-
-  <ul className="relative space-y-4 sm:space-y-6 md:space-y-8">
-    {specs.map((spec, i) => (
-      <li key={i} className="flex items-start gap-3 sm:gap-4">
-        <div className="bg-white/20 backdrop-blur-md p-1.5 sm:p-2 rounded-lg shadow-sm border border-white/30">
-          <spec.icon size={16} className="sm:w-[18px] sm:h-[18px] text-white/70" />
-        </div>
-
-        <div>
-          <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/60">
-            {spec.label}
-          </p>
-          <p className="text-base sm:text-lg font-black tracking-tight text-white">
-            {spec.value}
-          </p>
-        </div>
-      </li>
-    ))}
-  </ul>
-</div>
-
-          
-        </div>
-      </div>
-    </section>
-    <section ref={containerRef} className="w-full bg-[#f5f7f7] py-12 sm:py-16 md:py-20 relative">
-      {/* Grid Configuration:
-          - grid-cols-1: Single column on mobile
-          - md:grid-cols-2: Two columns on desktop
-          - gap-4: Tight architectural spacing
-      */}
-      <div className="absolute bg-gradient-to-b from-[#f0f0f0] from-35% h-48 sm:h-64 md:h-96 top-0 inset-0 z-10"></div>
-      <div className="grid grid-cols-1 md:grid-cols-2 max-w-[1600px] mx-auto">
-        {gridData.map((item, index) => (
-          <div 
-            key={item.id}
-            className="relative h-[60vh] md:h-[80vh] overflow-hidden group border border-white/5"
-          >
-            {/* Image Layer - Made taller (120%) to provide space for parallax shift */}
-        <img
-  ref={(el) => {
-    imageRefs.current[index] = el;
-  }}
-  src={item.image}
-  alt={item.title}
-  className="absolute -top-[10%] left-0 w-full h-[120%] object-cover scale-110 will-change-transform"
-/>
-
-
-            {/* Glassy Overlay & Content */}
-          
+          {/* Section Headline */}
+          <div className="w-full px-6 sm:px-10 md:px-16 pt-16 pb-10 relative z-20">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-[#205b63] font-bold">
+                VISUAL ARCHIVE // SPATIAL PERSPECTIVES
+              </span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-[#172a2b] uppercase tracking-tight">
+              Curated Architectural Perspectives
+            </h3>
           </div>
-        ))}
-      </div>
 
-<div className="w-full h-[25%] overflow-hidden rounded-lg sm:rounded-xl px-4 sm:px-6 md:px-10 py-10 sm:py-16 md:py-20">
-  <iframe 
-    className="w-full aspect-video rounded-lg"
-    src="https://www.youtube.com/embed/_BZZkFzuLQs" 
-    title="Architectural Portfolio Process" 
-    // frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-    // allowfullscreen
-    >
-  </iframe>
-</div>
-    </section>
-   
-  </>
+          {/* Full-Screen Edge-to-Edge Parallax Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 w-full relative z-20 border-t border-slate-300">
+            {displayImages.map((item, index) => {
+              const hasCaption = Boolean(item.title?.trim() || item.subtitle?.trim());
+              return (
+                <div 
+                  key={item.id || index}
+                  className="relative h-[70vh] sm:h-[80vh] md:h-screen w-full overflow-hidden group border-b border-r border-slate-300/40 bg-slate-950"
+                >
+                  {/* Image Layer with GSAP Parallax */}
+                  <img
+                    ref={(el) => {
+                      imageRefs.current[index] = el;
+                    }}
+                    src={item.image}
+                    alt={item.title?.trim() || "Architectural Perspective"}
+                    loading="lazy"
+                    className="absolute -top-[15%] left-0 w-full h-[130%] object-cover scale-105 will-change-transform transition-transform duration-700 group-hover:scale-110"
+                  />
+
+                  {/* Glassy Overlay & Content — Rendered ONLY if title or subtitle has actual text. If no title and subtitle, shows NOTHING */}
+                  {hasCaption ? (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent flex flex-col justify-end p-6 sm:p-10 md:p-16 z-20 pointer-events-none transition-opacity duration-300">
+                      {item.subtitle?.trim() ? (
+                        <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-widest text-cyan-300 mb-2 drop-shadow">
+                          {item.subtitle.trim()}
+                        </span>
+                      ) : null}
+                      {item.title?.trim() ? (
+                        <h4 className="text-xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight drop-shadow-md">
+                          {item.title.trim()}
+                        </h4>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* -------------------- ARCHITECTURAL CINEMATIC VIDEO DOCUMENTATION -------------------- */}
+      {videoUrl && videoUrl.trim() && (
+        <section className="w-full bg-[#f0f0f0] px-4 sm:px-8 md:px-16 py-16 sm:py-20 md:py-28 relative z-20">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-[#d4af37] font-bold">
+                  CINEMATIC DOCUMENTATION
+                </span>
+                <h4 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#172a2b] uppercase tracking-tight mt-1">
+                  Design, Fabrication & Spatial Flow
+                </h4>
+              </div>
+              {title?.trim() && <p className="text-xs font-mono text-slate-500 uppercase">PROJECT: {title.trim()}</p>}
+            </div>
+
+            <div className="relative aspect-video rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-300/80 bg-black">
+              {videoUrl.match(/\.(mp4|webm|mov|mkv)($|\?)/i) || videoUrl.startsWith('/uploads/') ? (
+                <video 
+                  controls 
+                  playsInline 
+                  className="w-full h-full object-cover" 
+                  src={resolveImageUrl(videoUrl)}
+                />
+              ) : (
+                <iframe 
+                  className="w-full h-full rounded-2xl sm:rounded-3xl"
+                  src={videoUrl.includes('watch?v=') ? videoUrl.replace('watch?v=', 'embed/') : videoUrl} 
+                  title={`${title || 'Architectural'} Video`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowFullScreen
+                />
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
   );
 };
 

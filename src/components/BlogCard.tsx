@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { resolveImageUrl } from "../services/api";
 
 interface BlogPost {
-  image: string;
+  image?: string | null;
+  cover_image?: string | null;
   title: string;
   category: string;
   author: string;
@@ -16,6 +18,8 @@ interface BlogCardProps {
 }
 
 export const BlogCard: React.FC<BlogCardProps> = ({ post, featured = false }) => {
+  const displayImage = resolveImageUrl(post.cover_image || post.image, '/tr/279A1756.JPG');
+
   return (
     <motion.div
       layout
@@ -27,7 +31,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ post, featured = false }) =>
     >
       {/* Image Layer */}
       <img
-        src={post.image}
+        src={displayImage}
         alt={post.title}
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
       />

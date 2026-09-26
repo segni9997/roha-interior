@@ -10,6 +10,8 @@ type GeoButtonProps = {
   from?: string; // Expecting hex without # (e.g., "fffeee")
   to?: string;   // Expecting hex without # (e.g., "ffffff")
   textColor?: string; // Expecting full hex (e.g., "#ffffff")
+  onClick?: () => void;
+  disabled?: boolean;
 };
 
 const GeoButton: React.FC<GeoButtonProps> = ({
@@ -19,6 +21,8 @@ const GeoButton: React.FC<GeoButtonProps> = ({
   from = "ffffff", // Default white
   to = "06b6d4",   // Default Cyan
   textColor = "#172a2b",
+  onClick,
+  disabled = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -34,10 +38,12 @@ const GeoButton: React.FC<GeoButtonProps> = ({
 
   return (
     <button
+      onClick={onClick}
+      disabled={disabled}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={buttonStyle}
-      className={`relative group cursor-pointer h-16 min-w-48 max-w-64 w-fil flex justify-center items-center border-dashed rounded-2xl transition-all duration-300  overflow-hidden p-1 shadow-lg`}
+      className={`relative group cursor-pointer h-16 min-w-48 max-w-64 w-fil flex justify-center items-center border-dashed rounded-2xl transition-all duration-300  overflow-hidden p-1 shadow-lg ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
       {/* Shapes coming from corners */}
      <div className="absolute w-40 h-40 top-0 left-0 z-10 transform -translate-x-full -translate-y-full group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-700">
