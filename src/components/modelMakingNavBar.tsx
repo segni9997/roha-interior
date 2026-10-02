@@ -22,10 +22,17 @@ export default function MargaNavbar() {
 
         {/* Desktop Links - Hover Effects like Marga */}
         <div className="hidden lg:flex items-center gap-8">
-          {['Home', 'About', 'Modeling', 'Interior', 'Contact', ''].map((item) => (
-            <div key={item} className="group relative py-2">
-              <a href={`/${item.toLowerCase()}`} className="text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-[#395e63] transition-colors">
-                {item}
+          {[
+            { label: 'Home', path: '/' },
+            { label: 'Architectural Design', path: '/interior' },
+            { label: 'Modeling Making', path: '/model-making' },
+            { label: 'Blogs', path: '/allblogs' },
+            { label: 'Gallery', path: '/gallery' },
+            { label: 'Contact', path: '/contactus' }
+          ].map((item) => (
+            <div key={item.label} className="group relative py-2">
+              <a href={item.path} className="text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-[#395e63] transition-colors">
+                {item.label}
               </a>
               {/* Animated underline like Marga templates */}
               <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#395e63] transition-all duration-300 group-hover:w-full"></span>

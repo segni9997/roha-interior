@@ -124,7 +124,7 @@
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
                 viewport={{ once: true }}
-                className="relative text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto p-1 px-4"
+                className="relative text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto p-1 px-4 border-r-4 border-[#395e63] pr-4 sm:pr-5 inline-block text-left"
               >
                 Shaping spaces with vision and precision
               </motion.p>

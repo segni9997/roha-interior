@@ -1,23 +1,84 @@
 @import "tailwindcss";
 
-@layer base {
-  html {
-    scroll-behavior: smooth;
-  }
-
- 
-}
 @font-face {
   font-family: "nasalization";
-  src: url("./assets/fonts/Nasalization-rg.otf") format("otf"),
-       url("./assets/fonts/nasalization-rg.otf") format("otf");
-  font-weight: normal;
+  src: url("/fonts/nasalization-rg.otf") format("opentype"),
+       url("./assets/fonts/nasalization-rg.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "EB Garamond";
+  src: url("/fonts/EBGaramond-VariableFont_wght.ttf") format("truetype"),
+       url("./assets/fonts/EBGaramond-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "EBGaramond";
+  src: url("/fonts/EBGaramond-VariableFont_wght.ttf") format("truetype"),
+       url("./assets/fonts/EBGaramond-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @theme {
-  --font-primary: "nasalization", 'sans-serif'
+  --font-primary: "nasalization", sans-serif;
+  --font-nasalization: "nasalization", sans-serif;
+  --font-sans: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+  --font-serif: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+  --font-garamond: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-size: 17.5px;
+    font-family: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+  }
+
+  body {
+    font-family: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Huge texts, display titles & primary headings use Nasalization */
+  h1, h2, h3, .font-nasalization, .font-primary, .font-main, .font-huge {
+    font-family: "nasalization", sans-serif;
+  }
+
+  /* All other texts, paragraphs, links, buttons, inputs, spans use EB Garamond */
+  p, span, a, button, input, textarea, select, label, li, small, blockquote, figcaption {
+    font-family: "EB Garamond", "EBGaramond", Georgia, 'Times New Roman', serif;
+  }
+
+  /* Exceptions: preserve font-mono where explicitly used for technical badges */
+  .font-mono, [class*="font-mono"] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  }
+
+  /* Explicit nasalization override when placed on span or div */
+  .font-nasalization, .font-primary, .font-main {
+    font-family: "nasalization", sans-serif !important;
+  }
+
+  .font-garamond {
+    font-family: "EB Garamond", "EBGaramond", Georgia, serif !important;
+  }
+
+  p {
+    font-size: 1.05rem;
+    line-height: 1.72;
+  }
 }
 @layer components {
   .hero-bg {
@@ -68,3 +129,22 @@
 .font-main {
   font-family: var(--font-primary);
 }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}

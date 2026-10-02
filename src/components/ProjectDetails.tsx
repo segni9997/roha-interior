@@ -10,6 +10,7 @@ import ParallaxGrid, { type ParallaxGridItem } from "./ParallaxGrid";
 import Footer from "./Footer";
 import GeoButton from "./Buttons";
 import { NavigationOverlay } from "./NavBar";
+import { FloatingShape, SHAPES } from "./FloatingShapes";
 import {
   api,
   resolveImageUrl,
@@ -258,6 +259,8 @@ function ProjectDetails() {
   const heroImageSrc = resolveImageUrl(project?.cover_image, "/confrence1.png");
   const heroSubtitle = project?.subtitle || "Transforming the Future of Contemporary Living";
   const heroTitle = project?.title ? project.title.toUpperCase() : "PRESENTATIONAL";
+  const resolvedLogo = resolveImageUrl(project?.company_logo, "/roha.png");
+  const clientName = (project as any)?.specifications?.client || (project as any)?.client || (project?.company_logo ? "Enterprise Partner" : "ROHA Studio");
 
   return (
     <>
@@ -273,6 +276,51 @@ function ProjectDetails() {
           className="absolute inset-0 w-full h-full pointer-events-none z-40"
         />
 
+        {/* Floating 3D Geometric Shapes with varied blur levels, sizes and positions */}
+        <FloatingShape
+          src={SHAPES.diamond}
+          size={85}
+          top="12%"
+          left="6%"
+          blur="1px"
+          opacity={0.35}
+          rotate={-15}
+          duration={8}
+        />
+        <FloatingShape
+          src={SHAPES.cone}
+          size={95}
+          top="22%"
+          right="8%"
+          blur="2px"
+          opacity={0.3}
+          rotate={25}
+          duration={9.5}
+          delay={0.6}
+        />
+        <FloatingShape
+          src={SHAPES.cylinder}
+          size={65}
+          bottom="18%"
+          left="10%"
+          blur="none"
+          opacity={0.35}
+          rotate={-20}
+          duration={7}
+          delay={1.2}
+        />
+        <FloatingShape
+          src={SHAPES.cubeAlt1}
+          size={75}
+          bottom="15%"
+          right="12%"
+          blur="none"
+          opacity={0.35}
+          rotate={30}
+          duration={8.5}
+          delay={1.8}
+        />
+
         {/* Background Watermark Silhouette from Backend */}
         <div className="absolute w-full md:bottom-0 top-60 scale-105 opacity-10 pointer-events-none flex justify-center">
           <img
@@ -286,9 +334,21 @@ function ProjectDetails() {
         <div className="absolute inset-0 bg-radial from-white/5 to-transparent z-0" />
 
         <div className="flex w-full h-full px-6 sm:px-10 flex-col relative z-10">
-          {/* Background Text (The Large Heading) from Backend */}
-          <div className="flex flex-col items-center text-white pt-10 h-1/2 select-none text-center">
-            <span className="text-xs sm:text-sm md:text-xl font-light tracking-[0.3em] sm:tracking-[0.4em] uppercase opacity-80 mb-4 text-cyan-200">
+          {/* Background Text & Client/ROHA Brand Badge */}
+          <div className="flex flex-col items-center text-white pt-8 sm:pt-10 h-1/2 select-none text-center">
+            {/* Commissioned Client / Studio Logo Fallback Badge */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 shadow-md mb-3">
+              <img
+                src={resolvedLogo}
+                alt={clientName}
+                className="w-5 h-5 object-contain rounded-sm"
+              />
+              <span className="text-[10px] sm:text-xs font-mono font-bold tracking-widest text-cyan-200 uppercase">
+                {project?.company_logo ? `Commissioned: ${clientName}` : `ROHA Studio Archive`}
+              </span>
+            </div>
+
+            <span className="text-xs sm:text-sm md:text-xl font-light tracking-[0.3em] sm:tracking-[0.4em] uppercase opacity-80 mb-2 text-cyan-200">
               {heroSubtitle}
             </span>
             <h1 className="text-[10vw] sm:text-[11.5vw] font-black tracking-tighter md:relative absolute top-64 md:top-24 leading-none opacity-40 uppercase truncate max-w-full px-4">
@@ -299,11 +359,11 @@ function ProjectDetails() {
           {/* Interactive Layer (Middle and Sides) */}
           <div className="flex flex-row h-2/3 relative -mt-20">
             {/* LEFT SIDE: Call to Action - hidden on mobile */}
-            <div className="hidden md:flex flex-col items-start w-[25%] justify-center text-[#172a2b] z-30">
-              <p className="text-lg font-medium mb-6 leading-tight opacity-90 w-56 font-sans">
+            <div className="hidden md:flex flex-col items-start w-[25%] justify-center text-white z-30">
+              <p className="text-base font-medium leading-relaxed text-slate-100 font-sans mb-4 max-w-[260px] drop-shadow-md">
                 {project?.description
-                  ? project.description.slice(0, 65) + "..."
-                  : "Start building your dream home today"}
+                  ? project.description.slice(0, 85) + "..."
+                  : "Start building your bespoke architectural vision with us today."}
               </p>
               <Link to="/contactus">
                 <GeoButton label="Get Started" from="f0f0f0" to="1d424b" />
@@ -338,7 +398,7 @@ function ProjectDetails() {
                   <div
                     key={index}
                     className="flex items-center gap-4 py-3 px-6 rounded-full 
-                               bg-black/20 backdrop-blur-xl border border-white/15 
+                               bg-black/35 backdrop-blur-xl border border-white/20 
                                hover:bg-white/10 transition-all cursor-pointer group shadow-lg"
                   >
                     <Icon
@@ -357,10 +417,10 @@ function ProjectDetails() {
           {/* MOBILE VERSION: left & right sections stacked under the hero */}
           <div className="flex flex-col md:hidden mt-6 px-4 gap-6 z-30 pb-6">
             <div className="flex flex-col items-center text-center">
-              <p className="text-sm font-medium mb-4 leading-tight opacity-90 w-full max-w-xs text-[#172a2b]">
+              <p className="text-sm font-medium mb-4 leading-tight text-slate-100 drop-shadow-md w-full max-w-xs">
                 {project?.description
-                  ? project.description.slice(0, 70) + "..."
-                  : "Start building your dream home today"}
+                  ? project.description.slice(0, 85) + "..."
+                  : "Start building your bespoke architectural vision with us today."}
               </p>
               <Link to="/contactus">
                 <GeoButton label="Get Started" from="f0f0f0" to="1d424b" />
@@ -374,7 +434,7 @@ function ProjectDetails() {
                   <div
                     key={index}
                     className="flex items-center gap-2 py-2 px-4 rounded-full 
-                               bg-black/20 backdrop-blur-xl border border-white/15 
+                               bg-black/35 backdrop-blur-xl border border-white/20 
                                hover:bg-white/10 transition-colors cursor-pointer group"
                   >
                     <Icon size={15} className="text-amber-400" />
@@ -421,6 +481,8 @@ function ProjectDetails() {
           (project as ModelProjectDetailItem)?.specifications?.status ||
           ""
         }
+        companyLogo={project?.company_logo}
+        clientName={clientName}
         parallaxImages={parallaxImages}
         videoUrl={project?.video_url || ""}
       />

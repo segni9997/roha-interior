@@ -99,7 +99,7 @@ const AllBlogs: React.FC = () => {
               BUILT <span className="text-[#205b63]">STORIES.</span>
             </h1>
 
-            <p className="text-sm sm:text-lg text-slate-600 font-light max-w-2xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-lg text-slate-600 font-light max-w-2xl mx-auto leading-relaxed border-r-4 border-[#205b63] pr-4 sm:pr-5 inline-block text-left">
               Perspectives on contemporary architecture, physical scale model engineering, interior spatial harmony, and sustainable design.
             </p>
 

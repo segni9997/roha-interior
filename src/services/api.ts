@@ -71,6 +71,7 @@ export interface InteriorProjectItem {
   subtitle?: string;
   video_url?: string;
   cover_image: string | null;
+  company_logo?: string | null;
   is_featured: boolean;
   order: number;
 }
@@ -123,6 +124,7 @@ export interface ModelProjectItem {
   subtitle?: string;
   video_url?: string;
   cover_image: string | null;
+  company_logo?: string | null;
   is_featured: boolean;
   order: number;
 }
@@ -140,6 +142,17 @@ export interface ModelProjectDetailItem extends ModelProjectItem {
     status: string;
   };
   gallery_images?: GalleryImageItem[];
+}
+
+export interface TrustedClientItem {
+  id: number;
+  name: string;
+  logo: string | null;
+  industry: string;
+  project_count?: string;
+  featured: boolean;
+  order: number;
+  website_url?: string;
 }
 
 export interface ModelGalleryImageItem extends GalleryImageItem {
@@ -413,6 +426,17 @@ export const api = {
     });
   },
 
+  async updateInteriorCategory(id: number, data: Partial<CategoryItem>): Promise<CategoryItem> {
+    return request<CategoryItem>(`/api/v1/interior/categories/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteInteriorCategory(id: number): Promise<void> {
+    return request<void>(`/api/v1/interior/categories/${id}/`, { method: 'DELETE' });
+  },
+
   // Physical Scale Models
   async getModelProjects(category?: string): Promise<ModelProjectItem[]> {
     const query = category && category !== 'All' ? `?category__name=${encodeURIComponent(category)}` : '';
@@ -467,6 +491,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ name, description }),
     });
+  },
+
+  async updateModelCategory(id: number, data: Partial<CategoryItem>): Promise<CategoryItem> {
+    return request<CategoryItem>(`/api/v1/modelmaking/categories/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteModelCategory(id: number): Promise<void> {
+    return request<void>(`/api/v1/modelmaking/categories/${id}/`, { method: 'DELETE' });
   },
 
   // Blog / Journal Articles
@@ -672,5 +707,28 @@ export const api = {
 
   async deleteMetric(id: number): Promise<void> {
     return request<void>(`/api/v1/core/metrics/${id}/`, { method: 'DELETE' });
+  },
+
+  // Trusted Clients & Partners
+  async getTrustedClients(): Promise<TrustedClientItem[]> {
+    return request<TrustedClientItem[]>(`/api/v1/core/clients/`);
+  },
+
+  async createTrustedClient(data: Partial<TrustedClientItem>): Promise<TrustedClientItem> {
+    return request<TrustedClientItem>(`/api/v1/core/clients/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateTrustedClient(id: number, data: Partial<TrustedClientItem>): Promise<TrustedClientItem> {
+    return request<TrustedClientItem>(`/api/v1/core/clients/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteTrustedClient(id: number): Promise<void> {
+    return request<void>(`/api/v1/core/clients/${id}/`, { method: 'DELETE' });
   },
 };

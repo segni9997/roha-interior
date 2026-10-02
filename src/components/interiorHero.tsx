@@ -12,6 +12,7 @@ import { ArrowDown, Compass } from "lucide-react";
 import { fragmentShader, vertexShader } from "../utils/shaders";
 import SubCategoryInteriorGrid from "./interiorProjects";
 import { NavigationOverlay } from "./NavBar";
+import { FloatingShape, SHAPES } from "./FloatingShapes";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -146,6 +147,40 @@ export function InteriorHero() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(32,91,99,0.35)_0%,transparent_70%)]" />
         </div>
 
+        {/* Floating 3D Geometric Architectural Shapes */}
+        <FloatingShape
+          src={SHAPES.diamond}
+          size={75}
+          top="14%"
+          left="4%"
+          blur="1px"
+          opacity={0.4}
+          rotate={15}
+          duration={7.5}
+        />
+        <FloatingShape
+          src={SHAPES.cone}
+          size={85}
+          top="22%"
+          right="5%"
+          blur="2px"
+          opacity={0.3}
+          rotate={-18}
+          duration={8.5}
+          delay={0.8}
+        />
+        <FloatingShape
+          src={SHAPES.cubeAlt1}
+          size={60}
+          bottom="20%"
+          left="6%"
+          blur="none"
+          opacity={0.35}
+          rotate={22}
+          duration={6.5}
+          delay={1.5}
+        />
+
         {/* 2. CENTERED SHOWCASE IMAGE STARTING FROM THE BOTTOM */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-5xl h-[65vh] sm:h-[75vh] md:h-[84vh] flex items-end justify-center pointer-events-none px-4">
           <motion.img
@@ -169,8 +204,7 @@ export function InteriorHero() {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#205b63]/40 backdrop-blur-md border border-emerald-400/30 text-emerald-300 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(16,185,129,0.25)]"
             >
-              {/* <Sparkles size={14} className="text-emerald-400 animate-pulse" /> */}
-              <span>Interior Architecture & Spatial Curation</span>
+              <span>Architectural Design & Spatial Curation</span>
             </motion.div>
 
             {/* Title */}
@@ -191,7 +225,7 @@ export function InteriorHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-base sm:text-lg text-gray-200 font-light leading-relaxed max-w-lg backdrop-blur-md bg-black/30 p-4 rounded-2xl border border-white/10 shadow-lg"
+              className="text-base sm:text-lg text-gray-100 font-light leading-relaxed max-w-lg drop-shadow-md border-r-4 border-[#205b63] pr-4 sm:pr-5"
             >
               We shape spaces that evoke emotion and elevate human experience. From bespoke residential sanctuaries to high-performance corporate headquarters, synthesizing raw materiality, biophilic lighting, and ergonomic harmony.
             </motion.p>

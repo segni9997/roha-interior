@@ -12,6 +12,7 @@ import { Layers, ArrowDown } from "lucide-react";
 import { fragmentShader, vertexShader } from "../utils/shaders";
 import SubCategoryModelGrid from "./modelMakingProjects";
 import { NavigationOverlay } from "./NavBar";
+import { FloatingShape, SHAPES } from "./FloatingShapes";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -146,6 +147,40 @@ export function ModelHero() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(57,94,99,0.35)_0%,transparent_70%)]" />
         </div>
 
+        {/* Floating 3D Geometric Architectural Shapes */}
+        <FloatingShape
+          src={SHAPES.cone}
+          size={85}
+          top="14%"
+          left="4%"
+          blur="1px"
+          opacity={0.4}
+          rotate={-15}
+          duration={7.5}
+        />
+        <FloatingShape
+          src={SHAPES.cubeAlt2}
+          size={95}
+          top="22%"
+          right="5%"
+          blur="2px"
+          opacity={0.3}
+          rotate={20}
+          duration={8.5}
+          delay={0.8}
+        />
+        <FloatingShape
+          src={SHAPES.diamond}
+          size={60}
+          bottom="20%"
+          left="6%"
+          blur="none"
+          opacity={0.35}
+          rotate={30}
+          duration={6.5}
+          delay={1.5}
+        />
+
         {/* 2. CENTERED SHOWCASE IMAGE STARTING FROM THE BOTTOM */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-5xl h-[65vh] sm:h-[75vh] md:h-[84vh] flex items-end justify-center pointer-events-none px-4">
           <motion.img
@@ -169,8 +204,7 @@ export function ModelHero() {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#395e63]/40 backdrop-blur-md border border-cyan-400/30 text-cyan-300 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(6,182,212,0.25)]"
             >
-              {/* <Box size={14} className="text-cyan-400 animate-pulse" /> */}
-              <span>Master Craftsmanship & 3D Fabrication</span>
+              <span>Modeling Making & Precision Fabrication</span>
             </motion.div>
 
             {/* Title */}
@@ -191,7 +225,7 @@ export function ModelHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-base sm:text-lg text-gray-200 font-light leading-relaxed max-w-lg backdrop-blur-md bg-black/30 p-4 rounded-2xl border border-white/10 shadow-lg"
+              className="text-base sm:text-lg text-gray-100 font-light leading-relaxed max-w-lg drop-shadow-md border-r-4 border-[#205b63] pr-4 sm:pr-5"
             >
               Translating visionary blueprints into tangible, high-fidelity physical realities. Combining laser micro-cutting, high-resolution stereolithography, and artisanal hand-finishing with 0.1mm tolerance.
             </motion.p>

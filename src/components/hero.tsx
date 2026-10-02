@@ -173,7 +173,7 @@ const Hero = () => {
           >
             <Sparkles size={14} className="text-cyan-400 animate-pulse" />
             <span className="text-[11px] font-mono font-semibold tracking-widest text-cyan-200 uppercase">
-              Architectural & Interior Excellence
+              Architectural Design & Modeling Making
             </span>
           </motion.div>
 
@@ -182,11 +182,11 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tight mb-6 max-w-7xl"
+            className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tight mb-6 max-w-7xl uppercase"
           >
-            ROHA 
-            <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
-              INTERIOR & ARCHITECTS
+            ROHA <br />
+            <span className="bg-gradient-to-r from-cyan-300 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
+              ARCHITECTURAL DESIGN & MODELING MAKING
             </span>
           </motion.h1>
 
@@ -195,9 +195,9 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.35 }}
-            className="text-base sm:text-xl text-gray-300 font-light max-w-2xl mb-8 leading-relaxed"
+            className="text-base sm:text-xl text-gray-200 font-light max-w-2xl mb-8 leading-relaxed drop-shadow-md border-r-4 border-[#205b63] pr-4 sm:pr-6"
           >
-            Sculpting physical scale models, bespoke interior environments, and immersive 360° virtual reality tours with master precision.
+            Sculpting physical scale models, bespoke architectural design environments, and immersive 360° virtual reality tours with master precision.
           </motion.p>
 
           {/* Interactive CTAs */}
@@ -225,23 +225,67 @@ const Hero = () => {
           </motion.div>
         </div>
 
-        {/* FLOATING PARTICLES */}
-        <div className="absolute inset-0 pointer-events-none z-30">
+        {/* FLOATING PARTICLES & RISING 3D SHAPES */}
+        <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          {/* Cyan Rising Drops */}
           {[...Array(24)].map((_, i) => (
             <motion.div
-              key={i}
+              key={`drop-${i}`}
               className="absolute w-2 h-2 bg-cyan-400/70 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.8)]"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: `${(i * 4.1 + 3) % 96}%`,
+                top: `${(i * 7.3 + 10) % 90}%`,
               }}
-              animate={{ y: [-20, -120], opacity: [0, 1, 0] }}
+              animate={{ y: [-10, -180], opacity: [0, 0.9, 0] }}
               transition={{
-                duration: Math.random() * 3 + 2.5,
+                duration: 3 + (i % 4) * 0.8,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: (i % 5) * 0.6,
+                ease: "easeInOut",
               }}
             />
+          ))}
+
+          {/* 3D Geometric Architectural Shapes Going Up Like The Drops */}
+          {[
+            { src: '/diamond_3d_shape.png', size: 65, left: '8%', top: '80%', blur: '1px', opacity: 0.45, rotate: 15, duration: 6.5, delay: 0 },
+            { src: '/cube_3d_shape.png', size: 80, left: '22%', top: '88%', blur: 'none', opacity: 0.35, rotate: -25, duration: 7.5, delay: 1.2 },
+            { src: '/cone_3d_shape.png', size: 90, left: '38%', top: '85%', blur: '2px', opacity: 0.4, rotate: 30, duration: 8.5, delay: 0.5 },
+            { src: '/cylinder_3d_shape.png', size: 55, left: '56%', top: '82%', blur: 'none', opacity: 0.35, rotate: -15, duration: 7, delay: 1.8 },
+            { src: '/cube_3d_shape (1).png', size: 70, left: '72%', top: '86%', blur: '1px', opacity: 0.35, rotate: 20, duration: 8, delay: 0.9 },
+            { src: '/cube_3d_shape (2).png', size: 100, left: '88%', top: '80%', blur: '3px', opacity: 0.3, rotate: -35, duration: 9, delay: 2.2 },
+            { src: '/diamond_3d_shape.png', size: 45, left: '48%', top: '75%', blur: 'none', opacity: 0.4, rotate: 45, duration: 6, delay: 1.5 },
+            { src: '/cone_3d_shape.png', size: 60, left: '80%', top: '70%', blur: '2px', opacity: 0.35, rotate: -10, duration: 7.8, delay: 2.8 },
+          ].map((shape, idx) => (
+            <motion.div
+              key={`shape-rise-${idx}`}
+              className="absolute pointer-events-none select-none"
+              style={{
+                left: shape.left,
+                top: shape.top,
+                width: shape.size,
+                height: shape.size,
+                filter: shape.blur === 'none' ? undefined : `blur(${shape.blur})`,
+                opacity: shape.opacity,
+              }}
+              animate={{
+                y: [40, -220, -320],
+                rotate: [shape.rotate - 10, shape.rotate + 15, shape.rotate - 5],
+                opacity: [0, shape.opacity, 0],
+              }}
+              transition={{
+                duration: shape.duration,
+                repeat: Infinity,
+                delay: shape.delay,
+                ease: "easeInOut",
+              }}
+            >
+              <img
+                src={shape.src}
+                alt=""
+                className="w-full h-full object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.6)]"
+              />
+            </motion.div>
           ))}
         </div>
       </div>

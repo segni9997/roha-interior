@@ -169,7 +169,7 @@ const PanoramaGallery = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto font-light mb-8"
+            className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto font-light mb-8 border-r-4 border-[#5b949b] pr-4 sm:pr-5 inline-block text-left"
           >
             Step inside our architectural creations with interactive 360° virtual reality tours and high-resolution design stills.
           </motion.p>

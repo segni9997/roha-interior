@@ -20,8 +20,8 @@ import { useAdminAuth } from './AdminAuthContext';
 
 const navItems = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { to: '/admin/interior', label: 'Interior Archive', icon: Home },
-  { to: '/admin/models', label: 'Scale Modeling', icon: Layers },
+  { to: '/admin/interior', label: 'Architectural Design', icon: Home },
+  { to: '/admin/models', label: 'Modeling Making', icon: Layers },
   { to: '/admin/tours', label: '360° Virtual Tours', icon: Move3D },
   { to: '/admin/blog', label: 'Journal & Articles', icon: BookOpen },
   { to: '/admin/pages', label: 'Page Content Builder', icon: FileCode2 },

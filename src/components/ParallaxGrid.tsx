@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Maximize2, Layers, MapPin, Ruler, Compass, Sparkles } from "lucide-react";
+import { Maximize2, Layers, MapPin, Ruler, Compass, Sparkles, Building2 } from "lucide-react";
 import { resolveImageUrl } from '../services/api';
+import { FloatingShape, SHAPES } from './FloatingShapes';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,6 +25,8 @@ export interface ParallaxGridProps {
   materialPalette?: string;
   styleName?: string;
   statusName?: string;
+  companyLogo?: string | null;
+  clientName?: string;
   parallaxImages?: ParallaxGridItem[];
   videoUrl?: string;
 }
@@ -39,6 +42,8 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
   materialPalette = "",
   styleName = "",
   statusName = "",
+  companyLogo = null,
+  clientName = "",
   parallaxImages = [],
   videoUrl = "",
 }) => {
@@ -46,6 +51,7 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
   const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
 
   const displayImages = parallaxImages;
+  const resolvedLogo = resolveImageUrl(companyLogo, '/roha.png');
 
   const rawSpecs = [
     { label: "Location", value: location, icon: MapPin },
@@ -132,9 +138,22 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
                   <div className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
 
                   <div>
-                    <h4 className="relative text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest font-black mb-6 sm:mb-8 border-b border-white/20 pb-3 sm:pb-4 text-cyan-300">
-                      Architectural Specifications
-                    </h4>
+                    <div className="flex items-center justify-between border-b border-white/20 pb-3 sm:pb-4 mb-6 sm:mb-8">
+                      <h4 className="text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest font-black text-cyan-300">
+                        Architectural Specifications
+                      </h4>
+                      {/* Client / Company Logo (if provided, otherwise ROHA Studio Logo) */}
+                      <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 shadow-sm" title={companyLogo ? `Commissioned Project: ${clientName || 'Enterprise Partner'}` : "ROHA Studio Monograph"}>
+                        <img
+                          src={resolvedLogo}
+                          alt={clientName || "ROHA Studio"}
+                          className="w-5 h-5 object-contain"
+                        />
+                        <span className="text-[9px] font-mono uppercase text-slate-300 font-bold">
+                          {companyLogo ? (clientName || "Client Logo") : "ROHA"}
+                        </span>
+                      </div>
+                    </div>
 
                     {activeSpecs.length > 0 && (
                       <ul className="relative space-y-5 sm:space-y-6">

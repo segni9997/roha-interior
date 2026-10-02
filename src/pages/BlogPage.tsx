@@ -61,7 +61,7 @@ const BlogPage = () => {
               FEATURED STORIES
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-600 font-light max-w-md">
+          <p className="text-xs sm:text-sm text-slate-700 font-normal max-w-md border-r-4 border-[#205b63] pr-4 sm:pr-5">
             Architectural perspectives, fabrication engineering insights, and spatial case studies.
           </p>
         </div>

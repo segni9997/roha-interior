@@ -1,33 +1,22 @@
 import Hero from '../components/hero';
-// import About from '../components/About';
-// import ParallaxImage from '../components/Parallax';
-// import Category from '../components/Categories';
 import Categories from '../components/category';
 import Footer from '../components/Footer';
 import BlogPage from './BlogPage';
 import { NavigationOverlay } from '../components/NavBar';
-// import MargaNavbar from '../components/modelMakingNavBar';
-// import NavigationOverlay from '../components/NavBar';
-// import ProjectDetails from '../components/ProjectDetails';
-// import ParallaxGrid from '../components/ParallaxGrid';
-// import ProjectGallery from '../components/Gallery';
+import ClientsSection from '../components/ClientsSection';
 
 const Home = () => {
   return (
     <>
-    {/* <MargaNavbar/> */}
-    <NavigationOverlay/>
+      <NavigationOverlay />
       <Hero />
- 
-    <Categories/>
-    <BlogPage/>
-        <Footer/> 
-      {/* <Category /> */}
-           {/* <About /> */}
-      {/* <ParallaxImage /> */}
-      {/* <ProjectGallery /> */}
+      <Categories />
+      <BlogPage />
+      <ClientsSection />
+      <Footer />
     </>
   );
-}
+};
 
-export default Home
+export default Home;
+

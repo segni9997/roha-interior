@@ -156,22 +156,38 @@ const typeIcons: Record<string, ReactNode> = {
   "Mixed-Use": <Layers className="w-4 h-4" />
 };
 
+import { FloatingShape, SHAPES } from './FloatingShapes';
+
 export default function SubCategoryModelGrid() {
   const [activeType, setActiveType] = useState<string>('All');
   const [projects, setProjects] = useState<ModelProjectItem[]>(fallbackModelProjects);
+  const [categoriesList, setCategoriesList] = useState<string[]>(['All', 'Architecture', 'Commercial', 'Cultural', 'Hospitality', 'Educational', 'Healthcare', 'Mixed-Use']);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
-
-  const types = ['All', 'Architecture', 'Commercial', 'Cultural', 'Hospitality', 'Educational', 'Healthcare', 'Mixed-Use'];
 
   useEffect(() => {
     let isMounted = true;
     async function fetchLiveModels() {
       try {
         setLoading(true);
-        const liveModels = await api.getModelProjects();
-        if (isMounted && liveModels && liveModels.length > 0) {
-          setProjects(liveModels);
+        const [liveModels, liveCats] = await Promise.all([
+          api.getModelProjects().catch(() => []),
+          api.getModelCategories().catch(() => []),
+        ]);
+        if (isMounted) {
+          if (liveModels && liveModels.length > 0) {
+            setProjects(liveModels);
+          }
+          const catNames = new Set<string>(['All']);
+          if (liveCats && liveCats.length > 0) {
+            liveCats.forEach(c => catNames.add(c.name));
+          }
+          if (liveModels && liveModels.length > 0) {
+            liveModels.forEach(p => {
+              if (p.category_name) catNames.add(p.category_name);
+            });
+          }
+          setCategoriesList(Array.from(catNames));
         }
       } catch (err) {
         console.warn('Backend unavailable, using local model archive:', err);
@@ -194,7 +210,52 @@ export default function SubCategoryModelGrid() {
   };
 
   return (
-    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative">
+    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative overflow-hidden">
+      {/* Floating 3D Geometric Architectural Shapes */}
+      <FloatingShape
+        src={SHAPES.cone}
+        size={85}
+        top="4%"
+        left="2%"
+        blur="1px"
+        opacity={0.3}
+        rotate={-18}
+        duration={7.5}
+      />
+      <FloatingShape
+        src={SHAPES.cubeAlt2}
+        size={95}
+        top="18%"
+        right="3%"
+        blur="2px"
+        opacity={0.25}
+        rotate={25}
+        duration={8.5}
+        delay={1}
+      />
+      <FloatingShape
+        src={SHAPES.diamond}
+        size={60}
+        bottom="12%"
+        left="3%"
+        blur="none"
+        opacity={0.35}
+        rotate={30}
+        duration={7}
+        delay={0.6}
+      />
+      <FloatingShape
+        src={SHAPES.cylinder}
+        size={70}
+        bottom="8%"
+        right="4%"
+        blur="none"
+        opacity={0.3}
+        rotate={-20}
+        duration={9}
+        delay={1.5}
+      />
+
       <div className="max-w-8xl mx-auto">
         
         {/* Header Section */}
@@ -203,9 +264,9 @@ export default function SubCategoryModelGrid() {
             <motion.h2 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-5xl font-light tracking-tighter text-slate-900"
+              className="text-5xl font-light tracking-tighter text-slate-900 uppercase"
             >
-              MODELING <span className="font-bold text-[#395e63]">ARCHIVE</span>
+              PHYSICAL SCALE <span className="font-bold text-[#395e63]">MODELING MAKING</span>
             </motion.h2>
             {loading && (
               <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -217,22 +278,24 @@ export default function SubCategoryModelGrid() {
 
           {/* Horizontal Scrollable Filter Bar */}
           <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-            {types.map((type) => (
+            {categoriesList.map((type) => (
               <button
                 key={type}
                 onClick={() => setActiveType(type)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer ${
-                  activeType === type 
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xl" 
-                  : "bg-white text-slate-400 border-slate-200 hover:border-slate-900 hover:text-slate-900"
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer whitespace-nowrap ${
+                  activeType.toLowerCase() === type.toLowerCase() 
+                  ? "bg-[#162e31] text-white border-[#162e31] shadow-xl" 
+                  : "bg-white text-slate-600 border-slate-200 hover:border-[#162e31] hover:text-[#162e31]"
                 }`}
               >
-                {typeIcons[type] || <Building2 className="w-3 h-3" />}
+                {(typeIcons as any)[type] || <Sparkles className="w-4 h-4" />}
                 {type}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Project Grid */}
 
         {/* Project Grid */}
         <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

@@ -7,11 +7,11 @@ export function NavigationOverlay() {
 
   const navLinks = [
     { name: "Home", path: "/" },
+    { name: "Architectural Design", path: "/interior" },
+    { name: "Modeling Making", path: "/model-making" },
     { name: "Blogs", path: "/allblogs" },
     { name: "Gallery", path: "/gallery" },
     { name: "Contact", path: "/contactus" },
-    { name: "Model", path: "/model-making" },
-    { name: "Interior", path: "/interior" },
   ];
 
   return (

@@ -9,8 +9,8 @@ const Category = () => {
   const categories = [
     {
       id: 1,
-      title: "Model",
-      description: "Explore our architectural models and 3D visualizations",
+      title: "Modeling Making",
+      description: "Explore our precision physical architectural models and scale visualizations",
       icon: Building2,
       image: interior,
 
@@ -21,8 +21,8 @@ const Category = () => {
     },
     {
       id: 2,
-      title: "Interior",
-      description: "Discover our interior design solutions and concepts",
+      title: "Architectural Design",
+      description: "Discover our bespoke architectural design solutions and curated spatial concepts",
       icon: Home,
       image: interior,
       link: "/interior",
@@ -72,7 +72,7 @@ const Category = () => {
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 font-primary">
             Our <span className="text-[#5b949b]">Expertise</span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto border-r-4 border-[#5b949b] pr-4 sm:pr-5 inline-block text-left">
             Discover our specialized services in architectural modeling and
             interior design
           </p>

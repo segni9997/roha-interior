@@ -57,7 +57,7 @@ export const AdminDashboard: React.FC = () => {
 
   const statCards = [
     {
-      title: 'Interior Archive',
+      title: 'Architectural Design',
       count: counts.interiors,
       unit: 'Projects',
       icon: Home,
@@ -65,7 +65,7 @@ export const AdminDashboard: React.FC = () => {
       accent: 'border-teal-800/60 text-teal-400',
     },
     {
-      title: 'Scale Modeling',
+      title: 'Modeling Making',
       count: counts.models,
       unit: 'Physical Models',
       icon: Layers,
@@ -117,14 +117,14 @@ export const AdminDashboard: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#2a737d] text-white text-xs font-bold uppercase tracking-wider shadow-lg transition-all"
             >
               <Plus size={14} />
-              <span>Add Interior</span>
+              <span>Add Architectural Project</span>
             </Link>
             <Link
               to="/admin/models"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase tracking-wider border border-white/10 transition-all"
             >
               <Plus size={14} />
-              <span>Add Model</span>
+              <span>Add Model Project</span>
             </Link>
           </div>
         </div>

@@ -36,9 +36,20 @@ export const AdminInterior: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [isAssetPickerOpen, setIsAssetPickerOpen] = useState(false);
 
-  // Video File Upload Ref & State
+  // Category Manager State
+  const [isCatManagerOpen, setIsCatManagerOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatDesc, setNewCatDesc] = useState('');
+  const [creatingCat, setCreatingCat] = useState(false);
+  const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
+  const [isQuickAddCat, setIsQuickAddCat] = useState(false);
+  const [quickCatName, setQuickCatName] = useState('');
+
+  // Video & Logo File Upload Refs & State
   const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Delete modal
   const [deleteTarget, setDeleteTarget] = useState<InteriorProjectItem | null>(null);
@@ -74,6 +85,55 @@ export const AdminInterior: React.FC = () => {
     loadData();
   }, []);
 
+  const handleCreateCategory = async (name: string, description?: string) => {
+    if (!name.trim()) {
+      addToast('error', 'Category Name Required', 'Please enter a name for the category.');
+      return;
+    }
+    try {
+      setCreatingCat(true);
+      const created = await api.createInteriorCategory({
+        name: name.trim(),
+        description: description?.trim() || '',
+      });
+      addToast('success', 'Category Created', `"${created.name}" added under Architectural Design.`);
+      const updatedCats = await api.getInteriorCategories();
+      setCategories(updatedCats);
+      setNewCatName('');
+      setNewCatDesc('');
+      setQuickCatName('');
+      setIsQuickAddCat(false);
+      if (editingProject) {
+        setEditingProject({
+          ...editingProject,
+          category: created.id,
+          category_id: created.id,
+          category_name: created.name,
+        });
+      }
+      return created;
+    } catch (err: any) {
+      addToast('error', 'Category Creation Failed', err.message);
+    } finally {
+      setCreatingCat(false);
+    }
+  };
+
+  const handleDeleteCategory = async (catId: number, catName: string) => {
+    try {
+      setDeletingCatId(catId);
+      await api.deleteInteriorCategory(catId);
+      addToast('success', 'Category Removed', `"${catName}" category has been deleted.`);
+      const updatedCats = await api.getInteriorCategories();
+      setCategories(updatedCats);
+      if (selectedCat === catName) setSelectedCat('All');
+    } catch (err: any) {
+      addToast('error', 'Failed to Delete Category', err.message);
+    } finally {
+      setDeletingCatId(null);
+    }
+  };
+
   const handleOpenCreate = () => {
     setEditingProject({
       title: '',
@@ -82,6 +142,7 @@ export const AdminInterior: React.FC = () => {
       year: new Date().getFullYear().toString(),
       description: '',
       cover_image: '/tr/279A1756.JPG',
+      company_logo: null,
       is_featured: true,
       order: projects.length + 1,
       specifications: {
@@ -92,7 +153,7 @@ export const AdminInterior: React.FC = () => {
         lighting_design: 'Indirect 2700K warm LED coves',
         duration: '12 months',
         budget: 'Confidential',
-        architect: 'ROHA Interior Studio',
+        architect: 'ROHA Architectural Studio',
         client: 'Private Residence',
         status: 'Completed',
       }
@@ -124,6 +185,22 @@ export const AdminInterior: React.FC = () => {
     } finally {
       setUploadingVideo(false);
       if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+    }
+  };
+
+  // Company Logo Upload Handler
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !editingProject) return;
+    try {
+      setUploadingLogo(true);
+      const res = await api.uploadFile(e.target.files[0]);
+      setEditingProject({ ...editingProject, company_logo: res.url });
+      addToast('success', 'Client Logo Uploaded', res.filename);
+    } catch (err: any) {
+      addToast('error', 'Logo Upload Failed', err.message);
+    } finally {
+      setUploadingLogo(false);
+      if (logoFileInputRef.current) logoFileInputRef.current.value = '';
     }
   };
 
@@ -210,20 +287,30 @@ export const AdminInterior: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Interior Architecture</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Architectural Design</h1>
             <span className="px-2.5 py-0.5 rounded-full bg-[#205b63]/40 border border-[#205b63] text-cyan-300 font-mono text-xs">
               {projects.length} Case Studies
             </span>
           </div>
-          <p className="text-xs text-slate-400 font-mono">Manage curated residential, commercial, hospitality, and penthouse interiors with real-time live building preview</p>
+          <p className="text-xs text-slate-400 font-mono">Manage architectural design projects, subcategories, client logos, and spatial specifications</p>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="px-5 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer transition-all shrink-0"
-        >
-          <Plus size={16} />
-          <span>New Case Study</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsCatManagerOpen(true)}
+            className="px-4 py-2.5 rounded-xl bg-[#142023] hover:bg-[#1a2b2f] border border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shrink-0"
+          >
+            <Sliders size={14} className="text-cyan-400" />
+            <span>Manage Categories</span>
+          </button>
+          <button
+            onClick={handleOpenCreate}
+            className="px-5 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer transition-all shrink-0"
+          >
+            <Plus size={16} />
+            <span>New Case Study</span>
+          </button>
+        </div>
       </div>
 
       {/* --- FILTER & SEARCH BAR --- */}
@@ -471,12 +558,19 @@ export const AdminInterior: React.FC = () => {
               })}
             </div>
 
-            {/* Hidden device video file input */}
+            {/* Hidden device video & logo file inputs */}
             <input
               ref={videoFileInputRef}
               type="file"
               accept="video/*"
               onChange={handleVideoFileUpload}
+              className="hidden"
+            />
+            <input
+              ref={logoFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
               className="hidden"
             />
 
@@ -509,27 +603,57 @@ export const AdminInterior: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">
-                            Typology / Category
-                          </label>
-                          <select
-                            value={editingProject.category || 1}
-                            onChange={(e) => {
-                              const catId = Number(e.target.value);
-                              const catObj = categories.find(c => c.id === catId);
-                              setEditingProject({
-                                ...editingProject,
-                                category: catId,
-                                category_id: catId,
-                                category_name: catObj?.name || 'Residential'
-                              });
-                            }}
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          >
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                          </select>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-mono uppercase text-slate-400 font-bold">
+                              Typology / Category
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setIsQuickAddCat(!isQuickAddCat)}
+                              className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer uppercase"
+                            >
+                              {isQuickAddCat ? 'Cancel' : '+ New'}
+                            </button>
+                          </div>
+
+                          {isQuickAddCat ? (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                value={quickCatName}
+                                onChange={(e) => setQuickCatName(e.target.value)}
+                                placeholder="Category name..."
+                                className="w-full px-3 py-2 bg-[#142023] border border-cyan-500/50 rounded-lg text-xs text-white focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleCreateCategory(quickCatName)}
+                                disabled={creatingCat || !quickCatName.trim()}
+                                className="px-3 py-2 bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold rounded-lg uppercase cursor-pointer disabled:opacity-50 shrink-0"
+                              >
+                                {creatingCat ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
+                              </button>
+                            </div>
+                          ) : (
+                            <select
+                              value={editingProject.category || 1}
+                              onChange={(e) => {
+                                const catId = Number(e.target.value);
+                                const catObj = categories.find(c => c.id === catId);
+                                setEditingProject({
+                                  ...editingProject,
+                                  category: catId,
+                                  category_id: catId,
+                                  category_name: catObj?.name || 'Residential'
+                                });
+                              }}
+                              className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
+                            >
+                              {categories.map((c) => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
 
                         <div className="sm:col-span-3">
@@ -630,6 +754,66 @@ export const AdminInterior: React.FC = () => {
                             : undefined
                         }
                       />
+
+                      {/* Company / Client Logo Section */}
+                      <div className="p-5 rounded-2xl bg-[#0b1214] border border-slate-800/90 shadow-xl space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
+                          <h4 className="text-sm font-black uppercase tracking-wider text-cyan-300 font-bold flex items-center gap-2">
+                            <ImageIcon size={16} />
+                            <span>Client / Enterprise Partner Logo</span>
+                          </h4>
+                          <span className="text-[10px] font-mono text-slate-400">Fallback: ROHA Studio Logo (/roha.png)</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                          <div className="lg:col-span-3 flex flex-col items-center justify-center p-4 rounded-xl bg-black/40 border border-slate-800">
+                            <img
+                              src={resolveImageUrl(editingProject.company_logo, '/roha.png')}
+                              alt="Logo Preview"
+                              className="w-20 h-20 object-contain drop-shadow-md mb-2"
+                            />
+                            <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold">
+                              {editingProject.company_logo ? 'Custom Partner Logo' : 'Default ROHA Logo'}
+                            </span>
+                          </div>
+
+                          <div className="lg:col-span-9 space-y-3">
+                            <label className="block text-xs font-mono text-slate-400 uppercase font-bold">
+                              Partner Logo URL or Upload PNG/SVG
+                            </label>
+                            <input
+                              type="text"
+                              value={editingProject.company_logo || ''}
+                              onChange={(e) => setEditingProject({ ...editingProject, company_logo: e.target.value })}
+                              placeholder="e.g. /uploads/partner-logo.png or https://..."
+                              className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#205b63] font-mono"
+                            />
+                            <div className="flex items-center gap-2.5">
+                              <button
+                                type="button"
+                                onClick={() => logoFileInputRef.current?.click()}
+                                disabled={uploadingLogo}
+                                className="px-4 py-2 rounded-xl bg-[#205b63] hover:bg-[#184e55] text-white text-xs font-bold uppercase flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-md"
+                              >
+                                {uploadingLogo ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />}
+                                <span>Upload Logo Image</span>
+                              </button>
+                              {editingProject.company_logo && (
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingProject({ ...editingProject, company_logo: null })}
+                                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border border-slate-800 hover:border-rose-900 text-xs font-mono uppercase transition-colors cursor-pointer"
+                                >
+                                  Clear (Use ROHA Logo)
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-tight">
+                              If provided, this brand mark appears on the project detail hero and technical plaque. If empty, the official ROHA monogram is shown.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Cinematic Video Section */}
                       <div className="p-5 rounded-2xl bg-[#0b1214] border border-slate-800/90 shadow-xl space-y-4">
@@ -1155,10 +1339,118 @@ export const AdminInterior: React.FC = () => {
         </div>
       )}
 
+      {/* Category Management Modal */}
+      {isCatManagerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCatManagerOpen(false)} />
+          <div className="relative w-full max-w-xl bg-[#0b1214] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[#205b63]/30 border border-[#205b63]/50 text-cyan-300">
+                  <Sliders size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white uppercase tracking-tight">
+                    Architectural Design Categories
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">Create, view, and organize filtering tags for projects</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCatManagerOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Create Category Form */}
+            <div className="p-4 rounded-2xl bg-[#142023]/70 border border-slate-800 space-y-3">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-300">
+                Add New Architectural Category
+              </h4>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Category Name (e.g. Master Planning, Urban Sanctuary)"
+                  className="w-full px-3.5 py-2.5 bg-[#0b1214] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#205b63]"
+                />
+                <input
+                  type="text"
+                  value={newCatDesc}
+                  onChange={(e) => setNewCatDesc(e.target.value)}
+                  placeholder="Optional brief description..."
+                  className="w-full px-3.5 py-2 bg-[#0b1214] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#205b63]"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleCreateCategory(newCatName, newCatDesc)}
+                disabled={creatingCat || !newCatName.trim()}
+                className="w-full py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors shadow-md"
+              >
+                {creatingCat ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                <span>Create Category</span>
+              </button>
+            </div>
+
+            {/* Existing Categories List */}
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+                Active Categories ({categories.length})
+              </h4>
+              {categories.map((cat) => {
+                const projectCount = projects.filter(p => p.category_name?.toLowerCase() === cat.name.toLowerCase()).length;
+                return (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#142023]/40 border border-slate-800/80 hover:border-slate-700 transition-colors"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">{cat.name}</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/40 text-cyan-300">
+                          {projectCount} projects
+                        </span>
+                      </div>
+                      {cat.description && (
+                        <p className="text-[11px] text-slate-400 mt-0.5">{cat.description}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                      disabled={deletingCatId === cat.id}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Delete Category"
+                    >
+                      {deletingCatId === cat.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsCatManagerOpen(false)}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={!!deleteTarget}
-        title="Delete Interior Case Study"
+        title="Delete Architectural Design Project"
         message={`Are you sure you want to permanently delete "${deleteTarget?.title}"? This will remove its specifications and gallery from the live portfolio.`}
         confirmLabel="Delete Project"
         isLoading={deleting}
@@ -1176,7 +1468,7 @@ export const AdminInterior: React.FC = () => {
             setEditingProject({ ...editingProject, cover_image: path });
           }
         }}
-        title="Select Interior Case Study Photography"
+        title="Select Architectural Design Photography"
       />
     </div>
   );

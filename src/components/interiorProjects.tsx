@@ -123,11 +123,13 @@ const typeIcons: Record<InteriorType, ReactNode> = {
   Penthouse: <Crown className="w-4 h-4" />
 };
 
+import { FloatingShape, SHAPES } from './FloatingShapes';
+
 export default function SubCategoryInteriorGrid() {
   const [activeType, setActiveType] = useState<string>('All');
   const [projects, setProjects] = useState<InteriorProjectItem[]>(fallbackProjects);
+  const [categoriesList, setCategoriesList] = useState<string[]>(['All', 'Residential', 'Commercial', 'Hospitality', 'Retail', 'Penthouse']);
   const [loading, setLoading] = useState<boolean>(true);
-  const types: InteriorType[] = ['All', 'Residential', 'Commercial', 'Hospitality', 'Retail', 'Penthouse'];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -135,9 +137,24 @@ export default function SubCategoryInteriorGrid() {
     async function fetchLiveInteriors() {
       try {
         setLoading(true);
-        const liveData = await api.getInteriorProjects();
-        if (isMounted && liveData && liveData.length > 0) {
-          setProjects(liveData);
+        const [liveData, liveCats] = await Promise.all([
+          api.getInteriorProjects().catch(() => []),
+          api.getInteriorCategories().catch(() => []),
+        ]);
+        if (isMounted) {
+          if (liveData && liveData.length > 0) {
+            setProjects(liveData);
+          }
+          const catNames = new Set<string>(['All']);
+          if (liveCats && liveCats.length > 0) {
+            liveCats.forEach(c => catNames.add(c.name));
+          }
+          if (liveData && liveData.length > 0) {
+            liveData.forEach(p => {
+              if (p.category_name) catNames.add(p.category_name);
+            });
+          }
+          setCategoriesList(Array.from(catNames));
         }
       } catch (err) {
         console.warn('Backend unavailable, using local project catalog:', err);
@@ -160,7 +177,52 @@ export default function SubCategoryInteriorGrid() {
   };
 
   return (
-    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative">
+    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative overflow-hidden">
+      {/* Floating 3D Geometric Architectural Shapes */}
+      <FloatingShape
+        src={SHAPES.diamond}
+        size={80}
+        top="4%"
+        left="2%"
+        blur="1px"
+        opacity={0.3}
+        rotate={18}
+        duration={7.5}
+      />
+      <FloatingShape
+        src={SHAPES.cone}
+        size={90}
+        top="18%"
+        right="3%"
+        blur="2px"
+        opacity={0.25}
+        rotate={-20}
+        duration={8.5}
+        delay={1}
+      />
+      <FloatingShape
+        src={SHAPES.cylinder}
+        size={65}
+        bottom="12%"
+        left="3%"
+        blur="none"
+        opacity={0.35}
+        rotate={25}
+        duration={7}
+        delay={0.6}
+      />
+      <FloatingShape
+        src={SHAPES.cubeAlt1}
+        size={70}
+        bottom="8%"
+        right="4%"
+        blur="none"
+        opacity={0.3}
+        rotate={-15}
+        duration={9}
+        delay={1.5}
+      />
+
       <div className="max-w-8xl mx-auto">
         {/* Header Section */}
         <div className="flex flex-col mb-12 space-y-6 w-full">
@@ -170,7 +232,7 @@ export default function SubCategoryInteriorGrid() {
               animate={{ opacity: 1, x: 0 }}
               className="text-5xl font-light tracking-tighter text-slate-900"
             >
-              INTERIOR <span className="font-bold text-[#205b63]">ARCHIVE</span>
+              INTERIOR & <span className="font-bold text-[#205b63]">ARCHITECTURAL DESIGN</span>
             </motion.h2>
             {loading && (
               <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -182,17 +244,17 @@ export default function SubCategoryInteriorGrid() {
 
           {/* Horizontal Scrollable Filter Bar */}
           <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-            {types.map((type) => (
+            {categoriesList.map((type) => (
               <button
                 key={type}
                 onClick={() => setActiveType(type)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer ${
-                  activeType === type 
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer whitespace-nowrap ${
+                  activeType.toLowerCase() === type.toLowerCase() 
                   ? "bg-[#162e31] text-white border-[#162e31] shadow-xl" 
-                  : "bg-white text-slate-500 border-slate-200 hover:border-[#162e31] hover:text-[#162e31]"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-[#162e31] hover:text-[#162e31]"
                 }`}
               >
-                {typeIcons[type]}
+                {(typeIcons as any)[type] || <Sparkles className="w-4 h-4" />}
                 {type}
               </button>
             ))}
