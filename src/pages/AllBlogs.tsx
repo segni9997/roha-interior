@@ -7,7 +7,7 @@ import { posts as fallbackPosts } from '../components/datas/posts';
 import { NavigationOverlay } from '../components/NavBar';
 import Footer from '../components/Footer';
 import { api, resolveImageUrl } from '../services/api';
-import { BookOpen, Filter, Search, Loader2 } from 'lucide-react';
+import { Filter, Search, Loader2 } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Editorial', 'Interior', 'Model Making', 'Architecture', 'Sustainability'];
 

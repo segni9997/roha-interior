@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   Search,
@@ -7,55 +7,51 @@ import {
   ExternalLink,
   X,
   Loader2,
-  Image as ImageIcon,
-  Film,
-  Maximize2,
-  Minimize2,
-  Sliders,
-  FileText,
-  Eye,
+  LayoutGrid,
+  List as ListIcon,
+  Tag,
+  Building2,
+  MapPin,
+  Calendar,
   Check
 } from 'lucide-react';
-import { api, resolveImageUrl, type InteriorProjectItem, type CategoryItem, type InteriorProjectDetailItem } from '../../services/api';
+import {
+  api,
+  resolveImageUrl,
+  type InteriorProjectItem,
+  type CategoryItem,
+  type InteriorProjectDetailItem
+} from '../../services/api';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ToastContainer, type ToastMessage } from '../components/Toast';
-import { ImagePickerModal } from '../components/ImagePickerModal';
 import { MediaGalleryManager } from '../components/MediaGalleryManager';
-
 
 export const AdminInterior: React.FC = () => {
   const [projects, setProjects] = useState<InteriorProjectItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('All');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Modals & Editing State
+  // Modal & Editing State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'media' | 'specs'>('details');
   const [editingProject, setEditingProject] = useState<Partial<InteriorProjectDetailItem> | null>(null);
   const [saving, setSaving] = useState(false);
-  const [isAssetPickerOpen, setIsAssetPickerOpen] = useState(false);
 
-  // Category Manager State
-  const [isCatManagerOpen, setIsCatManagerOpen] = useState(false);
+  // Category Manager Modal State
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
   const [creatingCat, setCreatingCat] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
-  const [isQuickAddCat, setIsQuickAddCat] = useState(false);
-  const [quickCatName, setQuickCatName] = useState('');
 
-  // Video & Logo File Upload Refs & State
-  const videoFileInputRef = useRef<HTMLInputElement>(null);
-  const logoFileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-
-  // Delete modal
+  // Delete Project Modal
   const [deleteTarget, setDeleteTarget] = useState<InteriorProjectItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Toast feedback
+  // Toast Feedback
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const addToast = (type: 'success' | 'error', title: string, message?: string) => {
     const id = Date.now().toString();
@@ -75,7 +71,7 @@ export const AdminInterior: React.FC = () => {
       setProjects(projs);
       setCategories(cats);
     } catch (err: any) {
-      addToast('error', 'Failed to load projects', err.message);
+      addToast('error', 'Failed to load architectural projects', err.message);
     } finally {
       setLoading(false);
     }
@@ -85,33 +81,20 @@ export const AdminInterior: React.FC = () => {
     loadData();
   }, []);
 
-  const handleCreateCategory = async (name: string, description?: string) => {
-    if (!name.trim()) {
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) {
       addToast('error', 'Category Name Required', 'Please enter a name for the category.');
       return;
     }
     try {
       setCreatingCat(true);
-      const created = await api.createInteriorCategory({
-        name: name.trim(),
-        description: description?.trim() || '',
-      });
-      addToast('success', 'Category Created', `"${created.name}" added under Architectural Design.`);
+      const created = await api.createInteriorCategory(newCatName.trim(), newCatDesc.trim());
+      addToast('success', 'Category Created', `"${created.name}" added successfully.`);
       const updatedCats = await api.getInteriorCategories();
       setCategories(updatedCats);
       setNewCatName('');
       setNewCatDesc('');
-      setQuickCatName('');
-      setIsQuickAddCat(false);
-      if (editingProject) {
-        setEditingProject({
-          ...editingProject,
-          category: created.id,
-          category_id: created.id,
-          category_name: created.name,
-        });
-      }
-      return created;
     } catch (err: any) {
       addToast('error', 'Category Creation Failed', err.message);
     } finally {
@@ -119,16 +102,14 @@ export const AdminInterior: React.FC = () => {
     }
   };
 
-  const handleDeleteCategory = async (catId: number, catName: string) => {
+  const handleDeleteCategory = async (id: number, name: string) => {
     try {
-      setDeletingCatId(catId);
-      await api.deleteInteriorCategory(catId);
-      addToast('success', 'Category Removed', `"${catName}" category has been deleted.`);
-      const updatedCats = await api.getInteriorCategories();
-      setCategories(updatedCats);
-      if (selectedCat === catName) setSelectedCat('All');
+      setDeletingCatId(id);
+      await api.deleteInteriorCategory(id);
+      addToast('success', 'Category Removed', `"${name}" removed from directory.`);
+      setCategories(prev => prev.filter(c => c.id !== id));
     } catch (err: any) {
-      addToast('error', 'Failed to Delete Category', err.message);
+      addToast('error', 'Failed to delete category', err.message);
     } finally {
       setDeletingCatId(null);
     }
@@ -137,1338 +118,832 @@ export const AdminInterior: React.FC = () => {
   const handleOpenCreate = () => {
     setEditingProject({
       title: '',
-      category: categories[0]?.id || 1,
-      location: 'Addis Ababa, Ethiopia',
-      year: new Date().getFullYear().toString(),
+      subtitle: '',
       description: '',
-      cover_image: '/tr/279A1756.JPG',
-      company_logo: null,
-      is_featured: true,
-      order: projects.length + 1,
+      category: categories[0]?.id || 1,
+      cover_image: '',
+      gallery_images: [],
+      location: 'Addis Ababa',
+      year: '2026',
+      order: (projects.length || 0) + 1,
+      is_featured: false,
       specifications: {
         area: '450 m²',
-        floors: 1,
-        style: 'Contemporary Minimalist',
-        material_palette: 'Smoked oak, raw travertine, brass joinery',
-        lighting_design: 'Indirect 2700K warm LED coves',
-        duration: '12 months',
-        budget: 'Confidential',
+        style: 'Modern Architectural',
+        material_palette: 'Basalt, Limewash, Smoked Oak',
+        lighting_design: 'Diffused Zenith Natural Flow',
         architect: 'ROHA Architectural Studio',
         client: 'Private Residence',
-        status: 'Completed',
       }
     });
+    setActiveTab('details');
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = async (project: InteriorProjectItem) => {
-    try {
-      const detail = await api.getInteriorProject(project.id);
-      setEditingProject(detail);
-      setIsModalOpen(true);
-    } catch {
-      setEditingProject(project);
-      setIsModalOpen(true);
-    }
-  };
-
-  // Video Upload Handler
-  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0] || !editingProject) return;
-    try {
-      setUploadingVideo(true);
-      const res = await api.uploadFile(e.target.files[0]);
-      setEditingProject({ ...editingProject, video_url: res.url });
-      addToast('success', 'Video File Uploaded', res.filename);
-    } catch (err: any) {
-      addToast('error', 'Video Upload Failed', err.message);
-    } finally {
-      setUploadingVideo(false);
-      if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-    }
-  };
-
-  // Company Logo Upload Handler
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0] || !editingProject) return;
-    try {
-      setUploadingLogo(true);
-      const res = await api.uploadFile(e.target.files[0]);
-      setEditingProject({ ...editingProject, company_logo: res.url });
-      addToast('success', 'Client Logo Uploaded', res.filename);
-    } catch (err: any) {
-      addToast('error', 'Logo Upload Failed', err.message);
-    } finally {
-      setUploadingLogo(false);
-      if (logoFileInputRef.current) logoFileInputRef.current.value = '';
-    }
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProject?.title) return;
-
+  const handleOpenEdit = async (proj: InteriorProjectItem) => {
     try {
       setSaving(true);
-
-      const payload: any = { ...editingProject };
-      if (payload.category && typeof payload.category === 'object' && payload.category.id) {
-        payload.category_id = payload.category.id;
-      } else if (payload.category && typeof payload.category === 'number') {
-        payload.category_id = payload.category;
-      }
-
-      if (payload.specifications && payload.specifications.floors !== undefined) {
-        const parsedFloors = parseInt(String(payload.specifications.floors).replace(/\D/g, ''), 10);
-        payload.specifications.floors = isNaN(parsedFloors) ? 1 : parsedFloors;
-      }
-
-      if (editingProject.id) {
-        await api.updateInteriorProject(editingProject.id, payload);
-        addToast('success', 'Project Updated', `"${editingProject.title}" has been saved.`);
-      } else {
-        const created = await api.createInteriorProject(payload);
-        // Persist any gallery images configured during creation
-        if (editingProject.gallery_images && editingProject.gallery_images.length > 0) {
-          for (const g of editingProject.gallery_images) {
-            await api.addInteriorGalleryImage(created.id, {
-              image: g.image,
-              caption: g.caption,
-              subtitle: g.subtitle,
-              order: g.order || 0,
-            }).catch(() => {});
-          }
+      const full = await api.getInteriorProject(proj.id);
+      setEditingProject({
+        ...full,
+        gallery_images: full.gallery_images || [],
+        specifications: full.specifications || {
+          area: '450 m²',
+          style: 'Modern Architectural',
+          material_palette: 'Basalt, Limewash, Smoked Oak',
+          lighting_design: 'Diffused Zenith Natural Flow',
+          architect: 'ROHA Architectural Studio',
+          client: 'Private Residence',
         }
-        addToast('success', 'Project Created', `"${editingProject.title}" added to portfolio.`);
-      }
-      setIsModalOpen(false);
-      loadData();
+      });
+      setActiveTab('details');
+      setIsModalOpen(true);
     } catch (err: any) {
-      addToast('error', 'Save Failed', err.message);
+      addToast('error', 'Failed to fetch project details', err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleSaveProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject) return;
+
+    if (!editingProject.title?.trim()) {
+      addToast('error', 'Validation Error', 'Project title is mandatory.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload: Partial<InteriorProjectDetailItem> = {
+        ...editingProject,
+        category: editingProject.category ? Number(editingProject.category) : undefined,
+      };
+
+      if (editingProject.id) {
+        await api.updateInteriorProject(editingProject.id, payload);
+        addToast('success', 'Project Updated', `"${editingProject.title}" synchronized with database.`);
+      } else {
+        await api.createInteriorProject(payload);
+        addToast('success', 'Project Created', `"${editingProject.title}" published to architectural catalogue.`);
+      }
+
+      setIsModalOpen(false);
+      setEditingProject(null);
+      await loadData();
+    } catch (err: any) {
+      addToast('error', 'Save Failed', err.message || 'An unexpected error occurred while saving.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteConfirmed = async () => {
     if (!deleteTarget) return;
     try {
       setDeleting(true);
       await api.deleteInteriorProject(deleteTarget.id);
-      addToast('success', 'Project Deleted', `"${deleteTarget.title}" was removed.`);
+      addToast('success', 'Project Removed', `"${deleteTarget.title}" deleted.`);
+      setProjects(prev => prev.filter(p => p.id !== deleteTarget.id));
       setDeleteTarget(null);
-      loadData();
     } catch (err: any) {
-      addToast('error', 'Deletion Failed', err.message);
+      addToast('error', 'Delete Failed', err.message);
     } finally {
       setDeleting(false);
     }
   };
 
-  const filteredProjects = projects.filter(p => {
-    const matchesCat = selectedCat === 'All' || p.category_name?.toLowerCase() === selectedCat.toLowerCase();
-    const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.location?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  // Filter & Search Logic
+  const filteredProjects = useMemo(() => {
+    return projects.filter((item) => {
+      const matchesSearch =
+        search === '' ||
+        item.title.toLowerCase().includes(search.toLowerCase()) ||
+        (item.location && item.location.toLowerCase().includes(search.toLowerCase())) ||
+        (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
 
-  // Live Preview & Modal State
-  const [previewLayout, setPreviewLayout] = useState<'tabbed' | 'split'>('tabbed');
-  const [modalTab, setModalTab] = useState<'concept' | 'media' | 'gallery' | 'specs' | 'simulation'>('concept');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'card' | 'detail'>('card');
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+      const matchesCat =
+        selectedCat === 'All' || item.category_name === selectedCat;
+
+      return matchesSearch && matchesCat;
+    });
+  }, [projects, search, selectedCat]);
 
   return (
-    <div className="space-y-8">
-      <ToastContainer toasts={toasts} onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
+    <div className="space-y-8 animate-in fade-in duration-300">
+      <ToastContainer toasts={toasts} onClose={(id) => setToasts(t => t.filter(x => x.id !== id))} />
 
-      {/* --- PAGE HEADER --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      {/* -------------------- HERO SECTION -------------------- */}
+      <section className="flex flex-col justify-between gap-4 md:flex-row md:items-end border-b border-white/10 pb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">Architectural Design</h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#205b63]/40 border border-[#205b63] text-cyan-300 font-mono text-xs">
-              {projects.length} Case Studies
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 font-mono">Manage architectural design projects, subcategories, client logos, and spatial specifications</p>
+          <p className="eyebrow text-cyan-400">Portfolio & Case Studies</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-white mt-1">
+            Interior Architecture & Built Work
+          </h1>
+          <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            Manage your spatial catalogue, high-resolution photography archives, floor plans, and technical architectural specifications.
+          </p>
         </div>
-        <div className="flex items-center gap-2.5">
+
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
-            type="button"
-            onClick={() => setIsCatManagerOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-[#142023] hover:bg-[#1a2b2f] border border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-all shrink-0"
+            onClick={() => setIsCatModalOpen(true)}
+            className="secondary-button text-xs"
           >
-            <Sliders size={14} className="text-cyan-400" />
-            <span>Manage Categories</span>
+            <Tag size={14} />
+            <span>Categories ({categories.length})</span>
           </button>
+
           <button
             onClick={handleOpenCreate}
-            className="px-5 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer transition-all shrink-0"
+            className="primary-button text-xs shadow-sm"
           >
-            <Plus size={16} />
-            <span>New Case Study</span>
+            <Plus size={15} />
+            <span>New project</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* --- FILTER & SEARCH BAR --- */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Typology Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
-          {['All', ...categories.map(c => c.name)].map((catName) => (
-            <button
-              key={catName}
-              onClick={() => setSelectedCat(catName)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer whitespace-nowrap ${
-                selectedCat.toLowerCase() === catName.toLowerCase()
-                  ? 'bg-[#205b63] text-white font-bold shadow-md shadow-[#205b63]/20'
-                  : 'bg-[#0f1719] text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
-              }`}
+      {/* -------------------- SEARCH & FILTER TOOLBAR -------------------- */}
+      <section className="panel p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          {/* Search Trigger Input */}
+          <div className="relative flex-1 max-w-md">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title, location, or description..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Category Chips & View Toggles */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
+              {['All', ...categories.map(c => c.name)].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCat(cat)}
+                  className={`filter-chip text-xs ${
+                    selectedCat === cat ? 'filter-chip-active' : ''
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-black/40 border border-white/10">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'grid' ? 'bg-cyan-900/70 text-cyan-200 shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
+                title="Grid view"
+              >
+                <LayoutGrid size={15} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                  viewMode === 'list' ? 'bg-cyan-900/70 text-cyan-200 shadow-xs' : 'text-slate-400 hover:text-white'
+                }`}
+                title="List table view"
+              >
+                <ListIcon size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* -------------------- PROJECTS DISPLAY (GRID / LIST) -------------------- */}
+      {loading ? (
+        <div className="py-24 flex flex-col items-center justify-center text-slate-400 text-xs gap-3">
+          <Loader2 size={24} className="animate-spin text-cyan-400" />
+          <span className="font-mono uppercase tracking-wider">Loading project library...</span>
+        </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="panel p-16 text-center text-sm text-slate-400">
+          No matching architectural projects found. Try adjusting your search query or category filter.
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* GRID VIEW */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((project) => (
+            <article
+              key={project.id}
+              className="panel overflow-hidden group hover:shadow-xl hover:border-cyan-400/40 transition-all flex flex-col justify-between"
             >
-              {catName}
-            </button>
+              <div>
+                {/* Cover Image with Aspect Ratio */}
+                <div
+                  className="aspect-[16/10] w-full bg-black/50 bg-cover bg-center relative overflow-hidden"
+                  style={{
+                    backgroundImage: `url(${resolveImageUrl(project.cover_image)})`,
+                  }}
+                >
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-cyan-950/90 text-cyan-300 font-semibold backdrop-blur-xs border border-cyan-500/30 shadow-xs">
+                      {project.category_name || 'Interior'}
+                    </span>
+                    {project.is_featured && (
+                      <span className="status-pill featured shadow-xs">
+                        Featured
+                      </span>
+                    )}
+                  </div>
+
+                  <a
+                    href={`/project-detail?id=${project.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="icon-button absolute top-3 right-3 bg-black/60 text-white hover:bg-cyan-600 shadow-xs border-white/20"
+                    title="View public project page"
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+
+                {/* Details */}
+                <div className="p-5">
+                  <h3 className="font-display text-xl font-semibold text-white group-hover:text-cyan-300 transition-colors truncate">
+                    {project.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <MapPin size={12} className="text-cyan-400" />
+                      <span>{project.location || 'Addis Ababa'}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} className="text-cyan-400" />
+                      <span>{project.year || '2026'}</span>
+                    </span>
+                  </p>
+                  <p className="text-xs text-slate-300 line-clamp-2 mt-2.5 leading-relaxed">
+                    {project.description || 'No detailed narrative provided yet.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 bg-black/30 border-t border-white/10 flex items-center justify-between text-xs">
+                <span className="text-[11px] font-mono text-slate-400">
+                  ID: #{project.id}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenEdit(project)}
+                    className="secondary-button text-xs py-1.5 px-3"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(project)}
+                    className="icon-button text-rose-400 hover:bg-rose-950/60 border-rose-800/40"
+                    title="Delete project"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            </article>
           ))}
         </div>
-
-        {/* Search */}
-        <div className="relative w-full md:w-72">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search projects or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-[#0f1719] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#205b63]"
-          />
-        </div>
-      </div>
-
-      {/* --- TABLE / GRID --- */}
-      <div className="bg-[#0f1719] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        {loading ? (
-          <div className="p-16 flex flex-col items-center justify-center text-slate-500 gap-3">
-            <Loader2 size={32} className="animate-spin text-cyan-400" />
-            <span className="text-xs font-mono uppercase tracking-wider">Loading Portfolio Database...</span>
-          </div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="p-16 text-center text-slate-500">
-            <p className="text-sm font-mono mb-2">No interior projects found.</p>
-            <button onClick={handleOpenCreate} className="text-xs text-cyan-400 underline cursor-pointer">
-              Create your first case study
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 bg-[#142023]/60 text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-semibold">Project</th>
-                  <th className="py-3.5 px-4 font-semibold">Typology</th>
-                  <th className="py-3.5 px-4 font-semibold">Location</th>
-                  <th className="py-3.5 px-4 font-semibold">Year</th>
-                  <th className="py-3.5 px-4 font-semibold text-center">Featured</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {filteredProjects.map((proj) => (
-                  <tr key={proj.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={resolveImageUrl(proj.cover_image, '/tr/279A1756.JPG')}
-                          alt={proj.title}
-                          className="w-12 h-12 rounded-lg object-cover border border-slate-700 shrink-0 group-hover:scale-105 transition-transform"
-                        />
-                        <div>
-                          <div className="font-bold text-white group-hover:text-cyan-300 transition-colors">
-                            {proj.title}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono truncate max-w-xs">
-                            {proj.description ? proj.description.slice(0, 60) + '...' : 'No narrative yet'}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-md bg-[#172e31] text-cyan-300 text-[10px] font-mono uppercase">
-                        {proj.category_name || 'Interior'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
-                      {proj.location || 'Addis Ababa'}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
-                      {proj.year || '2024'}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-block w-2 h-2 rounded-full ${proj.is_featured ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : 'bg-slate-600'}`} />
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleOpenEdit(proj)}
-                          className="p-2 text-slate-400 hover:text-cyan-300 hover:bg-[#205b63]/20 rounded-lg transition-colors cursor-pointer"
-                          title="Edit with Live Building Preview"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(proj)}
-                          className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Project"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                        <a
-                          href={`/project-detail?id=${proj.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                          title="View on Live Website"
-                        >
-                          <ExternalLink size={15} />
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* --- CREATE / EDIT MODAL DRAWER WITH LIVE BUILDING PREVIEW --- */}
-      {isModalOpen && editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-          <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
-
-          <div className={`relative w-full ${
-            isFullscreen
-              ? 'fixed inset-0 w-screen h-screen rounded-none z-50 max-h-screen'
-              : 'w-[98vw] max-w-[1720px] h-[94vh] max-h-[96vh] rounded-3xl z-10'
-          } bg-[#0b1214] border border-slate-800 shadow-2xl my-auto flex flex-col text-white transition-all duration-300 overflow-hidden`}>
-            
-            {/* Modal Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-slate-800 bg-[#0f181b] shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                <div>
+      ) : (
+        /* LIST TABLE VIEW */
+        <div className="panel overflow-hidden divide-y divide-white/10">
+          {filteredProjects.map((project) => (
+            <div
+              key={project.id}
+              className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div
+                  className="w-20 h-14 rounded-lg bg-black/50 bg-cover bg-center shrink-0 border border-white/10"
+                  style={{
+                    backgroundImage: `url(${resolveImageUrl(project.cover_image)})`,
+                  }}
+                />
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold tracking-tight text-white uppercase">
-                      {editingProject.id ? 'Edit Interior Architecture' : 'Create Interior Project'}
+                    <h3 className="font-display text-lg font-semibold text-white truncate">
+                      {project.title}
                     </h3>
-                    {editingProject.id && (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#142023] text-cyan-300 border border-slate-800">
-                        #{editingProject.id}
-                      </span>
-                    )}
-                    <span className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
-                      Live Preview Active
+                    <span className="status-pill published">
+                      Published
                     </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-mono">Full-screen wide workspace with tabbed curation and real-time website rendering</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-center">
-                {/* Layout View Mode Switcher */}
-                <div className="flex items-center p-1 bg-[#142023] rounded-xl border border-slate-800 text-xs font-mono">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewLayout('tabbed')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      previewLayout === 'tabbed' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Tabs Mode
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewLayout('split')}
-                    className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                      previewLayout === 'split' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Split 50/50
-                  </button>
-                </div>
-
-                {/* Fullscreen Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="p-2 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-[#142023] transition-colors cursor-pointer"
-                  title={isFullscreen ? "Exit Fullscreen" : "Full Screen Mode"}
-                >
-                  {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 rounded-xl border border-slate-800 text-slate-400 hover:text-white hover:bg-rose-950/40 hover:border-rose-900 transition-colors cursor-pointer"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Tabs Navigation Bar */}
-            <div className="flex items-center gap-1 sm:gap-2 px-6 py-2.5 border-b border-slate-800/80 bg-[#0c1417] overflow-x-auto scrollbar-none shrink-0 text-xs font-mono">
-              {[
-                { key: 'concept', label: '1. Narrative & Concept', icon: FileText },
-                { key: 'media', label: '2. Hero Visual & Video', icon: Film },
-                {
-                  key: 'gallery',
-                  label: '3. Parallax Gallery',
-                  icon: ImageIcon,
-                  badge: editingProject.gallery_images?.length || 0
-                },
-                { key: 'specs', label: '4. Architectural Specs', icon: Sliders },
-                ...(previewLayout === 'tabbed' ? [{ key: 'simulation', label: '5. Live Simulation', icon: Eye }] : []),
-              ].map((t: any) => {
-                const IconComponent = t.icon;
-                const isActive = modalTab === t.key;
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setModalTab(t.key)}
-                    className={`px-3.5 py-1.5 rounded-xl flex items-center gap-2 uppercase tracking-wider font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#205b63] text-white shadow-md shadow-teal-950/50 border border-teal-500/40'
-                        : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-                    }`}
-                  >
-                    <IconComponent size={13} />
-                    <span>{t.label}</span>
-                    {t.badge !== undefined && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                        isActive ? 'bg-black/40 text-cyan-200' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {t.badge}
+                    {project.is_featured && (
+                      <span className="status-pill featured">
+                        Featured
                       </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Hidden device video & logo file inputs */}
-            <input
-              ref={videoFileInputRef}
-              type="file"
-              accept="video/*"
-              onChange={handleVideoFileUpload}
-              className="hidden"
-            />
-            <input
-              ref={logoFileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              className="hidden"
-            />
-
-            {/* Modal Body */}
-            <div className={`flex-1 overflow-y-auto ${
-              previewLayout === 'split' ? 'grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-800' : ''
-            }`}>
-              {/* Form Pane (Full width in tabbed mode, left 7 cols in split mode) */}
-              <div className={`${
-                previewLayout === 'split' ? 'lg:col-span-7 p-6 space-y-6 max-h-[calc(94vh-130px)]' : 'p-6 sm:p-8 space-y-6 max-h-[calc(94vh-130px)]'
-              } overflow-y-auto`}>
-                <form id="interior-form" onSubmit={handleSave} className="space-y-6">
-                  
-                  {/* TAB 1: NARRATIVE & CONCEPT */}
-                  {modalTab === 'concept' && (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">
-                            Project Title <span className="text-rose-400">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={editingProject.title || ''}
-                            onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
-                            placeholder="e.g. Minimalist Modern Residence"
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <label className="block text-xs font-mono uppercase text-slate-400 font-bold">
-                              Typology / Category
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setIsQuickAddCat(!isQuickAddCat)}
-                              className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer uppercase"
-                            >
-                              {isQuickAddCat ? 'Cancel' : '+ New'}
-                            </button>
-                          </div>
-
-                          {isQuickAddCat ? (
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="text"
-                                value={quickCatName}
-                                onChange={(e) => setQuickCatName(e.target.value)}
-                                placeholder="Category name..."
-                                className="w-full px-3 py-2 bg-[#142023] border border-cyan-500/50 rounded-lg text-xs text-white focus:outline-none"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleCreateCategory(quickCatName)}
-                                disabled={creatingCat || !quickCatName.trim()}
-                                className="px-3 py-2 bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold rounded-lg uppercase cursor-pointer disabled:opacity-50 shrink-0"
-                              >
-                                {creatingCat ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
-                              </button>
-                            </div>
-                          ) : (
-                            <select
-                              value={editingProject.category || 1}
-                              onChange={(e) => {
-                                const catId = Number(e.target.value);
-                                const catObj = categories.find(c => c.id === catId);
-                                setEditingProject({
-                                  ...editingProject,
-                                  category: catId,
-                                  category_id: catId,
-                                  category_name: catObj?.name || 'Residential'
-                                });
-                              }}
-                              className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                            >
-                              {categories.map((c) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-
-                        <div className="sm:col-span-3">
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">
-                            Editorial Subtitle / Monograph Byline
-                          </label>
-                          <input
-                            type="text"
-                            value={editingProject.subtitle || ''}
-                            onChange={(e) => setEditingProject({ ...editingProject, subtitle: e.target.value })}
-                            placeholder="e.g. Transforming the Future of Contemporary Living"
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">Location</label>
-                          <input
-                            type="text"
-                            value={editingProject.location || ''}
-                            onChange={(e) => setEditingProject({ ...editingProject, location: e.target.value })}
-                            placeholder="Addis Ababa, Ethiopia"
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">Completion Year</label>
-                          <input
-                            type="text"
-                            value={editingProject.year || ''}
-                            onChange={(e) => setEditingProject({ ...editingProject, year: e.target.value })}
-                            placeholder="2024"
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">Display Order</label>
-                          <input
-                            type="number"
-                            value={editingProject.order ?? 0}
-                            onChange={(e) => setEditingProject({ ...editingProject, order: Number(e.target.value) })}
-                            className="w-full px-4 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-mono uppercase text-slate-400 mb-1.5 font-bold">
-                          Architectural Philosophy & Spatial Narrative
-                        </label>
-                        <textarea
-                          rows={5}
-                          value={editingProject.description || ''}
-                          onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                          placeholder="Articulate the project's spatial concept, materiality, ergonomic circulation, and natural light study..."
-                          className="w-full px-4 py-3 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white leading-relaxed focus:outline-none focus:border-[#205b63]"
-                        />
-                      </div>
-
-                      <div className="p-4 rounded-2xl bg-[#142023]/60 border border-slate-800 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-bold text-white uppercase tracking-wider">Feature on Homepage & Global Showcases</p>
-                          <p className="text-xs text-slate-400 font-mono">Highlighted in the curated architectural gallery and hero carousels.</p>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={editingProject.is_featured ?? true}
-                          onChange={(e) => setEditingProject({ ...editingProject, is_featured: e.target.checked })}
-                          className="w-5 h-5 rounded accent-[#205b63] cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 2 & 3: MEDIA, MAIN COVER & GALLERY */}
-                  {(modalTab === 'media' || modalTab === 'gallery') && (
-                    <div className="space-y-6">
-                      <MediaGalleryManager
-                        mainImage={editingProject.cover_image || null}
-                        onMainImageChange={(url) => setEditingProject({ ...editingProject, cover_image: url })}
-                        galleryImages={editingProject.gallery_images || []}
-                        onGalleryImagesChange={(imgs) => setEditingProject({ ...editingProject, gallery_images: imgs })}
-                        contentTypeLabel="Interior Project"
-                        onAddServerImage={
-                          editingProject.id
-                            ? async (data) => {
-                                return api.addInteriorGalleryImage(editingProject.id!, data);
-                              }
-                            : undefined
-                        }
-                        onDeleteServerImage={
-                          editingProject.id
-                            ? async (imgId) => {
-                                await api.deleteInteriorGalleryImage(imgId);
-                              }
-                            : undefined
-                        }
-                      />
-
-                      {/* Company / Client Logo Section */}
-                      <div className="p-5 rounded-2xl bg-[#0b1214] border border-slate-800/90 shadow-xl space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
-                          <h4 className="text-sm font-black uppercase tracking-wider text-cyan-300 font-bold flex items-center gap-2">
-                            <ImageIcon size={16} />
-                            <span>Client / Enterprise Partner Logo</span>
-                          </h4>
-                          <span className="text-[10px] font-mono text-slate-400">Fallback: ROHA Studio Logo (/roha.png)</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-                          <div className="lg:col-span-3 flex flex-col items-center justify-center p-4 rounded-xl bg-black/40 border border-slate-800">
-                            <img
-                              src={resolveImageUrl(editingProject.company_logo, '/roha.png')}
-                              alt="Logo Preview"
-                              className="w-20 h-20 object-contain drop-shadow-md mb-2"
-                            />
-                            <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold">
-                              {editingProject.company_logo ? 'Custom Partner Logo' : 'Default ROHA Logo'}
-                            </span>
-                          </div>
-
-                          <div className="lg:col-span-9 space-y-3">
-                            <label className="block text-xs font-mono text-slate-400 uppercase font-bold">
-                              Partner Logo URL or Upload PNG/SVG
-                            </label>
-                            <input
-                              type="text"
-                              value={editingProject.company_logo || ''}
-                              onChange={(e) => setEditingProject({ ...editingProject, company_logo: e.target.value })}
-                              placeholder="e.g. /uploads/partner-logo.png or https://..."
-                              className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#205b63] font-mono"
-                            />
-                            <div className="flex items-center gap-2.5">
-                              <button
-                                type="button"
-                                onClick={() => logoFileInputRef.current?.click()}
-                                disabled={uploadingLogo}
-                                className="px-4 py-2 rounded-xl bg-[#205b63] hover:bg-[#184e55] text-white text-xs font-bold uppercase flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-md"
-                              >
-                                {uploadingLogo ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />}
-                                <span>Upload Logo Image</span>
-                              </button>
-                              {editingProject.company_logo && (
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingProject({ ...editingProject, company_logo: null })}
-                                  className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 border border-slate-800 hover:border-rose-900 text-xs font-mono uppercase transition-colors cursor-pointer"
-                                >
-                                  Clear (Use ROHA Logo)
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-tight">
-                              If provided, this brand mark appears on the project detail hero and technical plaque. If empty, the official ROHA monogram is shown.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Cinematic Video Section */}
-                      <div className="p-5 rounded-2xl bg-[#0b1214] border border-slate-800/90 shadow-xl space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-800/60">
-                          <h4 className="text-sm font-black uppercase tracking-wider text-[#d4af37] font-bold flex items-center gap-2">
-                            <Film size={16} />
-                            <span>Cinematic Process Video</span>
-                          </h4>
-                          <span className="text-[10px] font-mono text-slate-400">Embed in /project-detail</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                          <div className="lg:col-span-6 relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-800">
-                            {editingProject.video_url ? (
-                              editingProject.video_url.match(/\.(mp4|webm|mov|mkv)($|\?)/i) || editingProject.video_url.startsWith('/uploads/') ? (
-                                <video controls playsInline className="w-full h-full object-cover" src={resolveImageUrl(editingProject.video_url)} />
-                              ) : (
-                                <iframe
-                                  className="w-full h-full"
-                                  src={editingProject.video_url.includes('watch?v=') ? editingProject.video_url.replace('watch?v=', 'embed/') : editingProject.video_url}
-                                  title="Project Video"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                />
-                              )
-                            ) : (
-                              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 text-xs font-mono gap-2 p-4 text-center">
-                                <Film size={28} className="text-slate-700" />
-                                <span>No video attached. Add a YouTube embed or upload an MP4/WebM file.</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="lg:col-span-6 space-y-3 flex flex-col justify-center">
-                            <label className="block text-xs font-mono text-slate-400 uppercase font-bold">Video URL or Uploaded Video File</label>
-                            <input
-                              type="text"
-                              value={editingProject.video_url || ''}
-                              onChange={(e) => setEditingProject({ ...editingProject, video_url: e.target.value })}
-                              placeholder="https://www.youtube.com/embed/... or /uploads/...mp4"
-                              className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-[#205b63] font-mono"
-                            />
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => videoFileInputRef.current?.click()}
-                                disabled={uploadingVideo}
-                                className="px-4 py-2 rounded-xl bg-[#205b63] hover:bg-[#184e55] text-white text-xs font-bold uppercase flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors shadow-md"
-                              >
-                                {uploadingVideo ? <Loader2 size={13} className="animate-spin" /> : <Film size={13} />}
-                                <span>Upload Video File</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* TAB 4: TECHNICAL SPECIFICATIONS */}
-                  {modalTab === 'specs' && (
-                    <div className="p-6 rounded-2xl bg-[#10191b] border border-slate-800 space-y-6">
-                      <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
-                        <div>
-                          <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#d4af37]">
-                            Technical Specifications & Materiality
-                          </h4>
-                          <p className="text-xs text-slate-400 font-mono mt-0.5">
-                            These architectural parameters are dynamically rendered on the public /project-detail plaque and specifications drawer.
-                          </p>
-                        </div>
-                        <span className="text-xs font-mono text-cyan-400">10 Parameters</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Floor Area</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.area || '450 m²'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, area: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Levels / Floors</label>
-                          <input
-                            type="number"
-                            value={editingProject.specifications?.floors || 1}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, floors: Number(e.target.value) }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Architectural Style</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.style || 'Contemporary Minimalist'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, style: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Material Palette</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.material_palette || 'Smoked oak, raw travertine, brass joinery'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, material_palette: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Lighting Design</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.lighting_design || 'Indirect 2700K warm LED coves'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, lighting_design: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Project Duration</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.duration || '12 months'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, duration: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Project Budget</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.budget || 'Confidential'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, budget: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Client / Typology</label>
-                          <input
-                            type="text"
-                            value={editingProject.specifications?.client || 'Private Residence'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, client: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-mono text-slate-400 mb-1 uppercase font-bold">Execution Status</label>
-                          <select
-                            value={editingProject.specifications?.status || 'Completed'}
-                            onChange={(e) => setEditingProject({
-                              ...editingProject,
-                              specifications: { ...editingProject.specifications!, status: e.target.value }
-                            })}
-                            className="w-full px-3.5 py-2.5 bg-[#142023] border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-[#205b63]"
-                          >
-                            <option value="Concept">Concept</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TAB 5: SIMULATION (Inside tabbed mode) */}
-                  {previewLayout === 'tabbed' && modalTab === 'simulation' && (
-                    <div className="space-y-6">
-                      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[#10191b] border border-slate-800">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-xs font-mono text-slate-300">Live Website Architectural Simulation</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-xs font-mono">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTab('card')}
-                              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                                previewTab === 'card' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              Card View
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTab('detail')}
-                              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                                previewTab === 'detail' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              Project Detail Plaque
-                            </button>
-                          </div>
-                          <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-xs font-mono">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewDevice('desktop')}
-                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                                previewDevice === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                              }`}
-                            >
-                              Desktop
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewDevice('mobile')}
-                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                                previewDevice === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                              }`}
-                            >
-                              Mobile
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={`mx-auto transition-all duration-300 ${
-                        previewDevice === 'mobile' ? 'max-w-[380px]' : 'max-w-4xl'
-                      }`}>
-                        {previewTab === 'card' ? (
-                          <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-2xl">
-                            <div className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 flex flex-col justify-between">
-                              <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                                <img
-                                  src={resolveImageUrl(editingProject.cover_image, '/tr/279A1756.JPG')}
-                                  alt={editingProject.title || 'Preview Project'}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                                <div className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-slate-800 group-hover:bg-[#205b63] group-hover:text-white transition-colors duration-300">
-                                  <ExternalLink className="w-4 h-4" />
-                                </div>
-                                <div className="absolute bottom-4 left-4 px-3.5 py-1.5 bg-black/70 backdrop-blur-md text-white text-xs font-mono rounded-full uppercase tracking-wider">
-                                  {categories.find(c => c.id === editingProject.category)?.name || 'Residential'}
-                                </div>
-                              </div>
-                              <div className="p-6 space-y-3 bg-white">
-                                <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                                  <span>{editingProject.location || 'Addis Ababa, Ethiopia'}</span>
-                                  <span>{editingProject.year || '2024'}</span>
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 group-hover:text-[#205b63] transition-colors leading-snug">
-                                  {editingProject.title || 'Untitled Architectural Case Study'}
-                                </h3>
-                                <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
-                                  {editingProject.description || 'Describe spatial curation, materiality, lighting, and ergonomic design...'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="rounded-3xl overflow-hidden border border-slate-800 bg-gradient-to-b from-[#172a2b] to-[#0a1214] p-8 shadow-2xl text-white space-y-6">
-                            <div className="text-center space-y-1">
-                              <span className="text-xs font-mono tracking-[0.25em] uppercase text-cyan-300 font-bold">
-                                {editingProject.subtitle || 'TRANSFORMING THE FUTURE OF CONTEMPORARY LIVING'}
-                              </span>
-                              <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
-                                {editingProject.title || 'UNTITLED RESIDENCE'}
-                              </h2>
-                            </div>
-                            <div className="relative aspect-video rounded-2xl overflow-hidden bg-black/40 border border-white/10">
-                              <img
-                                src={resolveImageUrl(editingProject.cover_image, '/tr/279A1756.JPG')}
-                                alt="Project"
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                                <div className="flex gap-2">
-                                  <span className="px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-xs font-mono text-white">
-                                    {categories.find(c => c.id === editingProject.category)?.name || 'Residential'}
-                                  </span>
-                                  <span className="px-3 py-1 bg-[#205b63]/80 backdrop-blur-md rounded-full border border-cyan-400/30 text-xs font-mono text-cyan-200">
-                                    {editingProject.specifications?.style || 'Contemporary Minimalist'}
-                                  </span>
-                                </div>
-                                <span className="px-3 py-1 bg-emerald-950/80 backdrop-blur-md rounded-full border border-emerald-500/30 text-xs font-mono text-emerald-300">
-                                  {editingProject.specifications?.status || 'Completed'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-                              <div className="text-xs font-mono uppercase tracking-widest text-[#d4af37] font-bold">
-                                Architectural Specifications
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                                  <span className="text-slate-400 block text-[10px] uppercase">Floor Area</span>
-                                  <span className="text-white font-bold">{editingProject.specifications?.area || '450 m²'}</span>
-                                </div>
-                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                                  <span className="text-slate-400 block text-[10px] uppercase">Style Typology</span>
-                                  <span className="text-white font-bold">{editingProject.specifications?.style || 'Contemporary Minimalist'}</span>
-                                </div>
-                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                                  <span className="text-slate-400 block text-[10px] uppercase">Materiality</span>
-                                  <span className="text-white font-bold truncate block">{editingProject.specifications?.material_palette || 'Smoked oak, raw travertine'}</span>
-                                </div>
-                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                                  <span className="text-slate-400 block text-[10px] uppercase">Lighting</span>
-                                  <span className="text-white font-bold truncate block">{editingProject.specifications?.lighting_design || 'Indirect 2700K warm LED'}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </form>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    {project.category_name} · {project.location} · {project.year}
+                  </p>
+                </div>
               </div>
 
-              {/* SPLIT MODE RIGHT PANE: Live Building Preview */}
-              {previewLayout === 'split' && (
-                <div className="lg:col-span-5 bg-[#070b0c] p-6 flex flex-col justify-between overflow-y-auto max-h-[calc(94vh-130px)]">
-                  <div className="space-y-4">
-                    {/* Simulated Browser Chrome & Controls */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800/80">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
-                        <span className="ml-2 text-[10px] font-mono text-slate-500 bg-[#142023] px-2.5 py-0.5 rounded-md border border-slate-800">
-                          roha.studio/interior/preview
-                        </span>
-                      </div>
+              <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <a
+                  href={`/project-detail?id=${project.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="icon-button"
+                  title="View live"
+                >
+                  <ExternalLink size={15} />
+                </a>
+                <button
+                  onClick={() => handleOpenEdit(project)}
+                  className="secondary-button text-xs"
+                >
+                  <Edit3 size={13} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(project)}
+                  className="icon-button text-rose-400 hover:bg-rose-950/60 border-rose-800/40"
+                  title="Delete project"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-[10px] font-mono">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewTab('card')}
-                            className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                              previewTab === 'card' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            Card View
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPreviewTab('detail')}
-                            className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                              previewTab === 'detail' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                            }`}
-                          >
-                            Plaque
-                          </button>
-                        </div>
+      {/* -------------------- CREATE / EDIT PROJECT MODAL -------------------- */}
+      {isModalOpen && editingProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md"
+            onClick={() => !saving && setIsModalOpen(false)}
+          />
 
-                        <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-[10px] font-mono">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDevice('desktop')}
-                            className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                              previewDevice === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                            }`}
-                            title="Desktop View"
-                          >
-                            Desktop
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPreviewDevice('mobile')}
-                            className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                              previewDevice === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                            }`}
-                            title="Mobile View"
-                          >
-                            Mobile
-                          </button>
-                        </div>
-                      </div>
+          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
+                  <Building2 size={18} />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-white">
+                    {editingProject.id ? `Edit: ${editingProject.title}` : 'Add Architectural Project'}
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Configure project meta, architectural specifications, and high-res photography
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsModalOpen(false)}
+                disabled={saving}
+                className="icon-button"
+                aria-label="Close dialog"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30">
+              {[
+                { id: 'details', label: '1. Basic Details' },
+                { id: 'media', label: '2. Media & Gallery Archive' },
+                { id: 'specs', label: '3. Architectural Specs' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`pb-3 px-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'border-cyan-400 text-cyan-300'
+                      : 'border-transparent text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Form Content */}
+            <form onSubmit={handleSaveProject} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* TAB 1: BASIC DETAILS */}
+              {activeTab === 'details' && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Project Title *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editingProject.title || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
+                        placeholder="e.g. Casa Nera / The Monolith Pavilion"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
                     </div>
 
-                    {/* Live Preview Content */}
-                    <div className={`mx-auto transition-all duration-300 ${
-                      previewDevice === 'mobile' ? 'max-w-[340px]' : 'w-full'
-                    }`}>
-                      {previewTab === 'card' ? (
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 shadow-2xl">
-                          <div className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xl transition-all duration-500 flex flex-col justify-between">
-                            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                              <img
-                                src={resolveImageUrl(editingProject.cover_image, '/tr/279A1756.JPG')}
-                                alt={editingProject.title || 'Preview Project'}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                              />
-                              <div className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm text-slate-800 group-hover:bg-[#205b63] group-hover:text-white transition-colors duration-300">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </div>
-                              <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/70 backdrop-blur-md text-white text-[10px] font-mono rounded-full uppercase tracking-wider">
-                                {categories.find(c => c.id === editingProject.category)?.name || 'Residential'}
-                              </div>
-                            </div>
-                            <div className="p-4 space-y-2 bg-white">
-                              <div className="flex justify-between items-center text-[11px] font-mono text-slate-400">
-                                <span>{editingProject.location || 'Addis Ababa, Ethiopia'}</span>
-                                <span>{editingProject.year || '2024'}</span>
-                              </div>
-                              <h3 className="text-base font-bold text-slate-900 group-hover:text-[#205b63] transition-colors leading-snug">
-                                {editingProject.title || 'Untitled Architectural Case Study'}
-                              </h3>
-                              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                                {editingProject.description || 'Describe spatial curation, materiality, lighting, and ergonomic design...'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="rounded-2xl overflow-hidden border border-slate-800 bg-gradient-to-b from-[#172a2b] to-[#0a1214] p-5 shadow-2xl text-white space-y-4">
-                          <div className="text-center space-y-1">
-                            <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-cyan-300">
-                              {editingProject.subtitle || 'TRANSFORMING THE FUTURE OF CONTEMPORARY LIVING'}
-                            </span>
-                            <h2 className="text-lg font-black uppercase tracking-tight text-white/90">
-                              {editingProject.title || 'UNTITLED RESIDENCE'}
-                            </h2>
-                          </div>
-                          <div className="relative aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10">
-                            <img
-                              src={resolveImageUrl(editingProject.cover_image, '/tr/279A1756.JPG')}
-                              alt={editingProject.title || 'Project'}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-                              <span className="px-2 py-0.5 bg-black/60 backdrop-blur-md rounded-full border border-white/20 text-[9px] font-mono text-white">
-                                {categories.find(c => c.id === editingProject.category)?.name || 'Residential'}
-                              </span>
-                              <span className="px-2 py-0.5 bg-emerald-950/80 backdrop-blur-md rounded-full border border-emerald-500/30 text-[9px] font-mono text-emerald-300">
-                                {editingProject.specifications?.status || 'Completed'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 text-[10px] font-mono space-y-2">
-                            <span className="text-[#d4af37] uppercase block font-bold">Architectural Specifications</span>
-                            <div className="grid grid-cols-2 gap-2 text-slate-300">
-                              <div>Area: <span className="text-white font-bold">{editingProject.specifications?.area || '450 m²'}</span></div>
-                              <div>Style: <span className="text-white font-bold">{editingProject.specifications?.style || 'Minimalist'}</span></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Category
+                      </label>
+                      <select
+                        value={editingProject.category || categories[0]?.id || 1}
+                        onChange={(e) => setEditingProject({ ...editingProject, category: Number(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id} className="bg-[#132527] text-white">
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-                    <span>Updates in real-time as you type</span>
-                    <span className="text-cyan-400">ROHA Interior Design System</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.location || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, location: e.target.value })}
+                        placeholder="e.g. Addis Ababa, Ethiopia"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Completion Year
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.year || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, year: e.target.value })}
+                        placeholder="e.g. 2026"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Display Order
+                      </label>
+                      <input
+                        type="number"
+                        value={editingProject.order || 1}
+                        onChange={(e) => setEditingProject({ ...editingProject, order: Number(e.target.value) })}
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Subtitle / Brief Manifesto
+                    </label>
+                    <input
+                      type="text"
+                      value={editingProject.subtitle || ''}
+                      onChange={(e) => setEditingProject({ ...editingProject, subtitle: e.target.value })}
+                      placeholder="e.g. A monolithic study in raw basalt, limewash, and natural zenith lighting"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Full Architectural Narrative / Description
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={editingProject.description || ''}
+                      onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
+                      placeholder="Detail the spatial hierarchy, environmental consideration, material choices, and structural logic..."
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
+                    <input
+                      type="checkbox"
+                      id="is_featured"
+                      checked={editingProject.is_featured || false}
+                      onChange={(e) => setEditingProject({ ...editingProject, is_featured: e.target.checked })}
+                      className="w-4 h-4 accent-cyan-500 rounded cursor-pointer"
+                    />
+                    <label htmlFor="is_featured" className="text-xs font-semibold text-slate-200 cursor-pointer">
+                      Feature on Studio Homepage & Priority Showcase Grids
+                    </label>
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Modal Bottom Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-slate-800 bg-[#0f181b] shrink-0">
-              <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-400 font-mono">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#205b63]" />
-                  <span>{editingProject.gallery_images?.length || 0} Parallax Photos</span>
-                </span>
-                <span>•</span>
-                <span>{editingProject.video_url ? 'Video Attached' : 'No Video'}</span>
-                <span>•</span>
-                <span className="text-[#d4af37] font-semibold">{editingProject.specifications?.status || 'Completed'}</span>
-              </div>
+              {/* TAB 2: MEDIA & GALLERY */}
+              {activeTab === 'media' && (
+                <div className="animate-in fade-in">
+                  <MediaGalleryManager
+                    mainImage={editingProject.cover_image || null}
+                    onMainImageChange={(url) => setEditingProject({ ...editingProject, cover_image: url || '' })}
+                    galleryImages={editingProject.gallery_images || []}
+                    onGalleryImagesChange={(images) => setEditingProject({ ...editingProject, gallery_images: images })}
+                    contentTypeLabel="Architectural Project"
+                  />
+                </div>
+              )}
 
-              <div className="flex items-center gap-3 ml-auto">
+              {/* TAB 3: ARCHITECTURAL SPECIFICATIONS */}
+              {activeTab === 'specs' && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="p-4 rounded-xl bg-cyan-950/40 border border-cyan-800/30 text-xs text-cyan-200">
+                    These technical parameters render in the architectural specification sheet on the public case study detail view.
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Total Floor Area
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.area || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, area: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. 450 m²"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Architectural Style
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.style || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, style: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Brutalist Vernacular / Warm Minimalist"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Material Palette
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.material_palette || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, material_palette: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Basalt, Travertine, Smoked Oak, Lime Plaster"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Lighting Scheme
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.lighting_design || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, lighting_design: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Diffused Zenith Skylights, 2700K Linear"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Lead Architect / Partner
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.architect || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, architect: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. ROHA Architectural Studio"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Client / Commission Type
+                      </label>
+                      <input
+                        type="text"
+                        value={editingProject.specifications?.client || ''}
+                        onChange={(e) =>
+                          setEditingProject({
+                            ...editingProject,
+                            specifications: { ...editingProject.specifications!, client: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. Private Residence"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Footer Controls */}
+              <div className="pt-5 border-t border-white/10 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  disabled={saving}
+                  className="secondary-button text-xs"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
-                  form="interior-form"
                   disabled={saving}
-                  className="px-6 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
+                  className="primary-button text-xs shadow-md"
                 >
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                  <span>{editingProject.id ? 'Save Changes' : 'Create Project'}</span>
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Saving project...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      <span>{editingProject.id ? 'Update Project' : 'Publish Project'}</span>
+                    </>
+                  )}
                 </button>
               </div>
-            </div>
-
+            </form>
           </div>
         </div>
       )}
 
-      {/* Category Management Modal */}
-      {isCatManagerOpen && (
+      {/* -------------------- CATEGORY MANAGEMENT MODAL -------------------- */}
+      {isCatModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCatManagerOpen(false)} />
-          <div className="relative w-full max-w-xl bg-[#0b1214] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#205b63]/30 border border-[#205b63]/50 text-cyan-300">
-                  <Sliders size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-tight">
-                    Architectural Design Categories
-                  </h3>
-                  <p className="text-xs text-slate-400 font-mono">Create, view, and organize filtering tags for projects</p>
-                </div>
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md"
+            onClick={() => setIsCatModalOpen(false)}
+          />
+
+          <div className="relative w-full max-w-lg bg-[#132527] border border-white/15 rounded-2xl p-6 shadow-2xl z-10 text-white backdrop-blur-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div>
+                <h3 className="font-display text-xl font-semibold text-white">
+                  Architectural Categories
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Organize projects by typology (Residential, Commercial, Hospitality, etc.)
+                </p>
               </div>
               <button
-                type="button"
-                onClick={() => setIsCatManagerOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                onClick={() => setIsCatModalOpen(false)}
+                className="icon-button"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            {/* Create Category Form */}
-            <div className="p-4 rounded-2xl bg-[#142023]/70 border border-slate-800 space-y-3">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-300">
-                Add New Architectural Category
-              </h4>
+            {/* Add Category Form */}
+            <form onSubmit={handleCreateCategory} className="mt-5 p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Add New Category
+              </p>
               <div className="space-y-2">
                 <input
                   type="text"
+                  required
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Category Name (e.g. Master Planning, Urban Sanctuary)"
-                  className="w-full px-3.5 py-2.5 bg-[#0b1214] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#205b63]"
+                  placeholder="Category name (e.g. Boutique Hospitality)"
+                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                 />
                 <input
                   type="text"
                   value={newCatDesc}
                   onChange={(e) => setNewCatDesc(e.target.value)}
-                  placeholder="Optional brief description..."
-                  className="w-full px-3.5 py-2 bg-[#0b1214] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#205b63]"
+                  placeholder="Brief description (optional)"
+                  className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                 />
               </div>
               <button
-                type="button"
-                onClick={() => handleCreateCategory(newCatName, newCatDesc)}
-                disabled={creatingCat || !newCatName.trim()}
-                className="w-full py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors shadow-md"
+                type="submit"
+                disabled={creatingCat}
+                className="primary-button text-xs w-full justify-center"
               >
-                {creatingCat ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                {creatingCat ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
                 <span>Create Category</span>
               </button>
-            </div>
+            </form>
 
-            {/* Existing Categories List */}
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-                Active Categories ({categories.length})
-              </h4>
-              {categories.map((cat) => {
-                const projectCount = projects.filter(p => p.category_name?.toLowerCase() === cat.name.toLowerCase()).length;
-                return (
-                  <div
-                    key={cat.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#142023]/40 border border-slate-800/80 hover:border-slate-700 transition-colors"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">{cat.name}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/40 text-cyan-300">
-                          {projectCount} projects
-                        </span>
-                      </div>
-                      {cat.description && (
-                        <p className="text-[11px] text-slate-400 mt-0.5">{cat.description}</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                      disabled={deletingCatId === cat.id}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50"
-                      title="Delete Category"
-                    >
-                      {deletingCatId === cat.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                    </button>
+            {/* Categories List */}
+            <div className="mt-5 space-y-2 max-h-60 overflow-y-auto">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/10"
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-white">{cat.name}</p>
+                    {cat.description && (
+                      <p className="text-[11px] text-slate-400">{cat.description}</p>
+                    )}
                   </div>
-                );
-              })}
+                  <button
+                    onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                    disabled={deletingCatId === cat.id}
+                    className="icon-button text-rose-400 hover:bg-rose-950/60 border-rose-800/40"
+                    title="Delete category"
+                  >
+                    {deletingCatId === cat.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                  </button>
+                </div>
+              ))}
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
+            <div className="mt-6 pt-4 border-t border-white/10 text-right">
               <button
-                type="button"
-                onClick={() => setIsCatManagerOpen(false)}
-                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold uppercase transition-colors cursor-pointer"
+                onClick={() => setIsCatModalOpen(false)}
+                className="secondary-button text-xs"
               >
-                Close
+                Done
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* -------------------- CONFIRM DELETE MODAL -------------------- */}
       <ConfirmModal
         isOpen={!!deleteTarget}
-        title="Delete Architectural Design Project"
-        message={`Are you sure you want to permanently delete "${deleteTarget?.title}"? This will remove its specifications and gallery from the live portfolio.`}
+        title="Delete Architectural Project"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? All associated specs, gallery images, and catalog references will be permanently removed.`}
         confirmLabel="Delete Project"
+        cancelLabel="Cancel"
+        isDestructive={true}
         isLoading={deleting}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={handleDeleteConfirmed}
         onCancel={() => setDeleteTarget(null)}
-      />
-
-      {/* Cover Asset Picker Modal */}
-      <ImagePickerModal
-        isOpen={isAssetPickerOpen}
-        onClose={() => setIsAssetPickerOpen(false)}
-        currentValue={editingProject?.cover_image || ''}
-        onSelect={(path) => {
-          if (editingProject) {
-            setEditingProject({ ...editingProject, cover_image: path });
-          }
-        }}
-        title="Select Architectural Design Photography"
       />
     </div>
   );

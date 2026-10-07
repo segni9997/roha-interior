@@ -1,380 +1,423 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { 
-  Building2, 
-  Sparkles, 
-  Award, 
+  ArrowLeft, 
+  ArrowRight, 
+  Star, 
+  Quote, 
   CheckCircle2, 
-  ExternalLink, 
-  ShieldCheck, 
-  Briefcase, 
-  Layers,
-  ArrowUpRight,
-  Landmark,
-  Plane,
-  Hotel
+  ShieldCheck,
+  ChevronDown
 } from 'lucide-react';
 import { api, resolveImageUrl, type TrustedClientItem } from '../services/api';
-import { FloatingShape, SHAPES } from './FloatingShapes';
 
-const FALLBACK_CLIENTS: TrustedClientItem[] = [
+export interface TestimonialSlide {
+  id: number;
+  clientName: string;
+  industry: string;
+  location: string;
+  projectScope: string;
+  quote: string;
+  spokesperson: string;
+  rating: number;
+  logo: string;
+  backgroundImage: string;
+  tint: string;
+}
+
+const DEFAULT_TESTIMONIALS: TestimonialSlide[] = [
   {
     id: 1,
-    name: "Ethiopian Airlines Group",
+    clientName: "Ethiopian Airlines Group",
     industry: "Aviation & Infrastructure",
-    project_count: "Corporate HQ & VIP Skylight Lounges",
+    location: "Bole International, Addis Ababa",
+    projectScope: "Corporate HQ & VIP Skylight Lounges",
+    quote: "ROHA transformed our executive VIP skylight lounges into spaces of monumental architectural serenity and elegance.",
+    spokesperson: "Director of Infrastructure & VIP Services",
+    rating: 5,
     logo: "/roha.png",
-    featured: true,
-    order: 1,
-    website_url: "#"
+    backgroundImage: "/tr/279A1756.JPG",
+    tint: "from-[#0c1f21]/85 via-[#172a2b]/60 to-transparent",
   },
   {
     id: 2,
-    name: "Commercial Bank of Ethiopia",
-    industry: "Banking & Finance",
-    project_count: "Headquarters Model & Executive Suites",
+    clientName: "Commercial Bank of Ethiopia",
+    industry: "Banking & Financial Real Estate",
+    location: "Finbarr Plaza, Addis Ababa",
+    projectScope: "Headquarters Model & Executive Suites",
+    quote: "The physical scale model and executive boardroom interiors delivered far beyond all architectural expectations with millimeter precision.",
+    spokesperson: "Head of Real Estate & Facilities Strategy",
+    rating: 5,
     logo: "/roha.png",
-    featured: true,
-    order: 2,
-    website_url: "#"
+    backgroundImage: "/tr/279A1760.JPG",
+    tint: "from-[#0d1c22]/85 via-[#18323a]/60 to-transparent",
   },
   {
     id: 3,
-    name: "MIDROC Investment Group",
-    industry: "Real Estate & Hospitality",
-    project_count: "Monolithic Residential & Resort Layouts",
+    clientName: "Marriott Executive Apartments",
+    industry: "Luxury Hospitality & Living",
+    location: "Kazanchis, Addis Ababa",
+    projectScope: "Bespoke Suites & Atrium Spatial Curation",
+    quote: "Bespoke craftsmanship, acoustic harmony, and biophilic lighting tailored seamlessly to world-class hospitality standards.",
+    spokesperson: "Regional General Manager",
+    rating: 5,
     logo: "/roha.png",
-    featured: true,
-    order: 3,
-    website_url: "#"
+    backgroundImage: "/tr/279A1768.JPG",
+    tint: "from-[#112325]/85 via-[#1d3d41]/60 to-transparent",
   },
   {
     id: 4,
-    name: "Marriott Executive Apartments",
-    industry: "Hospitality & Leisure",
-    project_count: "Bespoke Suites & Spatial Curation",
+    clientName: "MIDROC Investment Group",
+    industry: "Real Estate & Monolithic Dev.",
+    location: "Addis Ababa, Ethiopia",
+    projectScope: "Multi-acre Masterplan & Luxury Residences",
+    quote: "A masterful synthesis of modern materiality, fluted precision, and monumental spatial flow across our developments.",
+    spokesperson: "Chief Development Officer",
+    rating: 5,
     logo: "/roha.png",
-    featured: true,
-    order: 4,
-    website_url: "#"
+    backgroundImage: "/tr/279A1771.JPG",
+    tint: "from-[#0e2124]/85 via-[#1b3a3e]/60 to-transparent",
   },
   {
     id: 5,
-    name: "Sunshine Construction & Dev.",
-    industry: "Commercial & Mixed-Use",
-    project_count: "Multi-acre Masterplan Scale Models",
+    clientName: "Noah Real Estate",
+    industry: "Residential High-Rise Developments",
+    location: "Bole Atlas, Addis Ababa",
+    projectScope: "Flagship Residential Towers & Scale Exhibits",
+    quote: "Exemplary attention to micro-tolerances, material palettes, and spatial detailing that captivates our clients instantly.",
+    spokesperson: "Lead Project Architect",
+    rating: 5,
     logo: "/roha.png",
-    featured: true,
-    order: 5,
-    website_url: "#"
-  },
-  {
-    id: 6,
-    name: "Noah Real Estate",
-    industry: "Residential Developments",
-    project_count: "High-Rise Typology Scale Exhibits",
-    logo: "/roha.png",
-    featured: true,
-    order: 6,
-    website_url: "#"
-  },
-  {
-    id: 7,
-    name: "Hilton Addis Ababa",
-    industry: "Hospitality & Leisure",
-    project_count: "Grand Ballroom & Heritage Lounge",
-    logo: "/roha.png",
-    featured: true,
-    order: 7,
-    website_url: "#"
-  },
-  {
-    id: 8,
-    name: "Gift Real Estate Group",
-    industry: "Residential & Commercial",
-    project_count: "Township & Gated Community Models",
-    logo: "/roha.png",
-    featured: true,
-    order: 8,
-    website_url: "#"
+    backgroundImage: "/home1.png",
+    tint: "from-[#0a181a]/85 via-[#162e31]/60 to-transparent",
   },
 ];
-
-const INDUSTRIES = [
-  "All",
-  "Real Estate & Development",
-  "Hospitality & Leisure",
-  "Banking & Finance",
-  "Aviation & Infrastructure",
-  "Commercial & Mixed-Use",
-  "Residential Developments"
-];
-
-const getIndustryIcon = (industry: string) => {
-  const ind = industry.toLowerCase();
-  if (ind.includes('aviation') || ind.includes('infrastructure')) return <Plane className="w-4 h-4 text-cyan-400" />;
-  if (ind.includes('banking') || ind.includes('finance')) return <Landmark className="w-4 h-4 text-amber-400" />;
-  if (ind.includes('hospitality') || ind.includes('hotel')) return <Hotel className="w-4 h-4 text-emerald-400" />;
-  if (ind.includes('residential')) return <Building2 className="w-4 h-4 text-teal-400" />;
-  return <Briefcase className="w-4 h-4 text-cyan-300" />;
-};
 
 export const ClientsSection: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const [clients, setClients] = useState<TrustedClientItem[]>(FALLBACK_CLIENTS);
-  const [activeFilter, setActiveFilter] = useState<string>("All");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [active, setActive] = useState<number>(0);
+  const [testimonials, setTestimonials] = useState<TestimonialSlide[]>(DEFAULT_TESTIMONIALS);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
 
+  // Load backend trusted clients and map to testimonial slides if available
   useEffect(() => {
     let isMounted = true;
-    async function loadClients() {
+    async function fetchClients() {
       try {
-        setLoading(true);
-        const liveClients = await api.getTrustedClients();
+        const liveClients: TrustedClientItem[] = await api.getTrustedClients();
         if (isMounted && liveClients && liveClients.length > 0) {
-          setClients(liveClients);
+          const projectImages = ["/tr/279A1756.JPG", "/tr/279A1760.JPG", "/tr/279A1768.JPG", "/tr/279A1771.JPG", "/home1.png"];
+          const mapped = liveClients.map((client, idx) => ({
+            id: client.id,
+            clientName: client.name,
+            industry: client.industry || "Architectural Enterprise",
+            location: "Addis Ababa, Ethiopia",
+            projectScope: client.project_count || "Executive Architectural Commission",
+            quote: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].quote,
+            spokesperson: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].spokesperson,
+            rating: 5,
+            logo: resolveImageUrl(client.logo, '/roha.png'),
+            backgroundImage: projectImages[idx % projectImages.length],
+            tint: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].tint,
+          }));
+          setTestimonials(mapped);
         }
       } catch (err) {
-        console.warn("Using default client partners catalog:", err);
-      } finally {
-        if (isMounted) setLoading(false);
+        console.warn("Using default testimonial monograph:", err);
       }
     }
-    loadClients();
+    fetchClients();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const filteredClients = clients.filter((c) => {
-    if (activeFilter === "All") return true;
-    return c.industry.toLowerCase().includes(activeFilter.toLowerCase());
-  });
+  const next = () => setActive((current) => (current + 1) % testimonials.length);
+  const previous = () => setActive((current) => (current - 1 + testimonials.length) % testimonials.length);
+
+  // Auto-advance every 6 seconds unless paused
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = window.setInterval(next, 6500);
+    return () => window.clearInterval(timer);
+  }, [testimonials.length, isPaused]);
+
+  const slide = testimonials[active] || DEFAULT_TESTIMONIALS[0];
 
   return (
     <section 
       id="clients-section" 
-      className={`w-full relative py-20 sm:py-28 bg-[#0b1416] text-white font-sans overflow-hidden border-t border-slate-800 ${className}`}
+      className={`relative min-h-screen w-full overflow-hidden bg-[#0b1718] text-white font-sans flex flex-col justify-between ${className}`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Background Architectural Grid Pattern */}
-      <div 
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(32, 91, 99, 0.45) 0%, transparent 60%),
-                           radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.15) 0%, transparent 50%)`,
-          backgroundSize: '100% 100%'
-        }}
-      />
+      {/* ========================================================================= */}
+      {/* 1. FULL-BLEED ANIMATED BACKGROUND IMAGE (FROM PROJECT GALLERY)            */}
+      {/* ========================================================================= */}
+      <AnimatePresence mode="sync">
+        <motion.div
+          key={slide.backgroundImage}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${slide.backgroundImage})` }}
+          initial={{ opacity: 0, scale: 1.08 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </AnimatePresence>
 
-      {/* Floating 3D Geometric Architectural Shapes from public/ */}
-      <FloatingShape
-        src={SHAPES.cone}
-        size={90}
-        top="6%"
-        left="3%"
-        blur="1px"
-        opacity={0.35}
-        rotate={-15}
-        duration={8}
-      />
-      <FloatingShape
-        src={SHAPES.cubeAlt1}
-        size={75}
-        top="18%"
-        right="4%"
-        blur="none"
-        opacity={0.4}
-        rotate={25}
-        duration={7}
-        delay={1}
-      />
-      <FloatingShape
-        src={SHAPES.diamond}
-        size={60}
-        bottom="10%"
-        left="5%"
-        blur="2px"
-        opacity={0.3}
-        rotate={35}
-        duration={9}
-        delay={0.5}
-      />
-      <FloatingShape
-        src={SHAPES.cylinder}
-        size={80}
-        bottom="14%"
-        right="6%"
-        blur="none"
-        opacity={0.35}
-        rotate={-20}
-        duration={8.5}
-        delay={1.8}
-      />
+      {/* Deep Architectural Scrim Layers (Brand Color Grading & Contrast) */}
+      <div className="absolute inset-0 bg-[#0b1718]/75 z-0 pointer-events-none" />
+      <div className={`absolute inset-0 bg-gradient-to-br ${slide.tint} z-0 pointer-events-none`} />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0b1718] via-transparent to-[#0b1718]/85 z-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-radial from-white/[0.06] via-transparent to-transparent z-0 pointer-events-none" />
 
-      <div className="w-full px-4 sm:px-8 md:px-12 relative z-20">
-        
-        {/* --- SECTION HEADER --- */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 sm:mb-16 gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="w-10 sm:w-14 h-[3px] bg-[#205b63]" />
-              <span className="text-xs sm:text-sm font-mono uppercase tracking-[0.3em] font-bold text-cyan-400 flex items-center gap-2">
-                <ShieldCheck size={16} className="text-[#205b63]" />
-                Trusted Partnerships & Client Portfolio
-              </span>
-            </div>
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-white uppercase">
-              OUR CLIENTS & <span className="text-[#205b63]">PARTNERS</span>
-            </h2>
+      {/* Ceiling Recessed Spotlights (Whitish Architectural Beams) */}
+      <div className="absolute top-0 inset-x-0 flex justify-around pointer-events-none z-10">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex flex-col items-center">
+            <div className="w-4 h-1 bg-white/90 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.9)]" />
+            <div className="w-32 sm:w-48 h-56 sm:h-72 bg-gradient-to-b from-white/30 via-white/5 to-transparent blur-2xl transform -translate-y-2" />
           </div>
-          <p className="text-sm sm:text-base text-slate-300 font-light max-w-lg leading-relaxed border-r-4 border-[#205b63] pr-4 sm:pr-5">
-            Collaborating with leading developers, architectural studios, corporate enterprises, and private visionaries to deliver high-precision spatial curation and physical scale craftsmanship.
-          </p>
+        ))}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. SECTION HEADER & MONOGRAPH EYEBROW (Z-INDEX 20)                        */}
+      {/* ========================================================================= */}
+      <header className="relative z-20 flex items-center justify-between px-6 pt-12 pb-4 sm:px-12 sm:pt-16 lg:px-20 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3">
+          <span className="h-8 w-1 bg-white shadow-[0_0_10px_#ffffff]" />
+          <div>
+            <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-white/75 font-bold block">
+              TRUSTED PARTNERSHIPS & TESTIMONIALS
+            </span>
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white">
+              Client Monograph · {String(active + 1).padStart(2, '0')} / {String(testimonials.length).padStart(2, '0')}
+            </span>
+          </div>
         </div>
 
-        {/* --- TRUST METRICS BAR --- */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12 sm:mb-16">
-          {[
-            { metric: "50+", label: "Enterprise Clients", sub: "National & Regional Leaders", icon: Building2 },
-            { metric: "120+", label: "Completed Commissions", sub: "Physical Models & Spatial Projects", icon: Layers },
-            { metric: "0.1mm", label: "Precision Standard", sub: "Micro-tolerance Fabrication", icon: Award },
-            { metric: "100%", label: "Client Satisfaction", sub: "Repeat Partnerships & Trust", icon: CheckCircle2 },
-          ].map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
+        {/* Verified Alliance Monograph Tag */}
+        <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+          <ShieldCheck size={14} className="text-white" />
+          <span className="text-[10px] font-mono uppercase tracking-widest text-white font-semibold">
+            ROHA Studio Verified Alliance
+          </span>
+        </div>
+      </header>
+
+      {/* ========================================================================= */}
+      {/* 3. HERO TESTIMONIAL STATEMENT & FRONT DETAILS (Z-INDEX 20)                */}
+      {/* ========================================================================= */}
+      <div className="relative z-20 max-w-7xl mx-auto w-full px-6 sm:px-12 lg:px-20 my-auto py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          {/* Left Column: Quote Statement in Grand Editorial Serif */}
+          <div className="lg:col-span-8 space-y-6">
+            
+            {/* Front Details Pill: Rating & Industry */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                <span>{slide.industry}</span>
+              </div>
+              <div className="flex items-center gap-1 text-white">
+                {[...Array(slide.rating)].map((_, i) => (
+                  <Star key={i} size={14} className="fill-white text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                ))}
+              </div>
+            </div>
+
+            {/* Testimonial Quote with Framer Motion AnimatePresence */}
+            <div className="relative min-h-[140px] sm:min-h-[180px] flex items-center">
+              <Quote className="absolute -top-4 -left-4 sm:-left-8 w-12 h-12 text-white/10 pointer-events-none" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -18 }}
+                  transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  className="space-y-4"
+                >
+                  <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-light leading-[1.18] tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
+                    "{slide.quote}"
+                  </h2>
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-white/80 font-mono text-xs sm:text-sm">
+                    <span className="text-white font-bold tracking-wider uppercase">{slide.spokesperson}</span>
+                    <span className="hidden sm:inline text-white/40">·</span>
+                    <span className="text-white/60 uppercase">{slide.location}</span>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Right Column: Front Client Logo & Commission Badge */}
+          <div className="lg:col-span-4 flex flex-col items-start lg:items-end justify-center">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-[#101e21]/80 backdrop-blur-xl p-5 sm:p-6 rounded-2xl border border-slate-800 hover:border-[#205b63]/60 transition-all duration-300 group shadow-lg"
+                key={slide.clientName}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.5 }}
+                className="bg-black/60 backdrop-blur-2xl border border-white/20 p-6 rounded-3xl shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_30px_rgba(255,255,255,0.08)] w-full max-w-sm"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl sm:text-4xl font-black text-white font-mono tracking-tight group-hover:text-cyan-300 transition-colors">
-                    {stat.metric}
-                  </span>
-                  <div className="p-2 rounded-xl bg-white/5 group-hover:bg-[#205b63]/30 transition-colors">
-                    <Icon className="w-5 h-5 text-cyan-400" />
+                <div className="flex items-center gap-4 mb-4">
+                  {/* Front Logo Showcase */}
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md p-2.5 border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                    <img
+                      src={slide.logo}
+                      alt={slide.clientName}
+                      className="w-full h-full object-contain filter drop-shadow"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight leading-tight">
+                      {slide.clientName}
+                    </h3>
+                    <p className="text-[11px] font-mono text-white/60 uppercase mt-0.5">
+                      Verified Client Partner
+                    </p>
                   </div>
                 </div>
-                <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200">
-                  {stat.label}
-                </p>
-                <p className="text-[11px] text-slate-400 font-light mt-0.5">
-                  {stat.sub}
-                </p>
-              </motion.div>
-            );
-          })}
-        </div>
 
-        {/* --- INFINITE MOVING CLIENT RIBBON (MARQUEE) --- */}
-        <div className="relative mb-14 py-6 px-4 rounded-2xl bg-gradient-to-r from-[#0d1a1d] via-[#122427] to-[#0d1a1d] border border-slate-800/80 overflow-hidden shadow-2xl">
-          <div className="absolute left-0 inset-y-0 w-20 bg-gradient-to-r from-[#0b1416] to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 inset-y-0 w-20 bg-gradient-to-l from-[#0b1416] to-transparent z-10 pointer-events-none" />
-          
-          <div className="flex gap-8 sm:gap-12 animate-marquee whitespace-nowrap items-center">
-            {[...clients, ...clients].map((client, idx) => (
-              <div 
-                key={`${client.id}-${idx}`}
-                className="inline-flex items-center gap-3.5 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-cyan-400/40 hover:bg-white/10 transition-all duration-300 group cursor-default"
-              >
-                <div className="w-7 h-7 rounded-full bg-[#205b63]/40 border border-[#205b63] flex items-center justify-center p-1 shrink-0">
-                  <img
-                    src={resolveImageUrl(client.logo, '/roha.png')}
-                    alt={client.name}
-                    className="w-full h-full object-contain"
-                  />
+                <div className="pt-3 border-t border-white/10 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60 font-sans">Commission Scope:</span>
+                    <span className="text-white font-semibold font-mono text-right truncate max-w-[170px]">{slide.projectScope}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/60 font-sans">Quality Standard:</span>
+                    <span className="text-white font-mono flex items-center gap-1">
+                      <CheckCircle2 size={13} className="text-white" /> 100% Custom
+                    </span>
+                  </div>
                 </div>
-                <span className="text-xs sm:text-sm font-bold tracking-wide text-slate-200 group-hover:text-white uppercase font-sans">
-                  {client.name}
-                </span>
-                <span className="text-[10px] font-mono text-cyan-400/80 px-2 py-0.5 rounded-md bg-cyan-950/60 border border-cyan-800/40">
-                  {client.industry.split('&')[0]}
-                </span>
-              </div>
-            ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
+
         </div>
 
-        {/* --- INDUSTRY CATEGORY FILTER PILLS --- */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-none">
-          {INDUSTRIES.map((ind) => (
+        {/* Carousel Controls Bar */}
+        <div className="mt-8 sm:mt-10 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
             <button
-              key={ind}
-              onClick={() => setActiveFilter(ind)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all duration-300 cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-                activeFilter.toLowerCase() === ind.toLowerCase()
-                  ? 'bg-[#205b63] text-white font-bold border border-cyan-400/40 shadow-lg shadow-teal-950/80 scale-105'
-                  : 'bg-[#101e21] text-slate-400 hover:text-white border border-slate-800 hover:border-slate-700'
-              }`}
+              type="button"
+              onClick={previous}
+              className="p-3 rounded-full border border-white/30 bg-black/50 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.15)] group"
+              aria-label="Previous Testimonial"
             >
-              <span>{ind}</span>
+              <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
+            <button
+              type="button"
+              onClick={next}
+              className="p-3 rounded-full border border-white/30 bg-black/50 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-md cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.15)] group"
+              aria-label="Next Testimonial"
+            >
+              <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+            </button>
+            <span className="hidden text-[10px] uppercase tracking-[0.28em] text-white/60 sm:block font-mono">
+              Curated Architectural Portfolio
+            </span>
+          </div>
+
+          <p className="hidden max-w-[260px] text-right text-[10px] uppercase leading-relaxed tracking-[0.2em] text-white/50 md:block font-mono">
+            Bespoke Physical Models & Monolithic Spatial Craftsmanship.
+          </p>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 4. ANIMATED HORIZONTAL CARDS TRACK (ANIMATED-IMAGE-CAROUSEL DESIGN)       */}
+      {/* ========================================================================= */}
+      <div className="relative z-20 w-full overflow-hidden pt-2 pb-6 sm:pb-8">
+        <div className="px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto overflow-hidden">
+          <motion.div
+            className="flex items-center gap-6"
+            animate={{ x: `calc(-${active} * (min(28vw, 320px) + 24px))` }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {testimonials.map((item, index) => {
+              const isActive = index === active;
+              return (
+                <motion.article
+                  key={`${item.clientName}-${index}`}
+                  onClick={() => setActive(index)}
+                  className={`relative h-48 sm:h-56 w-[min(28vw,320px)] shrink-0 overflow-hidden rounded-2xl cursor-pointer border transition-all duration-500 ${
+                    isActive
+                      ? 'border-white/60 shadow-[0_12px_32px_rgba(0,0,0,0.8),0_0_25px_rgba(255,255,255,0.25)] scale-100 opacity-100'
+                      : 'border-white/15 opacity-50 hover:opacity-85 scale-95'
+                  }`}
+                  animate={{
+                    opacity: isActive ? 1 : 0.5,
+                    scale: isActive ? 1 : 0.94,
+                    y: isActive ? 0 : 8,
+                  }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <img
+                    src={item.backgroundImage}
+                    alt={`${item.clientName} commission`}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className={`absolute inset-0 bg-gradient-to-t ${item.tint} opacity-90`} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                  {/* Card Content & Front Logo Badge */}
+                  <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-5 h-5 rounded-md bg-black/60 backdrop-blur-md p-0.5 border border-white/20 flex items-center justify-center shrink-0">
+                          <img src={item.logo} alt="" className="w-full h-full object-contain" />
+                        </div>
+                        <p className="text-[9px] uppercase font-mono tracking-widest text-white/75 truncate">
+                          {item.industry.split('&')[0]}
+                        </p>
+                      </div>
+                      <h4 className="font-serif text-sm sm:text-base font-bold text-white uppercase tracking-tight truncate">
+                        {item.clientName}
+                      </h4>
+                    </div>
+
+                    {/* Active Accent Dot */}
+                    {isActive && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_#ffffff] shrink-0 mb-1" />
+                    )}
+                  </div>
+                </motion.article>
+              );
+            })}
+          </motion.div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 5. BOTTOM PAGINATION BAR & DISCOVERY HINT                                 */}
+      {/* ========================================================================= */}
+      <footer className="relative z-20 flex items-center justify-between px-6 pb-8 sm:px-12 sm:pb-12 lg:px-20 max-w-7xl mx-auto w-full">
+        {/* Pagination Lines */}
+        <div className="flex items-center gap-2" aria-label="Testimonials carousel pagination">
+          {testimonials.map((item, index) => (
+            <button
+              key={item.clientName + index}
+              type="button"
+              onClick={() => setActive(index)}
+              aria-label={`Go to slide ${index + 1}`}
+              className={`h-1 rounded-full transition-all duration-500 cursor-pointer ${
+                index === active ? 'w-12 sm:w-16 bg-white shadow-[0_0_10px_#ffffff]' : 'w-5 bg-white/30 hover:bg-white/60'
+              }`}
+            />
           ))}
         </div>
 
-        {/* --- CLIENTS GRID SHOWCASE --- */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeFilter}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-          >
-            {filteredClients.map((client, idx) => (
-              <motion.div
-                key={client.id || idx}
-                whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className="relative bg-gradient-to-b from-[#112124] to-[#0d191b] p-6 rounded-2xl border border-slate-800 hover:border-[#205b63] transition-all duration-300 shadow-xl group flex flex-col justify-between overflow-hidden"
-              >
-                {/* Subtle top card glow */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#205b63]/10 rounded-full blur-2xl pointer-events-none group-hover:bg-[#205b63]/25 transition-all" />
-
-                <div>
-                  {/* Header with Logo and Industry Tag */}
-                  <div className="flex items-start justify-between gap-3 mb-5">
-                    <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md p-2 border border-white/15 flex items-center justify-center group-hover:scale-105 transition-transform shadow-inner">
-                      <img
-                        src={resolveImageUrl(client.logo, '/roha.png')}
-                        alt={client.name}
-                        className="w-full h-full object-contain filter drop-shadow"
-                      />
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-[#205b63]/30 text-cyan-300 border border-[#205b63]/60">
-                      {getIndustryIcon(client.industry)}
-                      {client.industry}
-                    </span>
-                  </div>
-
-                  {/* Client Name */}
-                  <h3 className="text-lg sm:text-xl font-black text-white group-hover:text-cyan-200 transition-colors uppercase tracking-tight mb-2">
-                    {client.name}
-                  </h3>
-
-                  {/* Scope / Commission details */}
-                  <p className="text-xs text-slate-300 font-light leading-relaxed mb-4">
-                    {client.project_count || "Executive Architectural & Scale Fabrication Works"}
-                  </p>
-                </div>
-
-                {/* Footer status & verified alliance tag */}
-                <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                    <CheckCircle2 size={13} /> Verified Alliance
-                  </span>
-                  <span className="text-slate-500 group-hover:text-cyan-300 transition-colors">
-                    ROHA Studio
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-
-      </div>
+        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.28em] text-white/50">
+          <ChevronDown size={14} className="animate-bounce" /> Scroll for Monograph
+        </div>
+      </footer>
     </section>
   );
 };

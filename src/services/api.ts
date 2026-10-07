@@ -78,15 +78,15 @@ export interface InteriorProjectItem {
 
 export interface InteriorSpecificationItem {
   area: string;
-  floors: number;
+  floors?: number;
   style: string;
   material_palette: string;
   lighting_design: string;
-  duration: string;
-  budget: string;
+  duration?: string;
+  budget?: string;
   architect: string;
   client: string;
-  status: string;
+  status?: string;
 }
 
 export interface GalleryImageItem {
@@ -604,8 +604,16 @@ export const api = {
     });
   },
 
-  async deletePanoramicScene(id: number): Promise<void> {
+  async addTourScene(tourId: number, data: Partial<PanoramicSceneItem>): Promise<PanoramicSceneItem> {
+    return this.createPanoramicScene(tourId, data);
+  },
+
+  async deletePanoramicScene(id: number | string): Promise<void> {
     return request<void>(`/api/v1/panoramas/scenes/${id}/`, { method: 'DELETE' });
+  },
+
+  async deleteTourScene(id: number | string): Promise<void> {
+    return this.deletePanoramicScene(id);
   },
 
 

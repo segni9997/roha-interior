@@ -2,7 +2,7 @@ import bg from "/1.jpg";
 import model from "/as.png";
 import pattern from "/pattern-01.png";
 import rohaLogo from "../assets/roha.png";
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -13,6 +13,7 @@ import { fragmentShader, vertexShader } from "../utils/shaders";
 import SubCategoryModelGrid from "./modelMakingProjects";
 import { NavigationOverlay } from "./NavBar";
 import { FloatingShape, SHAPES } from "./FloatingShapes";
+import { api, resolveImageUrl, type PageSectionItem } from "../services/api";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,10 +22,54 @@ interface Config {
   spread: number;
 }
 
+const DEFAULT_HERO = {
+  heading: "PRECISION MODELING.",
+  subheading: "Modeling Making & Precision Fabrication",
+  body_text:
+    "Translating visionary blueprints into tangible, high-fidelity physical realities. Combining laser micro-cutting, high-resolution stereolithography, and artisanal hand-finishing with 0.1mm tolerance.",
+  background_image: bg,
+  cta_text: "Explore Physical Archive",
+  cta_link: "#models-archive",
+};
+
 export function ModelHero() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  const [heroData, setHeroData] = useState<PageSectionItem | typeof DEFAULT_HERO>(DEFAULT_HERO);
+
+  // Load customizable hero section from backend
+  useEffect(() => {
+    let isMounted = true;
+    async function loadHeroContent() {
+      try {
+        const pageData = await api.getPageContent("model-making").catch(() => null);
+        if (isMounted && pageData && pageData.sections && pageData.sections.length > 0) {
+          const heroSec = pageData.sections.find((s) => s.section_key === "hero") || pageData.sections[0];
+          if (heroSec) {
+            setHeroData({
+              heading: heroSec.heading || DEFAULT_HERO.heading,
+              subheading: heroSec.subheading || DEFAULT_HERO.subheading,
+              body_text: heroSec.body_text || DEFAULT_HERO.body_text,
+              background_image: heroSec.background_image || DEFAULT_HERO.background_image,
+              cta_text: heroSec.cta_text || DEFAULT_HERO.cta_text,
+              cta_link: heroSec.cta_link || DEFAULT_HERO.cta_link,
+              id: heroSec.id,
+              section_key: heroSec.section_key,
+              order: heroSec.order,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Could not load backend model-making hero section", e);
+      }
+    }
+    loadHeroContent();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   /* ===========================
      SHADER SETUP
@@ -114,12 +159,49 @@ export function ModelHero() {
     };
   }, []);
 
-  const scrollToArchive = () => {
+  const handleCtaClick = () => {
+    if (heroData.cta_link && heroData.cta_link.startsWith("#")) {
+      const targetId = heroData.cta_link.replace("#", "");
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    }
     const el = document.getElementById("models-archive");
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const renderHeading = (text: string) => {
+    if (!text || text === DEFAULT_HERO.heading) {
+      return (
+        <>
+          PRECISION <br />
+          <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
+            MODELING.
+          </span>
+        </>
+      );
+    }
+    const words = text.trim().split(" ");
+    if (words.length > 1) {
+      const firstPart = words.slice(0, -1).join(" ");
+      const lastPart = words[words.length - 1];
+      return (
+        <>
+          {firstPart} <br />
+          <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
+            {lastPart}
+          </span>
+        </>
+      );
+    }
+    return text;
+  };
+
+  const bgImageSrc = resolveImageUrl(heroData.background_image, bg);
 
   return (
     <>
@@ -133,7 +215,7 @@ export function ModelHero() {
         {/* 1. Background Visuals & Atmospheric Scrims */}
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
           <img
-            src={bg}
+            src={bgImageSrc}
             alt="Architectural Blueprint Background"
             className="w-full h-full object-cover opacity-20"
           />
@@ -204,7 +286,7 @@ export function ModelHero() {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#395e63]/40 backdrop-blur-md border border-cyan-400/30 text-cyan-300 text-xs font-mono tracking-widest uppercase shadow-[0_0_20px_rgba(6,182,212,0.25)]"
             >
-              <span>Modeling Making & Precision Fabrication</span>
+              <span>{heroData.subheading || "Modeling Making & Precision Fabrication"}</span>
             </motion.div>
 
             {/* Title */}
@@ -214,10 +296,7 @@ export function ModelHero() {
               transition={{ duration: 0.8, delay: 0.15 }}
               className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tight text-white leading-[0.95] drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]"
             >
-              PRECISION <br />
-              <span className="bg-gradient-to-r from-cyan-400 via-[#5b949b] to-[#395e63] bg-clip-text text-transparent">
-                MODELING.
-              </span>
+              {renderHeading(heroData.heading)}
             </motion.h1>
 
             {/* Narrative */}
@@ -227,7 +306,7 @@ export function ModelHero() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="text-base sm:text-lg text-gray-100 font-light leading-relaxed max-w-lg drop-shadow-md border-r-4 border-[#205b63] pr-4 sm:pr-5"
             >
-              Translating visionary blueprints into tangible, high-fidelity physical realities. Combining laser micro-cutting, high-resolution stereolithography, and artisanal hand-finishing with 0.1mm tolerance.
+              {heroData.body_text || DEFAULT_HERO.body_text}
             </motion.p>
 
             {/* CTA Buttons */}
@@ -239,10 +318,10 @@ export function ModelHero() {
             >
               <button
                 type="button"
-                onClick={scrollToArchive}
+                onClick={handleCtaClick}
                 className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#205b63] to-[#395e63] hover:from-[#2a757f] hover:to-[#49777e] text-white font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 shadow-[0_0_25px_rgba(32,91,99,0.5)] flex items-center gap-2 cursor-pointer"
               >
-                <span>Explore Physical Archive</span>
+                <span>{heroData.cta_text || "Explore Physical Archive"}</span>
                 <ArrowDown size={16} />
               </button>
             </motion.div>

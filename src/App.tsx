@@ -9,7 +9,6 @@ import PanoramaViewer from "./components/PanaromaViewer";
 import { useSmoothScroll } from "./hook/useSmoothScroll";
 import ProjectDetails from "./components/ProjectDetails";
 import ContactUs from "./components/ContactUs";
-import BlogPage from "./pages/BlogPage";
 import BlogDetail from "./components/BlogDetail";
 import AllBlogs from "./pages/AllBlogs";
 import { ScrollToTop } from "./components/scrollToTop";
@@ -27,6 +26,8 @@ import { AdminBlog } from "./admin/pages/AdminBlog";
 import { AdminPages } from "./admin/pages/AdminPages";
 import { AdminInquiries } from "./admin/pages/AdminInquiries";
 import { AdminSettings } from "./admin/pages/AdminSettings";
+import { ProjectBuilder } from "./admin/builder/ProjectBuilder";
+import { BlogBuilder } from "./admin/builder/BlogBuilder";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -151,6 +152,88 @@ function AnimatedRoutes() {
           <Route path="inquiries" element={<AdminInquiries />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
+
+        {/* Visual Editorial Project Builder / Composition Workspace */}
+        <Route
+          path="/admin/builder"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/blog-builder"
+          element={
+            <ProtectedAdminRoute>
+              <BlogBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/blog-builder/:id"
+          element={
+            <ProtectedAdminRoute>
+              <BlogBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/blog/builder"
+          element={
+            <ProtectedAdminRoute>
+              <BlogBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/blog-builder"
+          element={
+            <ProtectedAdminRoute>
+              <BlogBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/builder/:type"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/builder/:type/:id"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/builder"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/builder/:type"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/builder/:type/:id"
+          element={
+            <ProtectedAdminRoute>
+              <ProjectBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );

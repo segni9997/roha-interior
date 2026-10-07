@@ -90,7 +90,7 @@ const ContactUs = () => {
       </div>
 
       <div className="text-center mb-12 relative z-10">
-        <h1 className="text-5xl font-bold mb-2 text-[#172a2b]">Contact Us</h1>
+        <h1 className="text-5xl font-bold mb-2 text-white">Contact Us</h1>
         <p className="text-gray-400">Any question or remarks? Just write us a message!</p>
       </div>
 
@@ -149,7 +149,7 @@ const ContactUs = () => {
                 value={formData.firstName}
                 onChange={handleChange}
                 className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-100 transition-colors"
-                placeholder="John"
+                placeholder="Segni"
               />
             </div>
             <div className="space-y-2">
@@ -160,7 +160,7 @@ const ContactUs = () => {
                 value={formData.lastName}
                 onChange={handleChange}
                 className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-100 transition-colors"
-                placeholder="Doe"
+                placeholder="Asrat"
               />
             </div>
             <div className="space-y-2">
@@ -171,7 +171,7 @@ const ContactUs = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full bg-transparent border-b border-white/20 py-2 outline-none focus:border-cyan-100 transition-colors"
-                placeholder="john@example.com"
+                placeholder="segni@example.com"
               />
             </div>
             <div className="space-y-2">

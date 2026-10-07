@@ -103,48 +103,39 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
     try {
       setUploadingGallery(true);
       setUploadError(null);
-
-      const newlyAdded: GalleryImageItem[] = [];
+      const newItems: GalleryImageItem[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         setUploadProgress({ current: i + 1, total: files.length, filename: file.name });
-        const uploadRes = await api.uploadFile(file);
-
-        const newItem: GalleryImageItem = {
-          id: Date.now() + i + Math.floor(Math.random() * 1000),
-          image: uploadRes.url,
-          caption: '',
-          subtitle: 'Detail View',
-          order: galleryImages.length + i + 1,
-        };
 
         if (onAddServerImage) {
-          try {
-            const serverItem = await onAddServerImage({
-              image: newItem.image,
-              caption: newItem.caption,
-              subtitle: newItem.subtitle,
-              order: newItem.order,
-            });
-            newlyAdded.push(serverItem);
-          } catch {
-            newlyAdded.push(newItem);
-          }
+          const res = await api.uploadFile(file);
+          const created = await onAddServerImage({
+            image: res.url,
+            caption: file.name.replace(/\.[^/.]+$/, ''),
+            order: galleryImages.length + i + 1,
+          });
+          newItems.push(created);
         } else {
-          newlyAdded.push(newItem);
+          const res = await api.uploadFile(file);
+          newItems.push({
+            id: Date.now() + i,
+            image: res.url,
+            caption: file.name.replace(/\.[^/.]+$/, ''),
+            subtitle: 'Gallery Detail',
+            order: galleryImages.length + i + 1,
+          });
         }
       }
 
-      const updated = [...galleryImages, ...newlyAdded];
-      onGalleryImagesChange(updated);
+      onGalleryImagesChange([...galleryImages, ...newItems]);
 
-      // If no Main Image is set yet, automatically assign the first uploaded image as Main Image
-      if (!mainImage && newlyAdded.length > 0) {
-        onMainImageChange(newlyAdded[0].image);
+      if (!mainImage && newItems.length > 0) {
+        onMainImageChange(newItems[0].image);
       }
     } catch (err: any) {
-      setUploadError(err.message || 'Gallery upload failed.');
+      setUploadError(err.message || 'Failed to upload gallery images.');
     } finally {
       setUploadingGallery(false);
       setUploadProgress(null);
@@ -153,52 +144,42 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
   };
 
   /* -------------------------------------------------------------
-     3. GALLERY REORDER & REMOVE
+     3. GALLERY REORDER & FIELD UPDATE HANDLERS
   ------------------------------------------------------------- */
-  const handleMoveGalleryItem = (index: number, direction: 'left' | 'right' | 'up' | 'down') => {
-    const isBack = direction === 'left' || direction === 'up';
-    const targetIdx = isBack ? index - 1 : index + 1;
-    if (targetIdx < 0 || targetIdx >= galleryImages.length) return;
+  const handleMoveGalleryItem = (index: number, direction: 'left' | 'right') => {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= galleryImages.length) return;
 
-    const list = [...galleryImages];
-    const temp = list[index];
-    list[index] = list[targetIdx];
-    list[targetIdx] = temp;
+    const copy = [...galleryImages];
+    const temp = copy[index];
+    copy[index] = copy[targetIndex];
+    copy[targetIndex] = temp;
 
-    // Recalculate order indices
-    list.forEach((img, i) => {
-      img.order = i + 1;
-    });
+    const reordered = copy.map((item, idx) => ({ ...item, order: idx + 1 }));
+    onGalleryImagesChange(reordered);
+  };
 
-    onGalleryImagesChange(list);
+  const handleUpdateItemField = (index: number, field: 'caption' | 'subtitle', value: string) => {
+    const copy = [...galleryImages];
+    copy[index] = { ...copy[index], [field]: value };
+    onGalleryImagesChange(copy);
   };
 
   const handleRemoveGalleryItem = async (index: number) => {
-    const itemToRemove = galleryImages[index];
-    if (!itemToRemove) return;
-
-    // If server delete callback is provided and id is not a local temp timestamp
-    if (onDeleteServerImage && itemToRemove.id && itemToRemove.id < 1000000000) {
+    const target = galleryImages[index];
+    if (target.id && onDeleteServerImage) {
       try {
-        await onDeleteServerImage(itemToRemove.id);
-      } catch (err) {
-        console.warn('Server delete failed, removing locally:', err);
+        await onDeleteServerImage(target.id);
+      } catch (err: any) {
+        setUploadError(`Failed to delete image: ${err.message}`);
+        return;
       }
     }
 
-    const updated = galleryImages.filter((_, i) => i !== index);
+    const updated = galleryImages.filter((_, idx) => idx !== index);
     onGalleryImagesChange(updated);
   };
 
-  const handleUpdateItemField = (index: number, field: 'caption' | 'subtitle', val: string) => {
-    const list = [...galleryImages];
-    list[index] = { ...list[index], [field]: val };
-    onGalleryImagesChange(list);
-  };
-
-  /* -------------------------------------------------------------
-     4. DRAG AND DROP LISTENERS
-  ------------------------------------------------------------- */
   const onDragOverMain = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -242,7 +223,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
   }, [galleryImages, mainImage]);
 
   return (
-    <div className="space-y-8 select-none">
+    <div className="space-y-6">
       {/* Hidden File Inputs */}
       <input
         type="file"
@@ -262,12 +243,12 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
 
       {/* Upload Error Banner */}
       {uploadError && (
-        <div className="flex items-center justify-between p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
+        <div className="flex items-center justify-between p-3.5 bg-rose-950/60 border border-rose-800/40 rounded-xl text-xs text-rose-300">
           <div className="flex items-center gap-2.5">
             <AlertCircle size={16} className="text-rose-400 shrink-0" />
             <span>{uploadError}</span>
           </div>
-          <button onClick={() => setUploadError(null)} className="text-rose-400 hover:text-white">
+          <button onClick={() => setUploadError(null)} className="text-rose-400 hover:text-rose-200">
             <X size={14} />
           </button>
         </div>
@@ -276,21 +257,21 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
       {/* -------------------------------------------------------------
           SECTION 1: MAIN IMAGE (PRIMARY / COVER VISUAL)
       ------------------------------------------------------------- */}
-      <div className="bg-[#0b1214] border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800/60">
+      <div className="bg-[#132527] border border-white/15 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#d4af37]">
-              <Star size={16} className="fill-[#d4af37]" />
+            <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
+              <Star size={16} className="fill-cyan-400 text-cyan-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-wider text-white">Main Image (Cover)</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#172e31] text-cyan-300 border border-[#205b63]">
-                  PRIMARY LISTING & HERO
+                <h3 className="font-display text-base font-semibold text-white">Main Cover Photograph</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                  PRIMARY HERO
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                The primary visual for {contentTypeLabel.toLowerCase()} cards, listing grids, and the hero section on the public detail page.
+              <p className="text-xs text-slate-400">
+                The key visual for {contentTypeLabel.toLowerCase()} showcase cards, grids, and header banners.
               </p>
             </div>
           </div>
@@ -300,15 +281,15 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
               type="button"
               onClick={() => mainFileInputRef.current?.click()}
               disabled={uploadingMain}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#172e31] hover:bg-[#205b63] text-cyan-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-[#205b63] transition-all cursor-pointer"
+              className="secondary-button text-xs"
             >
               {uploadingMain ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
-              <span>{mainImage ? 'Replace Image' : 'Upload Main Image'}</span>
+              <span>{mainImage ? 'Replace Cover' : 'Upload Cover'}</span>
             </button>
             <button
               type="button"
               onClick={() => setPickerTarget('main')}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700/60 transition-all cursor-pointer"
+              className="secondary-button text-xs"
             >
               <FolderPlus size={13} />
               <span>Studio Assets</span>
@@ -318,19 +299,19 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
 
         {/* Main Image Drop Area / Preview */}
         {mainImage ? (
-          <div className="relative group rounded-xl overflow-hidden border border-[#d4af37]/40 bg-black/60 shadow-lg">
-            <div className="relative h-56 sm:h-72 w-full flex items-center justify-center bg-black/80 overflow-hidden">
+          <div className="relative group rounded-xl overflow-hidden border border-white/15 bg-black/40 shadow-xs">
+            <div className="relative h-56 sm:h-72 w-full flex items-center justify-center bg-black/60 overflow-hidden">
               <img
                 src={resolveImageUrl(mainImage)}
                 alt="Main Cover"
-                className="w-full h-full object-contain object-center transition-transform duration-500 group-hover:scale-[1.02]"
+                className="w-full h-full object-contain object-center transition-transform duration-300 group-hover:scale-[1.01]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
               {/* Status Badge */}
-              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#d4af37] text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-md">
-                <Star size={12} className="fill-slate-950" />
-                <span>Selected Main Image</span>
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-950/90 backdrop-blur-xs text-cyan-300 font-bold text-[10px] uppercase tracking-wider shadow-xs border border-cyan-500/30">
+                <Star size={11} className="fill-cyan-400 text-cyan-400" />
+                <span>Primary Cover</span>
               </div>
 
               {/* Action Overlays */}
@@ -339,7 +320,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                   type="button"
                   onClick={() => mainFileInputRef.current?.click()}
                   title="Replace with Local File"
-                  className="p-2 rounded-lg bg-black/80 hover:bg-[#205b63] text-white border border-slate-700 hover:border-cyan-400 text-xs transition-all shadow-lg cursor-pointer"
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs transition-all shadow-md cursor-pointer border border-white/20"
                 >
                   <RefreshCw size={14} />
                 </button>
@@ -347,15 +328,15 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                   type="button"
                   onClick={handleClearMain}
                   title="Remove Main Image"
-                  className="p-2 rounded-lg bg-black/80 hover:bg-rose-600 text-rose-300 hover:text-white border border-slate-700 hover:border-rose-500 text-xs transition-all shadow-lg cursor-pointer"
+                  className="p-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs transition-all shadow-md cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>
               </div>
 
               {/* Info Pill */}
-              <div className="absolute bottom-3 left-3 text-[10px] font-mono text-slate-300 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded border border-slate-800">
-                {mainImage.split('/').pop() || 'main_cover.jpg'}
+              <div className="absolute bottom-3 left-3 text-[11px] font-mono text-white/90 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/15">
+                {mainImage.split('/').pop() || 'cover_photo.jpg'}
               </div>
             </div>
           </div>
@@ -367,21 +348,21 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
             onClick={() => mainFileInputRef.current?.click()}
             className={`flex flex-col items-center justify-center p-8 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
               isDraggingMain
-                ? 'border-[#d4af37] bg-[#d4af37]/10 scale-[1.01]'
-                : 'border-slate-800 hover:border-[#d4af37]/50 bg-black/30 hover:bg-black/50'
+                ? 'border-cyan-400 bg-cyan-950/40'
+                : 'border-white/15 hover:border-cyan-400/60 bg-black/30 hover:bg-black/40'
             }`}
           >
             {uploadingMain ? (
               <div className="flex flex-col items-center gap-2 text-slate-400">
-                <Loader2 size={28} className="animate-spin text-[#d4af37]" />
+                <Loader2 size={24} className="animate-spin text-cyan-400" />
                 <span className="text-xs font-mono">Uploading cover image...</span>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className="w-12 h-12 rounded-xl bg-[#d4af37]/10 flex items-center justify-center text-[#d4af37] mb-1">
-                  <Star size={24} />
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 mb-1 shadow-xs">
+                  <Star size={18} />
                 </div>
-                <p className="text-xs font-bold text-white uppercase tracking-wider">
+                <p className="text-xs font-semibold text-white uppercase tracking-wider">
                   Drag & Drop Main Cover Photo Here
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -396,21 +377,21 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
       {/* -------------------------------------------------------------
           SECTION 2: MULTI-IMAGE GALLERY UPLOAD & REORDER GRID
       ------------------------------------------------------------- */}
-      <div className="bg-[#0b1214] border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
+      <div className="bg-[#132527] border border-white/15 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-[#205b63]/20 border border-[#205b63]/40 text-cyan-300">
+            <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
               <Layers size={16} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-wider text-white">Gallery Images</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#172e31] text-cyan-300 border border-[#205b63]">
+                <h3 className="font-display text-base font-semibold text-white">Project Gallery Archive</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                   {galleryImages.length} {galleryImages.length === 1 ? 'PHOTO' : 'PHOTOS'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Upload multiple images at once. Reorder, select a Main Image, or add captions.
+              <p className="text-xs text-slate-400">
+                Upload multiple high-res angles, details, and sections. Drag to reorder or set cover.
               </p>
             </div>
           </div>
@@ -420,15 +401,15 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
               type="button"
               onClick={() => multiFileInputRef.current?.click()}
               disabled={uploadingGallery}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#172e31] to-[#205b63] hover:from-[#1b373b] hover:to-[#266e77] text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-[#2d7882] shadow-md shadow-teal-950/30 transition-all cursor-pointer"
+              className="primary-button text-xs shadow-xs"
             >
               {uploadingGallery ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
-              <span>Upload Multiple Images</span>
+              <span>Upload Multiple Photos</span>
             </button>
             <button
               type="button"
               onClick={() => setPickerTarget('gallery')}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-700/60 transition-all cursor-pointer"
+              className="secondary-button text-xs"
             >
               <FolderPlus size={13} />
               <span>Studio Assets</span>
@@ -444,8 +425,8 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
           onClick={() => multiFileInputRef.current?.click()}
           className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
             isDraggingGallery
-              ? 'border-cyan-400 bg-[#205b63]/20 scale-[1.01]'
-              : 'border-slate-800/80 hover:border-cyan-500/50 bg-black/20 hover:bg-black/40'
+              ? 'border-cyan-400 bg-cyan-950/40'
+              : 'border-white/15 hover:border-cyan-400/60 bg-black/30 hover:bg-black/40'
           }`}
         >
           {uploadingGallery && uploadProgress ? (
@@ -455,9 +436,9 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                 <span>Uploading {uploadProgress.current} of {uploadProgress.total}</span>
                 <span>{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
               </div>
-              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-cyan-400 to-[#d4af37] transition-all duration-300"
+                  className="h-full bg-cyan-400 transition-all duration-300"
                   style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
                 />
               </div>
@@ -465,14 +446,14 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
             </div>
           ) : (
             <div className="flex flex-col items-center text-center gap-1.5">
-              <div className="w-10 h-10 rounded-xl bg-cyan-950/40 border border-cyan-800/40 flex items-center justify-center text-cyan-300 mb-1">
-                <UploadCloud size={20} />
+              <div className="w-9 h-9 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 mb-1 shadow-xs">
+                <UploadCloud size={18} />
               </div>
-              <p className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-white uppercase tracking-wider">
                 Drag & Drop Multiple Gallery Photos Here
               </p>
               <p className="text-[11px] text-slate-400">
-                You can select dozens of images at once from your local computer files
+                Batch select architectural photography from your computer
               </p>
             </div>
           )}
@@ -486,10 +467,10 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
               return (
                 <div
                   key={item.id || index}
-                  className={`group relative rounded-xl overflow-hidden bg-[#0e1719] border transition-all duration-200 flex flex-col justify-between ${
+                  className={`group relative rounded-xl overflow-hidden bg-black/40 border transition-all duration-200 flex flex-col justify-between ${
                     isSelectedMain
-                      ? 'border-[#d4af37] ring-2 ring-[#d4af37]/40 shadow-lg shadow-amber-950/30'
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? 'border-cyan-400 ring-2 ring-cyan-400/30 shadow-md'
+                      : 'border-white/10 hover:border-cyan-400/50 shadow-xs'
                   }`}
                 >
                   {/* Thumbnail Container */}
@@ -499,17 +480,17 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                       alt={item.caption || `Gallery ${index + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-70 group-hover:opacity-90 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />
 
                     {/* Order Index Pill */}
-                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-mono text-slate-300 border border-slate-700/60">
+                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs text-[10px] font-mono text-white border border-white/20">
                       #{index + 1}
                     </div>
 
                     {/* Active Main Badge OR Set as Main Button */}
                     {isSelectedMain ? (
-                      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d4af37] text-slate-950 text-[9px] font-black uppercase tracking-wider shadow-md">
-                        <Star size={10} className="fill-slate-950" />
+                      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-600 text-white text-[9px] font-bold uppercase tracking-wider shadow-xs">
+                        <Star size={10} className="fill-white text-white" />
                         <span>MAIN</span>
                       </div>
                     ) : (
@@ -520,10 +501,10 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                           handleSetAsMain(item.image);
                         }}
                         title="Set this image as Main Cover"
-                        className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 hover:bg-[#d4af37] text-slate-300 hover:text-slate-950 text-[9px] font-bold uppercase tracking-wider border border-slate-700 hover:border-transparent opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-md"
+                        className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 hover:bg-cyan-600 text-white text-[9px] font-semibold uppercase tracking-wider border border-white/20 opacity-0 group-hover:opacity-100 transition-all cursor-pointer shadow-xs"
                       >
                         <Star size={10} />
-                        <span>Make Main</span>
+                        <span>Make Cover</span>
                       </button>
                     )}
 
@@ -538,7 +519,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                             handleMoveGalleryItem(index, 'left');
                           }}
                           title="Move Left"
-                          className="p-1 rounded bg-black/80 hover:bg-[#205b63] text-white disabled:opacity-30 disabled:hover:bg-black/80 text-xs border border-slate-700 cursor-pointer"
+                          className="p-1 rounded bg-black/80 hover:bg-white hover:text-black text-white disabled:opacity-30 text-xs border border-white/20 cursor-pointer"
                         >
                           <ChevronLeft size={12} />
                         </button>
@@ -550,7 +531,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                             handleMoveGalleryItem(index, 'right');
                           }}
                           title="Move Right"
-                          className="p-1 rounded bg-black/80 hover:bg-[#205b63] text-white disabled:opacity-30 disabled:hover:bg-black/80 text-xs border border-slate-700 cursor-pointer"
+                          className="p-1 rounded bg-black/80 hover:bg-white hover:text-black text-white disabled:opacity-30 text-xs border border-white/20 cursor-pointer"
                         >
                           <ChevronRight size={12} />
                         </button>
@@ -561,7 +542,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                           type="button"
                           onClick={() => setLightboxIndex(index)}
                           title="Zoom / Inspect"
-                          className="p-1 rounded bg-black/80 hover:bg-cyan-600 text-white text-xs border border-slate-700 cursor-pointer"
+                          className="p-1 rounded bg-black/80 hover:bg-white hover:text-black text-white text-xs border border-white/20 cursor-pointer"
                         >
                           <Maximize2 size={12} />
                         </button>
@@ -569,7 +550,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                           type="button"
                           onClick={() => handleRemoveGalleryItem(index)}
                           title="Remove Photo"
-                          className="p-1 rounded bg-black/80 hover:bg-rose-600 text-rose-300 hover:text-white text-xs border border-slate-700 cursor-pointer"
+                          className="p-1 rounded bg-rose-700 hover:bg-rose-800 text-white text-xs border border-rose-600 cursor-pointer"
                         >
                           <Trash2 size={12} />
                         </button>
@@ -577,15 +558,15 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                     </div>
                   </div>
 
-                  {/* Caption & Subtitle Bar */}
+                  {/* Caption Bar */}
                   {allowCaptions && (
-                    <div className="p-2 space-y-1.5 bg-[#0b1214] border-t border-slate-800">
+                    <div className="p-2 space-y-1 bg-black/40 border-t border-white/10">
                       <input
                         type="text"
                         value={item.caption || ''}
                         onChange={(e) => handleUpdateItemField(index, 'caption', e.target.value)}
                         placeholder="Caption (e.g. Master Suite Joinery)"
-                        className="w-full text-[11px] bg-black/40 border border-slate-800/80 rounded px-2 py-1 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                        className="w-full text-xs bg-black/50 border border-white/10 rounded px-2 py-1 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                       />
                     </div>
                   )}
@@ -594,8 +575,8 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
             })}
           </div>
         ) : (
-          <div className="py-6 text-center text-slate-500 text-xs font-mono">
-            No gallery images uploaded yet. Drag & drop photos above to build this gallery.
+          <div className="py-6 text-center text-slate-400 text-xs">
+            No gallery images uploaded yet. Drop photos above to build this gallery.
           </div>
         )}
       </div>
@@ -632,28 +613,28 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
       ------------------------------------------------------------- */}
       {lightboxIndex !== null && galleryImages[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none"
           onClick={() => setLightboxIndex(null)}
         >
           <div className="relative max-w-5xl w-full h-[80vh] flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <img
               src={resolveImageUrl(galleryImages[lightboxIndex].image)}
               alt="Lightbox"
-              className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-slate-800"
+              className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-white/20"
             />
 
             {/* Lightbox Controls */}
             <button
               onClick={() => setLightboxIndex(null)}
-              className="absolute top-2 right-2 p-2 rounded-full bg-black/70 text-white hover:bg-rose-600 transition-colors"
+              className="icon-button absolute top-2 right-2 bg-black/60 text-white hover:bg-black"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {lightboxIndex > 0 && (
               <button
                 onClick={() => setLightboxIndex(lightboxIndex - 1)}
-                className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/70 text-white hover:bg-[#205b63] transition-colors"
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black transition-colors cursor-pointer"
               >
                 <ChevronLeft size={24} />
               </button>
@@ -662,26 +643,26 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
             {lightboxIndex < galleryImages.length - 1 && (
               <button
                 onClick={() => setLightboxIndex(lightboxIndex + 1)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/70 text-white hover:bg-[#205b63] transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 text-white hover:bg-black transition-colors cursor-pointer"
               >
                 <ChevronRight size={24} />
               </button>
             )}
 
             {/* Lightbox Bottom Info */}
-            <div className="mt-4 flex items-center justify-between w-full px-4 text-xs font-mono text-slate-300">
+            <div className="mt-4 flex items-center justify-between w-full px-4 text-xs font-mono text-white">
               <span>Photo {lightboxIndex + 1} of {galleryImages.length}</span>
-              <span className="text-[#d4af37]">
-                {mainImage === galleryImages[lightboxIndex].image ? '★ CURRENT MAIN IMAGE' : ''}
+              <span className="text-cyan-400">
+                {mainImage === galleryImages[lightboxIndex].image ? '★ CURRENT COVER' : ''}
               </span>
               <button
                 type="button"
                 onClick={() => {
                   handleSetAsMain(galleryImages[lightboxIndex].image);
                 }}
-                className="px-3 py-1 rounded bg-[#172e31] hover:bg-[#205b63] text-cyan-300 text-xs font-bold uppercase tracking-wider border border-[#205b63]"
+                className="px-3 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold uppercase tracking-wider cursor-pointer"
               >
-                Set as Main Image
+                Set as Cover
               </button>
             </div>
           </div>

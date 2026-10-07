@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, User, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, User, ArrowRight, ShieldCheck, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { useAdminAuth } from '../AdminAuthContext';
 
 export const AdminLogin: React.FC = () => {
@@ -36,34 +36,64 @@ export const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-[#070b0c] text-white flex items-center justify-center p-6 relative overflow-hidden font-sans">
-      {/* Background Architectural Grid Lines */}
-      <div 
-        className="absolute inset-0 opacity-10 pointer-events-none"
+    <div className="min-h-screen w-screen bg-gradient-to-b from-[#0b1415] via-[#101e20] to-[#0b1415] text-white flex flex-col items-center justify-between p-6 relative overflow-hidden font-sans-ui selection:bg-cyan-500 selection:text-black">
+      {/* Background Architectural Blueprint / Subtle Texture */}
+      <div
+        className="absolute inset-0 opacity-40 pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(#205b63 1px, transparent 1px), linear-gradient(to right, #162e31 1px, transparent 1px)`,
-          backgroundSize: '40px 40px, 80px 80px'
+          backgroundImage: `radial-gradient(rgba(32, 91, 99, 0.25) 1px, transparent 1px), linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px)`,
+          backgroundSize: '48px 48px, 96px 96px'
         }}
       />
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#205b63]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#d4af37]/10 rounded-full blur-3xl pointer-events-none" />
 
+      {/* Top Header Link */}
+      <header className="w-full max-w-5xl flex items-center justify-between relative z-10 py-2">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="logo-mark" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div>
+            <p className="font-display text-[17px] font-semibold leading-none tracking-[-0.03em] text-white">
+              ROHA
+            </p>
+            <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.24em] text-cyan-400">
+              Architectural studio
+            </p>
+          </div>
+        </Link>
+
+        <a
+          href="/"
+          className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1 font-medium transition-colors"
+        >
+          <span>Live Studio</span>
+          <ArrowUpRight size={13} />
+        </a>
+      </header>
+
+      {/* Login Card */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md bg-[#0e1618]/90 border border-slate-800/80 rounded-3xl p-8 sm:p-10 shadow-2xl backdrop-blur-xl z-10"
+        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-md bg-[#132527]/90 backdrop-blur-xl border border-white/15 rounded-3xl p-8 sm:p-10 shadow-2xl z-10 my-auto"
       >
         {/* Studio Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#8c701b] text-[#090e10] font-black text-xl mb-4 shadow-xl shadow-amber-950/40">
-            R
+          <div className="inline-flex items-center justify-center mb-4">
+            <div className="logo-mark scale-125" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white uppercase">
-            Studio CMS Portal
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-white">
+            Studio Workspace
           </h1>
-          <p className="text-xs text-slate-400 font-mono tracking-wider mt-1 uppercase">
-            ROHA Interior & Architectural Administration
+          <p className="text-xs text-cyan-300 uppercase tracking-[0.16em] mt-1.5 font-medium">
+            Architectural Executive Administration
           </p>
         </div>
 
@@ -72,70 +102,75 @@ export const AdminLogin: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-300 text-xs leading-relaxed"
+            className="mb-6 p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 flex items-start gap-3 text-rose-300 text-xs leading-relaxed"
           >
-            <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-rose-400" />
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{error}</span>
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Administrator Username
             </label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin"
                 required
-                className="w-full pl-11 pr-4 py-3 bg-[#131f22] border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#205b63] transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full pl-11 pr-4 py-3 bg-[#131f22] border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#205b63] transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
               />
             </div>
           </div>
 
           {/* Quick Helper Badge */}
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-[#132023]/70 border border-slate-800 text-[11px] text-slate-400 font-mono">
-            <ShieldCheck size={14} className="text-[#d4af37]" />
-            <span>Standard credentials: <strong className="text-white">admin</strong> / <strong className="text-white">admin123</strong></span>
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-white/[0.04] border border-white/10 text-[11px] text-slate-400">
+            <ShieldCheck size={14} className="text-amber-400 shrink-0" />
+            <span>Default demo: <strong className="text-white">admin</strong> / <strong className="text-white">admin123</strong></span>
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-6 py-3.5 px-6 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full mt-6 py-3 px-6 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/50 transition-all cursor-pointer disabled:opacity-50"
           >
             {submitting ? (
-              <span>Authenticating...</span>
+              <span>Authenticating studio session...</span>
             ) : (
               <>
-                <span>Access CMS Dashboard</span>
-                <ArrowRight size={16} />
+                <span>Enter Studio Workspace</span>
+                <ArrowRight size={15} />
               </>
             )}
           </button>
         </form>
       </motion.div>
+
+      {/* Footer Meta */}
+      <footer className="w-full max-w-5xl text-center py-2 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+        ROHA Architectural Studio • v2.4 All systems operational
+      </footer>
     </div>
   );
 };

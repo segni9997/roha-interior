@@ -1,32 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Move3D,
   Plus,
   Search,
-  Edit2,
+  Edit3,
   Trash2,
   ExternalLink,
-  Layers,
-  Compass,
   X,
-  Eye,
   Loader2,
-  Image as ImageIcon,
-  MapPin,
-  Upload,
-  Maximize2,
-  Minimize2
+  Compass,
+  Layers,
+  Eye,
+  Check,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   api,
   resolveImageUrl,
   type PanoramicTourItem,
-  type PanoramicSceneItem,
-  type GalleryImageItem,
 } from '../../services/api';
 import { ConfirmModal } from '../components/ConfirmModal';
-import { Toast, type ToastType } from '../components/Toast';
+import { ToastContainer, type ToastMessage } from '../components/Toast';
 import { ImagePickerModal } from '../components/ImagePickerModal';
 import { MediaGalleryManager } from '../components/MediaGalleryManager';
 
@@ -35,62 +28,34 @@ export const AdminTours: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  // Tour Edit/Create Modal State
+  // Tour Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTour, setEditingTour] = useState<PanoramicTourItem | null>(null);
-  const [formTitle, setFormTitle] = useState('');
-  const [formSlug, setFormSlug] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formCoverImage, setFormCoverImage] = useState('');
-  const [formGalleryImages, setFormGalleryImages] = useState<GalleryImageItem[]>([]);
-  const [formIsFeatured, setFormIsFeatured] = useState(true);
+  const [activeTab, setActiveTab] = useState<'details' | 'media' | 'scenes'>('details');
+  const [editingTour, setEditingTour] = useState<Partial<PanoramicTourItem> | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Live Preview Mode State
-  const [previewLayout, setPreviewLayout] = useState<'split' | 'form' | 'preview'>('split');
-  const [previewTab, setPreviewTab] = useState<'card' | 'panorama'>('card');
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Scenes Management Drawer/Modal State
+  // Scene Management Drawer State
   const [selectedTourForScenes, setSelectedTourForScenes] = useState<PanoramicTourItem | null>(null);
   const [newSceneName, setNewSceneName] = useState('');
   const [newScenePanorama, setNewScenePanorama] = useState('/1.jpg');
   const [newSceneYaw, setNewSceneYaw] = useState<number>(180);
   const [newScenePitch, setNewScenePitch] = useState<number>(0);
   const [addingScene, setAddingScene] = useState(false);
-
-  // Asset Picker State
-  const [imagePickerTarget, setImagePickerTarget] = useState<'tour_cover' | 'scene_panorama' | null>(null);
-  const sceneFileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingSceneImg, setUploadingSceneImg] = useState(false);
+  const [isScenePickerOpen, setIsScenePickerOpen] = useState(false);
 
   // Confirm Delete
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'tour' | 'scene'; id: number; title: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Toast
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-
-  const handleSceneUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      setUploadingSceneImg(true);
-      const res = await api.uploadFile(file);
-      setNewScenePanorama(res.url);
-      setToast({ message: `Panorama uploaded: ${file.name}`, type: 'success' });
-    } catch (err: any) {
-      setToast({ message: err.message || 'Panorama upload failed', type: 'error' });
-    } finally {
-      setUploadingSceneImg(false);
-      if (e.target) e.target.value = '';
-    }
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const addToast = (type: 'success' | 'error', title: string, message?: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
   };
-
-  useEffect(() => {
-    loadTours();
-  }, []);
 
   const loadTours = async () => {
     try {
@@ -98,97 +63,63 @@ export const AdminTours: React.FC = () => {
       const data = await api.getPanoramicTours();
       setTours(data);
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to fetch panoramic tours', type: 'error' });
+      addToast('error', 'Failed to fetch virtual tours', err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadTours();
+  }, []);
+
   const handleOpenCreateModal = () => {
-    setEditingTour(null);
-    setFormTitle('');
-    setFormSlug('');
-    setFormDescription('');
-    setFormCoverImage('/1.jpg');
-    setFormGalleryImages([]);
-    setFormIsFeatured(true);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (tour: PanoramicTourItem) => {
-    setEditingTour(tour);
-    setFormTitle(tour.title);
-    setFormSlug(tour.slug);
-    setFormDescription(tour.description || '');
-    setFormCoverImage(tour.cover_image || '');
-    setFormGalleryImages(tour.gallery_images || []);
-    setFormIsFeatured(tour.is_featured);
-    setIsModalOpen(true);
-  };
-
-  const handleAddServerGalleryImage = async (data: Partial<GalleryImageItem>): Promise<GalleryImageItem> => {
-    if (!editingTour) throw new Error('Tour not saved yet');
-    const res = await api.addTourGalleryImage(editingTour.id, {
-      image: data.image || '',
-      caption: data.caption,
-      subtitle: data.subtitle,
-      order: data.order || 0,
+    setActiveTab('details');
+    setEditingTour({
+      title: '',
+      slug: '',
+      description: '',
+      cover_image: '/1.jpg',
+      is_featured: true,
+      panoramicScenes: [],
+      gallery_images: [],
     });
-    return res;
+    setIsModalOpen(true);
   };
 
-  const handleDeleteServerGalleryImage = async (id: number | string) => {
-    await api.deleteTourGalleryImage(Number(id));
+  const handleOpenEditModal = async (tour: PanoramicTourItem) => {
+    setActiveTab('details');
+    try {
+      const fullDetail = await api.getPanoramicTour(tour.id);
+      setEditingTour(fullDetail);
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setEditingTour({ ...tour });
+      setIsModalOpen(true);
+    }
   };
 
   const handleSaveTour = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTitle.trim()) {
-      setToast({ message: 'Tour title is required', type: 'error' });
+    if (!editingTour?.title?.trim()) {
+      addToast('error', 'Validation Error', 'Tour title is required.');
       return;
     }
 
     try {
       setSaving(true);
-      const payload: Partial<PanoramicTourItem> = {
-        title: formTitle.trim(),
-        slug: formSlug.trim() || formTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-        description: formDescription.trim(),
-        cover_image: formCoverImage.trim() || null,
-        is_featured: formIsFeatured,
-      };
-
-      if (editingTour) {
-        const updated = await api.updatePanoramicTour(editingTour.id, payload);
-        updated.gallery_images = formGalleryImages;
-        setTours(prev => prev.map(t => (t.id === updated.id ? { ...t, ...updated } : t)));
-        setToast({ message: `Tour "${updated.title}" updated successfully`, type: 'success' });
+      if (editingTour.id) {
+        await api.updatePanoramicTour(editingTour.id, editingTour);
+        addToast('success', 'Virtual Tour Updated', `"${editingTour.title}" saved.`);
       } else {
-        const created = await api.createPanoramicTour(payload);
-        if (formGalleryImages.length > 0) {
-          const savedGallery: GalleryImageItem[] = [];
-          for (const g of formGalleryImages) {
-            try {
-              const res = await api.addTourGalleryImage(created.id, {
-                image: g.image,
-                caption: g.caption,
-                subtitle: g.subtitle,
-                order: g.order || 0,
-              });
-              savedGallery.push(res);
-            } catch {
-              savedGallery.push(g);
-            }
-          }
-          created.gallery_images = savedGallery;
-        }
-        setTours(prev => [created, ...prev]);
-        setToast({ message: `Tour "${created.title}" created successfully`, type: 'success' });
+        await api.createPanoramicTour(editingTour);
+        addToast('success', 'Virtual Tour Created', `"${editingTour.title}" added to VR portfolio.`);
       }
-
       setIsModalOpen(false);
+      setEditingTour(null);
+      await loadTours();
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to save tour', type: 'error' });
+      addToast('error', 'Failed to Save Tour', err.message);
     } finally {
       setSaving(false);
     }
@@ -196,38 +127,41 @@ export const AdminTours: React.FC = () => {
 
   const handleAddScene = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTourForScenes) return;
-    if (!newSceneName.trim()) {
-      setToast({ message: 'Scene name is required', type: 'error' });
-      return;
-    }
+    if (!selectedTourForScenes || !newSceneName.trim()) return;
 
     try {
       setAddingScene(true);
-      const scenePayload: Partial<PanoramicSceneItem> = {
+      await api.addTourScene(selectedTourForScenes.id, {
         name: newSceneName.trim(),
-        panorama: newScenePanorama.trim() || '/1.jpg',
-        initial_yaw: Number(newSceneYaw) || 0,
-        initial_pitch: Number(newScenePitch) || 0,
-        hotSpots: [],
-      };
+        panorama: newScenePanorama,
+        initial_yaw: newSceneYaw,
+        initial_pitch: newScenePitch,
+      });
 
-      const createdScene = await api.createPanoramicScene(selectedTourForScenes.id, scenePayload);
-      
-      // Update local state
-      const updatedTour = {
-        ...selectedTourForScenes,
-        panoramicScenes: [...(selectedTourForScenes.panoramicScenes || []), createdScene],
-      };
-      setSelectedTourForScenes(updatedTour);
-      setTours(prev => prev.map(t => (t.id === updatedTour.id ? updatedTour : t)));
-
+      addToast('success', 'Scene Added', `"${newSceneName}" added to tour.`);
       setNewSceneName('');
-      setToast({ message: `Scene "${createdScene.name}" added to tour`, type: 'success' });
+      setNewScenePanorama('/1.jpg');
+
+      const updated = await api.getPanoramicTour(selectedTourForScenes.id);
+      setSelectedTourForScenes(updated);
+      setTours(prev => prev.map(t => t.id === updated.id ? updated : t));
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to add scene', type: 'error' });
+      addToast('error', 'Failed to Add Scene', err.message);
     } finally {
       setAddingScene(false);
+    }
+  };
+
+  const handleDeleteScene = async (sceneId: number | string, sceneName: string) => {
+    if (!selectedTourForScenes) return;
+    try {
+      await api.deleteTourScene(sceneId);
+      addToast('success', 'Scene Deleted', `"${sceneName}" removed.`);
+      const updated = await api.getPanoramicTour(selectedTourForScenes.id);
+      setSelectedTourForScenes(updated);
+      setTours(prev => prev.map(t => t.id === updated.id ? updated : t));
+    } catch (err: any) {
+      addToast('error', 'Failed to Delete Scene', err.message);
     }
   };
 
@@ -237,52 +171,39 @@ export const AdminTours: React.FC = () => {
       setIsDeleting(true);
       if (deleteTarget.type === 'tour') {
         await api.deletePanoramicTour(deleteTarget.id);
+        addToast('success', 'Tour Deleted', `"${deleteTarget.title}" was removed.`);
         setTours(prev => prev.filter(t => t.id !== deleteTarget.id));
-        setToast({ message: `Tour "${deleteTarget.title}" deleted`, type: 'success' });
-        if (selectedTourForScenes?.id === deleteTarget.id) {
-          setSelectedTourForScenes(null);
-        }
-      } else if (deleteTarget.type === 'scene') {
-        await api.deletePanoramicScene(deleteTarget.id);
-        if (selectedTourForScenes) {
-          const updatedScenes = selectedTourForScenes.panoramicScenes.filter(
-            s => String(s.id) !== String(deleteTarget.id)
-          );
-          const updatedTour = { ...selectedTourForScenes, panoramicScenes: updatedScenes };
-          setSelectedTourForScenes(updatedTour);
-          setTours(prev => prev.map(t => (t.id === updatedTour.id ? updatedTour : t)));
-        }
-        setToast({ message: `Scene "${deleteTarget.title}" deleted`, type: 'success' });
       }
+      setDeleteTarget(null);
     } catch (err: any) {
-      setToast({ message: err.message || 'Failed to delete item', type: 'error' });
+      addToast('error', 'Delete Failed', err.message);
     } finally {
       setIsDeleting(false);
-      setDeleteTarget(null);
     }
   };
 
-  const filteredTours = tours.filter(t =>
-    t.title.toLowerCase().includes(search.toLowerCase()) ||
-    t.description?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTours = useMemo(() => {
+    return tours.filter(t =>
+      t.title.toLowerCase().includes(search.toLowerCase()) ||
+      t.description?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [tours, search]);
 
   return (
-    <div className="space-y-8">
-      {/* Toast Notification */}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    <div className="space-y-7 animate-in fade-in duration-300">
+      <ToastContainer toasts={toasts} onClose={(id) => setToasts(t => t.filter(x => x.id !== id))} />
 
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      {/* -------------------- EDITORIAL HEADER -------------------- */}
+      <section className="flex flex-col justify-between gap-5 md:flex-row md:items-end border-b border-white/10 pb-7">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight text-white uppercase">360° Virtual Reality Tours</h1>
-            <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-[#172e31] text-cyan-300 border border-[#205b63]">
-              {tours.length} TOURS LIVE
-            </span>
-          </div>
-          <p className="text-xs text-slate-400 font-mono mt-1">
-            SPATIAL TELEMETRY // EQUIRECTANGULAR IMMERSION ENGINES // HOTSPOT COMPASS
+          <p className="eyebrow mb-2 text-cyan-400">
+            Immersive archive / {tours.length < 10 ? `0${tours.length}` : tours.length} tours
+          </p>
+          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-[-0.035em] text-white">
+            Virtual Experiences
+          </h1>
+          <p className="mt-2 text-sm text-slate-300 max-w-xl">
+            Build guided 360° interactive virtual journeys through your built architectural spaces and pavilions.
           </p>
         </div>
 
@@ -291,591 +212,323 @@ export const AdminTours: React.FC = () => {
             href="/gallery"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold uppercase tracking-wider border border-slate-700/80 transition-all"
+            className="secondary-button"
           >
-            <span>Public Gallery</span>
-            <ExternalLink size={13} className="text-slate-400" />
+            <Eye size={15} />
+            <span>Public VR Gallery</span>
           </a>
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#172e31] to-[#205b63] hover:from-[#1b373b] hover:to-[#266e77] text-white text-xs font-bold uppercase tracking-wider border border-[#2d7882] shadow-lg shadow-teal-950/40 cursor-pointer transition-all"
+            className="primary-button shadow-sm"
           >
             <Plus size={15} />
-            <span>Create 360 Tour</span>
+            <span>New virtual tour</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Search Filter */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+      {/* -------------------- SEARCH TOOLBAR -------------------- */}
+      <section className="panel p-4 sm:p-5">
+        <div className="relative max-w-md">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search spatial tours..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0e1719] border border-slate-800 text-xs text-white placeholder:text-slate-600 focus:border-[#205b63] focus:outline-none"
+            placeholder="Search virtual tours..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
           />
         </div>
-      </div>
+      </section>
 
-      {/* Tours Grid */}
+      {/* -------------------- TOURS GRID -------------------- */}
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center text-slate-500 gap-3">
-          <Loader2 size={32} className="animate-spin text-cyan-400" />
-          <p className="text-xs font-mono uppercase tracking-widest">Compiling Spatial Panoramas...</p>
+        <div className="py-24 flex flex-col items-center justify-center text-slate-400 text-xs gap-3">
+          <Loader2 size={24} className="animate-spin text-cyan-400" />
+          <span className="font-mono uppercase tracking-wider">Loading virtual tours...</span>
         </div>
       ) : filteredTours.length === 0 ? (
-        <div className="py-20 rounded-3xl border border-dashed border-slate-800 text-center bg-[#0e1719]/40">
-          <Move3D size={40} className="mx-auto text-slate-600 mb-3" />
-          <p className="text-sm font-bold text-slate-300">No Panoramic Tours Found</p>
-          <p className="text-xs text-slate-500 font-mono mt-1">Initialize your first 360° equirectangular virtual tour</p>
+        <div className="panel p-16 text-center text-sm text-slate-400">
+          No virtual tours found. Click &quot;New virtual tour&quot; to create your first 360° spatial journey.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTours.map((tour) => {
-            const scenesCount = tour.panoramicScenes?.length || 0;
+            const sceneCount = tour.panoramicScenes?.length || 0;
             return (
-              <div
+              <article
                 key={tour.id}
-                className="group relative rounded-3xl bg-[#0c1315] border border-slate-800/80 hover:border-[#172e31] transition-all overflow-hidden flex flex-col shadow-xl"
+                className="panel overflow-hidden group hover:shadow-xl hover:border-cyan-400/40 transition-all flex flex-col justify-between"
               >
-                {/* Image Cover */}
-                <div className="aspect-[16/9] w-full overflow-hidden bg-slate-900 relative">
-                  <img
-                    src={resolveImageUrl(tour.cover_image, '/1.jpg')}
-                    alt={tour.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c1315] via-transparent to-black/40" />
+                <div>
+                  <div
+                    className="aspect-[16/10] w-full bg-black/50 bg-cover bg-center relative overflow-hidden"
+                    style={{
+                      backgroundImage: `url(${resolveImageUrl(tour.cover_image || '/1.jpg')})`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
 
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-md bg-black/75 text-cyan-300 border border-cyan-800/50 backdrop-blur-md flex items-center gap-1.5">
-                      <Compass size={11} />
-                      <span>{scenesCount} {scenesCount === 1 ? 'SCENE' : 'SCENES'}</span>
-                    </span>
-                    {tour.is_featured && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/40 backdrop-blur-md">
-                        FEATURED
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-cyan-950/90 text-cyan-300 font-semibold border border-cyan-500/30 shadow-xs flex items-center gap-1">
+                        <Compass size={11} className="text-cyan-400" />
+                        <span>{sceneCount} {sceneCount === 1 ? 'Scene' : 'Scenes'}</span>
                       </span>
-                    )}
-                  </div>
+                      {tour.is_featured && (
+                        <span className="status-pill featured shadow-xs">
+                          Featured
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Actions Bar on Image */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                     <a
-                      href={`/view360/${tour.id}`}
+                      href={`/view360?tour=${tour.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="icon-button absolute top-3 right-3 bg-black/60 text-white hover:bg-cyan-600 shadow-xs border-white/20"
                       title="Launch 360 Viewer"
-                      className="p-2 rounded-xl bg-black/70 hover:bg-[#172e31] text-cyan-300 border border-slate-700 backdrop-blur-md transition-colors"
                     >
-                      <Eye size={14} />
+                      <ExternalLink size={14} />
                     </a>
+                  </div>
+
+                  <div className="p-5">
+                    <h3 className="font-display text-xl font-semibold text-white group-hover:text-cyan-300 transition-colors truncate">
+                      {tour.title}
+                    </h3>
+                    <p className="text-xs text-slate-300 line-clamp-2 mt-2 leading-relaxed">
+                      {tour.description || 'Interactive 360° architectural space panorama.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-black/30 border-t border-white/10 flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => setSelectedTourForScenes(tour)}
+                    className="text-xs font-semibold text-cyan-300 hover:text-cyan-200 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Layers size={13} />
+                    <span>Scenes ({sceneCount})</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleOpenEditModal(tour)}
-                      title="Edit Tour"
-                      className="p-2 rounded-xl bg-black/70 hover:bg-[#172e31] text-slate-300 hover:text-white border border-slate-700 backdrop-blur-md transition-colors cursor-pointer"
+                      className="secondary-button text-xs py-1.5 px-3"
                     >
-                      <Edit2 size={14} />
+                      <Edit3 size={13} />
+                      <span>Edit</span>
                     </button>
                     <button
                       onClick={() => setDeleteTarget({ type: 'tour', id: tour.id, title: tour.title })}
-                      title="Delete Tour"
-                      className="p-2 rounded-xl bg-black/70 hover:bg-rose-900/50 text-slate-300 hover:text-rose-400 border border-slate-700 backdrop-blur-md transition-colors cursor-pointer"
+                      className="icon-button text-rose-400 hover:bg-rose-950/60 border-rose-800/40"
+                      title="Delete tour"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
-
-                {/* Tour Info */}
-                <div className="p-6 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-white tracking-tight line-clamp-1">{tour.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2 mt-2 leading-relaxed">
-                      {tour.description || 'No spatial narrative provided.'}
-                    </p>
-                  </div>
-
-                  {/* Scenes Quick Bar */}
-                  <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="text-[11px] font-mono text-slate-500 uppercase">
-                      ID: VR-{String(tour.id).padStart(3, '0')}
-                    </span>
-                    <button
-                      onClick={() => setSelectedTourForScenes(tour)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#172e31]/60 hover:bg-[#172e31] text-cyan-300 text-xs font-bold uppercase tracking-wider border border-[#205b63]/60 transition-all cursor-pointer"
-                    >
-                      <Layers size={13} />
-                      <span>Manage Scenes</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      {/* -------------------- TOUR CREATE / EDIT MODAL WITH LIVE 360 PREVIEW -------------------- */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className={`fixed inset-0 z-50 flex items-center justify-center ${isFullscreen ? 'p-0' : 'p-2 sm:p-4'} overflow-y-auto`}>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="fixed inset-0 bg-black/85 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 15 }}
-              className={`relative ${
-                isFullscreen
-                  ? 'w-screen h-screen rounded-none border-0'
-                  : 'w-[98vw] max-w-[1720px] h-[94vh] rounded-3xl border border-[#172e31]'
-              } bg-[#0b1214] shadow-2xl z-10 my-auto flex flex-col text-white transition-all duration-300 overflow-hidden`}
-            >
-              {/* Header & Mode Switcher */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-slate-800 bg-[#0f181b] shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#172e31] flex items-center justify-center text-cyan-300 shrink-0">
-                    <Move3D size={18} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                      <span>{editingTour ? 'Edit 360 Virtual Tour' : 'Create 360 Virtual Tour'}</span>
-                      <span className="hidden md:inline-block px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cyan-950 text-cyan-300 border border-cyan-800/60">
-                        Live 360 Preview
-                      </span>
-                    </h3>
-                    <p className="text-[11px] font-mono text-slate-400">Configure spatial architecture metadata and review public gallery presentation</p>
-                  </div>
+      {/* -------------------- CREATE / EDIT TOUR MODAL -------------------- */}
+      {isModalOpen && editingTour && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md"
+            onClick={() => !saving && setIsModalOpen(false)}
+          />
+
+          <div className="relative w-full max-w-3xl max-h-[90vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl">
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
+                  <Compass size={18} />
                 </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  <div className="flex items-center p-1 bg-[#142023] rounded-xl border border-slate-800 text-xs font-mono">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewLayout('form')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        previewLayout === 'form' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Form
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewLayout('split')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        previewLayout === 'split' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Split 50/50
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewLayout('preview')}
-                      className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                        previewLayout === 'preview' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Preview
-                    </button>
-                  </div>
-
-                  {/* Fullscreen Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-2 rounded-xl bg-[#142023] border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    title={isFullscreen ? 'Exit Full Screen' : 'Full Screen Mode'}
-                  >
-                    {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Split Canvas */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
-                
-                {/* LEFT PANE: Form */}
-                {(previewLayout === 'split' || previewLayout === 'form') && (
-                  <div className={`${previewLayout === 'split' ? 'lg:col-span-6' : 'lg:col-span-12'} p-6 space-y-4 overflow-y-auto max-h-[80vh]`}>
-                    <form id="tour-form" onSubmit={handleSaveTour} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-mono text-slate-400 uppercase mb-1">
-                          Tour Title <span className="text-rose-400">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formTitle}
-                          onChange={(e) => setFormTitle(e.target.value)}
-                          placeholder="e.g. Modern Minimalist Penthouse 360"
-                          className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white focus:border-[#205b63] focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-mono text-slate-400 uppercase mb-1">Slug (URL Identifier)</label>
-                        <input
-                          type="text"
-                          value={formSlug}
-                          onChange={(e) => setFormSlug(e.target.value)}
-                          placeholder="e.g. modern-minimalist-penthouse-360"
-                          className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white font-mono focus:border-[#205b63] focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Main Cover & Companion Gallery Images */}
-                      <MediaGalleryManager
-                        mainImage={formCoverImage}
-                        onMainImageChange={(url) => setFormCoverImage(url || '')}
-                        galleryImages={formGalleryImages}
-                        onGalleryImagesChange={setFormGalleryImages}
-                        contentTypeLabel="360 Tour"
-                        onAddServerImage={editingTour ? handleAddServerGalleryImage : undefined}
-                        onDeleteServerImage={editingTour ? handleDeleteServerGalleryImage : undefined}
-                      />
-
-                      <div>
-                        <label className="block text-xs font-mono text-slate-400 uppercase mb-1">Description / Spatial Narrative</label>
-                        <textarea
-                          rows={3}
-                          value={formDescription}
-                          onChange={(e) => setFormDescription(e.target.value)}
-                          placeholder="Immersive spatial visualization capturing the light well and mezzanine..."
-                          className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white focus:border-[#205b63] focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-2">
-                        <input
-                          type="checkbox"
-                          id="tourFeatured"
-                          checked={formIsFeatured}
-                          onChange={(e) => setFormIsFeatured(e.target.checked)}
-                          className="w-4 h-4 rounded bg-[#080d0e] border-slate-700 accent-[#205b63]"
-                        />
-                        <label htmlFor="tourFeatured" className="text-xs font-mono text-slate-300 cursor-pointer">
-                          Feature on Studio Homepage & VR Hero Showcase
-                        </label>
-                      </div>
-                    </form>
-                  </div>
-                )}
-
-                {/* RIGHT PANE: Authentic Live Website 360° Preview */}
-                {(previewLayout === 'split' || previewLayout === 'preview') && (
-                  <div className={`${previewLayout === 'split' ? 'lg:col-span-6' : 'lg:col-span-12'} bg-[#070b0c] p-5 flex flex-col justify-between overflow-y-auto max-h-[80vh]`}>
-                    <div>
-                      {/* Browser Chrome & Controls */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800/80">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
-                          <span className="ml-2 text-[10px] font-mono text-slate-500 bg-[#142023] px-2.5 py-0.5 rounded-md border border-slate-800">
-                            roha.studio/gallery/preview
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-[10px] font-mono">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTab('card')}
-                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                                previewTab === 'card' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              Gallery Card
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewTab('panorama')}
-                              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                                previewTab === 'panorama' ? 'bg-[#205b63] text-white font-bold' : 'text-slate-400 hover:text-white'
-                              }`}
-                            >
-                              360 Viewport
-                            </button>
-                          </div>
-
-                          <div className="flex items-center p-0.5 bg-[#142023] rounded-lg border border-slate-800 text-[10px] font-mono">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewDevice('desktop')}
-                              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                                previewDevice === 'desktop' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                              }`}
-                            >
-                              Desktop
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewDevice('mobile')}
-                              className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                                previewDevice === 'mobile' ? 'bg-slate-700 text-white' : 'text-slate-400'
-                              }`}
-                            >
-                              Mobile
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* PREVIEW CONTENT */}
-                      <div className={`mx-auto transition-all duration-300 ${
-                        previewDevice === 'mobile' ? 'max-w-[320px]' : 'max-w-[420px]'
-                      }`}>
-                        {previewTab === 'card' ? (
-                          /* Authentic 360 Gallery Card as on /gallery */
-                          <div className="bg-black p-3 rounded-2xl border border-slate-800 shadow-2xl">
-                            <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                              <span>● Live /gallery Showcase</span>
-                              <span>Interactive 360</span>
-                            </div>
-
-                            <div className="group relative overflow-hidden rounded-2xl bg-gray-950 aspect-[4/5] border border-gray-800 shadow-2xl cursor-pointer">
-                              <div
-                                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                                style={{
-                                  backgroundImage: `url(${resolveImageUrl(formCoverImage, '/1.jpg')})`
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
-
-                              {/* 360 Tour Badge */}
-                              <div className="absolute top-4 left-4 bg-[#395e63] px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 shadow-lg">
-                                <Move3D size={12} className="animate-pulse" />
-                                <span>360° TOUR</span>
-                              </div>
-
-                              <div className="absolute bottom-5 left-5 right-5">
-                                <span className="text-cyan-400 text-[10px] uppercase font-bold tracking-widest font-mono block">
-                                  {editingTour?.panoramicScenes?.length || 1} INTERACTIVE SCENES
-                                </span>
-                                <h3 className="text-xl sm:text-2xl font-bold mt-1 mb-1 text-white leading-tight">
-                                  {formTitle || 'Untitled 360° Experience'}
-                                </h3>
-                                <div className="flex items-center gap-1.5 text-gray-300 text-xs">
-                                  <MapPin size={13} className="text-[#395e63]" />
-                                  <span>Addis Ababa, Ethiopia</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Equirectangular Panorama Viewport Simulation */
-                          <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#0c1315] p-4 shadow-2xl space-y-3">
-                            <div className="text-[10px] font-mono text-cyan-300 uppercase tracking-widest flex items-center justify-between border-b border-white/10 pb-2">
-                              <span>● Equirectangular Camera Viewport</span>
-                              <span>Field of View: 100°</span>
-                            </div>
-
-                            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/15 group">
-                              <img
-                                src={resolveImageUrl(formCoverImage, '/1.jpg')}
-                                alt="360 Scene"
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/25 pointer-events-none" />
-
-                              {/* HUD Reticle */}
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="w-12 h-12 rounded-full border border-cyan-400/60 flex items-center justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-ping" />
-                                </div>
-                              </div>
-
-                              {/* Top Bar HUD */}
-                              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between text-[10px] font-mono bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10">
-                                <span className="text-cyan-300 flex items-center gap-1">
-                                  <Compass size={12} /> YAW: 180° [S]
-                                </span>
-                                <span className="text-slate-300">PITCH: 0.0°</span>
-                                <span className="text-emerald-400">FPS: 60</span>
-                              </div>
-
-                              <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-center">
-                                <span className="px-3 py-1 rounded-full bg-[#205b63]/90 backdrop-blur-md text-[10px] font-mono text-white font-bold uppercase tracking-wider">
-                                  360° Spherical Immersion Active
-                                </span>
-                              </div>
-                            </div>
-
-                            <p className="text-[11px] text-slate-400 font-mono text-center">
-                              High-resolution equirectangular spherical texture projection with spatial audio tags.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-                      <span>Real-time WebGL rendering preview</span>
-                      <span className="text-cyan-400">ROHA Virtual Reality Engine</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Actions */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-[#0f181b] rounded-b-3xl shrink-0">
-                <span className="text-xs text-slate-500 font-mono hidden sm:inline-block">
-                  Changes will be reflected across 360 gallery and VR viewer
-                </span>
-                <div className="flex items-center gap-3 ml-auto">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl border border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    form="tour-form"
-                    disabled={saving}
-                    className="px-6 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
-                  >
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : null}
-                    <span>{editingTour ? 'Update Tour' : 'Create Tour'}</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* -------------------- SCENES MANAGEMENT DRAWER -------------------- */}
-      <AnimatePresence>
-        {selectedTourForScenes && (
-          <div className="fixed inset-0 z-50 flex justify-end">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedTourForScenes(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-2xl bg-[#0c1315] border-l border-[#172e31] h-full shadow-2xl p-6 sm:p-8 flex flex-col z-10 text-white overflow-y-auto"
-            >
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#172e31] text-cyan-300">
-                      SPATIAL SCENE ENGINE
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">VR-{selectedTourForScenes.id}</span>
-                  </div>
-                  <h2 className="text-lg font-black text-white mt-1 uppercase tracking-tight">
-                    {selectedTourForScenes.title}
+                  <h2 className="font-display text-xl font-semibold text-white">
+                    {editingTour.id ? `Edit: ${editingTour.title}` : 'Create Virtual 360 Tour'}
                   </h2>
+                  <p className="text-xs text-slate-400">
+                    Configure tour metadata and panoramic visuals
+                  </p>
                 </div>
+              </div>
+
+              <button
+                onClick={() => setIsModalOpen(false)}
+                disabled={saving}
+                className="icon-button"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30">
+              {[
+                { id: 'details', label: '1. Tour Details' },
+                { id: 'media', label: '2. Cover & Assets' },
+              ].map((tab) => (
                 <button
-                  onClick={() => setSelectedTourForScenes(null)}
-                  className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/5"
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`pb-3 px-3 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'border-cyan-400 text-cyan-300'
+                      : 'border-transparent text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <X size={20} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSaveTour} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {activeTab === 'details' && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Tour Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editingTour.title || ''}
+                      onChange={(e) => setEditingTour({ ...editingTour, title: e.target.value })}
+                      placeholder="e.g. Lighthouse House Spatial Walkthrough"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Description
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={editingTour.description || ''}
+                      onChange={(e) => setEditingTour({ ...editingTour, description: e.target.value })}
+                      placeholder="Describe the immersive guided experience..."
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
+                    <input
+                      type="checkbox"
+                      id="is_tour_featured"
+                      checked={editingTour.is_featured || false}
+                      onChange={(e) => setEditingTour({ ...editingTour, is_featured: e.target.checked })}
+                      className="w-4 h-4 accent-cyan-500 rounded cursor-pointer"
+                    />
+                    <label htmlFor="is_tour_featured" className="text-xs font-semibold text-slate-200 cursor-pointer">
+                      Feature on Virtual Reality Experience Showcase
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'media' && (
+                <div className="animate-in fade-in">
+                  <MediaGalleryManager
+                    mainImage={editingTour.cover_image || null}
+                    onMainImageChange={(url) => setEditingTour({ ...editingTour, cover_image: url || '' })}
+                    galleryImages={editingTour.gallery_images || []}
+                    onGalleryImagesChange={(images) => setEditingTour({ ...editingTour, gallery_images: images })}
+                    contentTypeLabel="Virtual Tour"
+                  />
+                </div>
+              )}
+
+              <div className="pt-5 border-t border-white/10 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={saving}
+                  className="secondary-button text-xs"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="primary-button text-xs shadow-md"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>Saving tour...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      <span>{editingTour.id ? 'Update Tour' : 'Publish Tour'}</span>
+                    </>
+                  )}
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              {/* Existing Scenes List */}
-              <div className="mt-6">
-                <h3 className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-3">
-                  Configured Panoramic Scenes ({selectedTourForScenes.panoramicScenes?.length || 0})
+      {/* -------------------- SCENES MANAGEMENT DRAWER -------------------- */}
+      {selectedTourForScenes && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md"
+            onClick={() => setSelectedTourForScenes(null)}
+          />
+
+          <div className="relative w-full max-w-2xl bg-[#132527] border border-white/15 rounded-2xl p-6 shadow-2xl z-10 text-white max-h-[90vh] flex flex-col backdrop-blur-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div>
+                <h3 className="font-display text-xl font-semibold text-white">
+                  Tour Scenes: {selectedTourForScenes.title}
                 </h3>
+                <p className="text-xs text-slate-400">
+                  Manage 360° panoramas and initial camera orientation for each viewpoint
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedTourForScenes(null)}
+                className="icon-button"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-5 space-y-6">
+              {/* Add Scene Form */}
+              <form onSubmit={handleAddScene} className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Add 360° Scene Viewpoint
+                </p>
 
                 <div className="space-y-3">
-                  {(!selectedTourForScenes.panoramicScenes || selectedTourForScenes.panoramicScenes.length === 0) ? (
-                    <div className="p-6 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500 font-mono">
-                      No scenes defined for this tour yet. Add one below.
-                    </div>
-                  ) : (
-                    selectedTourForScenes.panoramicScenes.map((scene, idx) => (
-                      <div
-                        key={scene.id || idx}
-                        className="p-4 rounded-2xl bg-[#080d0e] border border-slate-800/90 flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-14 h-10 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-slate-800">
-                            <img
-                              src={resolveImageUrl(scene.panorama, '/1.jpg')}
-                              alt={scene.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{scene.name}</p>
-                            <p className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
-                              {scene.panorama} // YAW: {scene.initial_yaw}° // PITCH: {scene.initial_pitch}°
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => setDeleteTarget({
-                            type: 'scene',
-                            id: Number(scene.id),
-                            title: scene.name,
-                          })}
-                          className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Add New Scene Form */}
-              <div className="mt-8 pt-6 border-t border-slate-800">
-                <h3 className="text-xs font-mono text-cyan-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <Plus size={14} />
-                  <span>Add Equirectangular Scene</span>
-                </h3>
-
-                <form onSubmit={handleAddScene} className="space-y-4">
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Scene Name</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+                      Scene Name
+                    </label>
                     <input
                       type="text"
                       required
                       value={newSceneName}
                       onChange={(e) => setNewSceneName(e.target.value)}
-                      placeholder="e.g. Master Living Salon"
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white focus:border-[#205b63] focus:outline-none"
+                      placeholder="e.g. Master Living Pavilion / Courtyard Walk"
+                      className="w-full px-3 py-2 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">
-                      Equirectangular Panorama Image
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+                      Equirectangular 360° Panorama Path
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -883,103 +536,134 @@ export const AdminTours: React.FC = () => {
                         required
                         value={newScenePanorama}
                         onChange={(e) => setNewScenePanorama(e.target.value)}
-                        placeholder="/1.jpg or /3.jpg"
-                        className="flex-1 px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white font-mono focus:border-[#205b63] focus:outline-none"
-                      />
-                      <input
-                        ref={sceneFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleSceneUpload}
+                        placeholder="/1.jpg or /uploads/..."
+                        className="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-white/10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                       />
                       <button
                         type="button"
-                        disabled={uploadingSceneImg}
-                        onClick={() => sceneFileInputRef.current?.click()}
-                        className="px-3.5 py-2 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50 transition-colors"
-                        title="Upload 360 panorama directly from device"
-                      >
-                        {uploadingSceneImg ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                        <span>{uploadingSceneImg ? 'Uploading...' : 'Upload'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setImagePickerTarget('scene_panorama')}
-                        className="px-3 py-2 rounded-xl bg-[#172e31] hover:bg-[#205b63] text-cyan-300 text-xs font-bold uppercase tracking-wider border border-[#205b63] flex items-center gap-1.5 cursor-pointer transition-colors"
+                        onClick={() => setIsScenePickerOpen(true)}
+                        className="secondary-button text-xs"
                       >
                         <ImageIcon size={13} />
-                        <span>Select</span>
+                        <span>Select Photo</span>
                       </button>
                     </div>
-                    {newScenePanorama && (
-                      <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-slate-800 mt-2">
-                        <img
-                          src={resolveImageUrl(newScenePanorama, '/1.jpg')}
-                          alt="Scene Panorama Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-mono text-cyan-300 border border-cyan-800/40">
-                          ● Live Equirectangular Projection
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Initial Yaw (°)</label>
+                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+                        Initial Yaw Angle ({newSceneYaw}°)
+                      </label>
                       <input
-                        type="number"
+                        type="range"
+                        min="0"
+                        max="360"
                         value={newSceneYaw}
                         onChange={(e) => setNewSceneYaw(Number(e.target.value))}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white font-mono focus:border-[#205b63] focus:outline-none"
+                        className="w-full accent-cyan-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-mono text-slate-400 uppercase mb-1">Initial Pitch (°)</label>
+                      <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">
+                        Initial Pitch Angle ({newScenePitch}°)
+                      </label>
                       <input
-                        type="number"
+                        type="range"
+                        min="-90"
+                        max="90"
                         value={newScenePitch}
                         onChange={(e) => setNewScenePitch(Number(e.target.value))}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-white font-mono focus:border-[#205b63] focus:outline-none"
+                        className="w-full accent-cyan-400"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <button
-                    type="submit"
-                    disabled={addingScene}
-                    className="w-full mt-2 px-5 py-2.5 rounded-xl bg-[#172e31] hover:bg-[#205b63] text-white text-xs font-bold uppercase tracking-wider border border-[#2d7882] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer transition-all"
-                  >
-                    {addingScene && <Loader2 size={14} className="animate-spin" />}
-                    <span>Add Scene to Tour</span>
-                  </button>
-                </form>
+                <button
+                  type="submit"
+                  disabled={addingScene}
+                  className="primary-button text-xs w-full justify-center mt-2"
+                >
+                  {addingScene ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                  <span>Add Scene to Tour</span>
+                </button>
+              </form>
+
+              {/* Scenes List */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Current Scenes ({selectedTourForScenes.panoramicScenes?.length || 0})
+                </p>
+
+                {(!selectedTourForScenes.panoramicScenes || selectedTourForScenes.panoramicScenes.length === 0) ? (
+                  <p className="text-xs text-slate-400 py-4 text-center">No scenes configured for this tour yet.</p>
+                ) : (
+                  selectedTourForScenes.panoramicScenes.map((scene, idx) => (
+                    <div
+                      key={scene.id || idx}
+                      className="p-3.5 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-14 h-10 rounded-md bg-black/60 bg-cover bg-center shrink-0 border border-white/10"
+                          style={{ backgroundImage: `url(${resolveImageUrl(scene.panorama)})` }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white truncate">{scene.name}</p>
+                          <p className="text-[10px] font-mono text-slate-400 truncate">
+                            Yaw: {scene.initial_yaw}° • Pitch: {scene.initial_pitch}° • {scene.panorama}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteScene(scene.id, scene.name)}
+                        className="icon-button text-rose-400 hover:bg-rose-950/60 border-rose-800/40"
+                        title="Delete scene"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            </div>
 
-      {/* -------------------- IMAGE ASSET PICKER MODAL -------------------- */}
-      <ImagePickerModal
-        isOpen={imagePickerTarget !== null}
-        onClose={() => setImagePickerTarget(null)}
-        currentValue={imagePickerTarget === 'tour_cover' ? formCoverImage : newScenePanorama}
-        onSelect={(path) => {
-          if (imagePickerTarget === 'tour_cover') setFormCoverImage(path);
-          if (imagePickerTarget === 'scene_panorama') setNewScenePanorama(path);
-        }}
-        title={imagePickerTarget === 'scene_panorama' ? 'Select Equirectangular Panorama' : 'Select Tour Cover Image'}
-      />
+            <div className="pt-4 border-t border-white/10 text-right">
+              <button
+                onClick={() => setSelectedTourForScenes(null)}
+                className="secondary-button text-xs"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Asset Picker for Scene Panorama */}
+      {isScenePickerOpen && (
+        <ImagePickerModal
+          isOpen={true}
+          onClose={() => setIsScenePickerOpen(false)}
+          onSelect={(url) => {
+            setNewScenePanorama(url);
+            setIsScenePickerOpen(false);
+          }}
+          currentValue={newScenePanorama}
+          title="Select 360 Equirectangular Panorama"
+        />
+      )}
 
       {/* -------------------- CONFIRM DELETE MODAL -------------------- */}
       <ConfirmModal
-        isOpen={deleteTarget !== null}
-        title={`Delete ${deleteTarget?.type === 'tour' ? 'Panoramic Tour' : 'Scene'}?`}
-        message={`Are you sure you want to delete "${deleteTarget?.title}"? This spatial data will be permanently removed.`}
-        confirmLabel="Confirm Delete"
+        isOpen={!!deleteTarget}
+        title="Delete Virtual Tour"
+        message={`Are you sure you want to delete "${deleteTarget?.title}"? All scenes and VR configurations will be removed.`}
+        confirmLabel="Delete Tour"
+        cancelLabel="Cancel"
+        isDestructive={true}
         isLoading={isDeleting}
         onConfirm={handleDeleteConfirmed}
         onCancel={() => setDeleteTarget(null)}

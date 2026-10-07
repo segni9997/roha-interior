@@ -110,20 +110,20 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            className="absolute inset-0 bg-black/75 backdrop-blur-md"
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-4xl max-h-[90vh] bg-[#0c1315] border border-[#172e31] rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col z-10 text-white"
+            exit={{ opacity: 0, scale: 0.96, y: 15 }}
+            className="relative w-full max-w-4xl max-h-[90vh] bg-[#132527] border border-white/15 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col z-10 text-white backdrop-blur-xl"
           >
             {/* Hidden device file input */}
             <input
@@ -135,40 +135,41 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             />
 
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#172e31] border border-[#205b63] flex items-center justify-center text-cyan-300 shadow-sm">
-                  {acceptVideo ? <Film size={20} /> : <ImageIcon size={20} />}
+                <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
+                  {acceptVideo ? <Film size={18} /> : <ImageIcon size={18} />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold tracking-tight text-white">{title}</h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#172e31] text-[#d4af37]">
+                    <h3 className="font-display text-lg font-semibold text-white">{title}</h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
                       {STUDIO_PHOTO_ASSETS.length} ASSETS
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 font-mono">
-                    Upload from local device, select studio photography, or input custom URI
+                  <p className="text-xs text-slate-400">
+                    Select high-res studio photography, drop new uploads, or paste a media link
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                className="icon-button"
+                aria-label="Close modal"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </div>
 
-            {/* Top Action Tabs: Upload from Device vs Curated Library */}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#080d0e] border border-slate-800/90">
+            {/* Top Action Tabs */}
+            <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-black/40 border border-white/10">
                 <button
                   type="button"
                   onClick={() => setActiveTab('library')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     activeTab === 'library'
-                      ? 'bg-[#172e31] text-cyan-200 border border-[#2d7882] shadow-sm'
+                      ? 'bg-cyan-900/60 text-cyan-200 border border-cyan-500/30 shadow-xs font-semibold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -178,9 +179,9 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('upload')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                     activeTab === 'upload'
-                      ? 'bg-[#205b63] text-white border border-cyan-400/50 shadow-sm'
+                      ? 'bg-cyan-900/60 text-cyan-200 border border-cyan-500/30 shadow-xs font-semibold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -194,12 +195,12 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#205b63] to-[#2d7882] hover:from-[#17484e] hover:to-[#205b63] text-white text-xs font-bold uppercase tracking-wider border border-cyan-400/40 shadow-lg shadow-cyan-950/40 transition-all cursor-pointer disabled:opacity-50"
+                className="primary-button text-xs shadow-xs"
               >
                 {isUploading ? (
                   <>
-                    <Loader2 size={14} className="animate-spin text-cyan-300" />
-                    <span>Uploading...</span>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Uploading file...</span>
                   </>
                 ) : (
                   <>
@@ -212,7 +213,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 
             {/* Upload Error Banner */}
             {uploadError && (
-              <div className="mt-3 p-3 rounded-xl bg-red-950/50 border border-red-800/80 text-red-300 text-xs flex items-center gap-2">
+              <div className="mt-3 p-3 rounded-xl bg-rose-950/60 border border-rose-800/40 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle size={15} className="shrink-0" />
                 <span>{uploadError}</span>
               </div>
@@ -226,35 +227,35 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
-                  className={`p-10 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                  className={`p-10 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
                     isDragging
-                      ? 'border-cyan-400 bg-[#205b63]/20 scale-[1.01]'
-                      : 'border-slate-700/80 hover:border-[#205b63] bg-[#080d0e]/60 hover:bg-[#080d0e]'
+                      ? 'border-cyan-400 bg-cyan-950/40'
+                      : 'border-white/15 hover:border-cyan-400/60 bg-black/30 hover:bg-black/40'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-[#172e31] border border-[#205b63] flex items-center justify-center text-cyan-300 mb-4 shadow-inner">
+                  <div className="w-14 h-14 rounded-2xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 mb-3 shadow-xs">
                     {isUploading ? (
-                      <Loader2 size={30} className="animate-spin text-cyan-300" />
+                      <Loader2 size={24} className="animate-spin text-cyan-400" />
                     ) : (
-                      <UploadCloud size={30} />
+                      <UploadCloud size={24} />
                     )}
                   </div>
 
-                  <h4 className="text-base font-bold text-white mb-1">
-                    {isUploading ? 'Uploading file from your computer...' : 'Select or Drop Files from Your Device'}
+                  <h4 className="font-display text-base font-semibold text-white mb-1">
+                    {isUploading ? 'Uploading file to server...' : 'Drag & drop media files here'}
                   </h4>
                   <p className="text-xs text-slate-400 max-w-sm mb-4">
                     {acceptVideo
-                      ? 'Supports high-res architectural images (JPG, PNG, WebP) and cinematic videos (MP4, WebM).'
+                      ? 'Supports high-res architectural images (JPG, PNG, WebP) and videos (MP4, WebM).'
                       : 'Supports high-res architectural photography (JPG, PNG, WebP, SVG).'}
                   </p>
 
                   <button
                     type="button"
                     disabled={isUploading}
-                    className="px-6 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#17484e] text-white text-xs font-bold uppercase tracking-wider border border-cyan-400/40 shadow-md transition-colors"
+                    className="secondary-button text-xs"
                   >
-                    Browse Device Storage
+                    Select file from computer
                   </button>
                 </div>
               </div>
@@ -262,15 +263,15 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
               /* TAB 2: CURATED STUDIO LIBRARY & CUSTOM URI */
               <>
                 {/* Custom URL Input Bar */}
-                <div className="mt-3 p-2.5 rounded-2xl bg-[#080d0e] border border-slate-800/80 flex flex-col sm:flex-row gap-2.5 items-center">
-                  <div className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-slate-800 focus-within:border-[#205b63]">
-                    <span className="text-[11px] font-mono text-slate-500 uppercase">URI:</span>
+                <div className="mt-3 p-2 rounded-xl bg-black/40 border border-white/10 flex flex-col sm:flex-row gap-2 items-center">
+                  <div className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 focus-within:border-cyan-400">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">URL/Path:</span>
                     <input
                       type="text"
                       value={customInput}
                       onChange={(e) => setCustomInput(e.target.value)}
                       placeholder="e.g. /tr/279A1756.JPG or /uploads/... or https://..."
-                      className="bg-transparent text-xs text-white placeholder:text-slate-600 focus:outline-none w-full font-mono"
+                      className="bg-transparent text-xs text-white placeholder:text-slate-500 focus:outline-none w-full font-mono"
                     />
                   </div>
                   <button
@@ -282,24 +283,22 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                       }
                     }}
                     disabled={!customInput.trim()}
-                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#172e31] hover:bg-[#205b63] disabled:opacity-40 text-xs font-bold uppercase tracking-wider text-cyan-200 border border-[#2d7882] transition-colors cursor-pointer"
+                    className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-xs font-semibold text-white transition-colors cursor-pointer"
                   >
-                    Apply Custom URI
+                    Apply URI
                   </button>
                 </div>
 
                 {/* Search and Category Filter */}
-                <div className="mt-3 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                <div className="mt-3 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
                   <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
                     {categories.map((cat) => (
                       <button
                         key={cat}
                         type="button"
                         onClick={() => setActiveCategory(cat)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wider uppercase transition-all cursor-pointer ${
-                          activeCategory === cat
-                            ? 'bg-[#205b63] text-white border border-cyan-400/40 shadow-sm'
-                            : 'bg-white/5 text-slate-400 hover:text-white border border-transparent'
+                        className={`filter-chip text-xs ${
+                          activeCategory === cat ? 'filter-chip-active' : ''
                         }`}
                       >
                         {cat}
@@ -307,20 +306,20 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                     ))}
                   </div>
 
-                  <div className="relative w-full sm:w-60">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <div className="relative w-full sm:w-56">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search assets..."
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#080d0e] border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:border-[#205b63] focus:outline-none"
+                      placeholder="Filter library..."
+                      className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Grid of Images */}
-                <div className="mt-3 flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 min-h-[300px]">
+                <div className="mt-3 flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 min-h-[280px]">
                   {filteredAssets.map((asset) => {
                     const isSelected = currentValue === asset.path;
                     return (
@@ -330,33 +329,33 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                           onSelect(asset.path);
                           onClose();
                         }}
-                        className={`group relative rounded-2xl overflow-hidden border transition-all cursor-pointer bg-[#080d0e] flex flex-col ${
+                        className={`group relative rounded-xl overflow-hidden border transition-all cursor-pointer bg-black/40 flex flex-col ${
                           isSelected
-                            ? 'border-[#d4af37] ring-2 ring-[#d4af37]/40 shadow-lg shadow-amber-950/30'
-                            : 'border-slate-800/80 hover:border-[#205b63] hover:shadow-md'
+                            ? 'border-cyan-400 ring-2 ring-cyan-400/40 shadow-lg'
+                            : 'border-white/10 hover:border-cyan-400/50 hover:shadow-xs'
                         }`}
                       >
-                        <div className="aspect-[4/3] w-full overflow-hidden bg-slate-900 relative">
+                        <div className="aspect-[4/3] w-full overflow-hidden bg-black/60 relative">
                           <img
                             src={resolveImageUrl(asset.path)}
                             alt={asset.title}
                             loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
-                          <span className="absolute top-2 left-2 text-[9px] font-mono px-2 py-0.5 rounded-md bg-black/75 text-cyan-300 backdrop-blur-sm">
+                          <span className="absolute top-2 left-2 text-[9px] font-mono uppercase px-2 py-0.5 rounded-full bg-cyan-950/90 text-cyan-300 backdrop-blur-xs border border-cyan-500/30">
                             {asset.category}
                           </span>
                           {isSelected && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#d4af37] text-black flex items-center justify-center font-bold shadow-md">
-                              <Check size={14} />
+                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center font-bold shadow-xs">
+                              <Check size={12} strokeWidth={3} />
                             </div>
                           )}
                         </div>
                         <div className="p-2.5">
-                          <p className="text-[11px] font-bold text-slate-200 truncate group-hover:text-white">
+                          <p className="text-xs font-semibold text-white truncate group-hover:text-cyan-300 transition-colors">
                             {asset.title}
                           </p>
-                          <p className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
+                          <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
                             {asset.path}
                           </p>
                         </div>
@@ -368,14 +367,14 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             )}
 
             {/* Footer */}
-            <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-              <span className="font-mono text-[11px]">ARCHITECTURAL ASSET VAULT</span>
+            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+              <span className="font-mono text-[10px] uppercase">Roha Architectural Photography Archive</span>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold cursor-pointer transition-colors"
+                className="secondary-button text-xs"
               >
-                Cancel
+                Close
               </button>
             </div>
           </motion.div>
@@ -386,4 +385,3 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
 };
 
 export default ImagePickerModal;
-

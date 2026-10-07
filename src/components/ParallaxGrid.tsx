@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Maximize2, Layers, MapPin, Ruler, Compass, Sparkles, Building2 } from "lucide-react";
+import { Maximize2, Layers, MapPin, Ruler, Compass, Sparkles } from "lucide-react";
 import { resolveImageUrl } from '../services/api';
-import { FloatingShape, SHAPES } from './FloatingShapes';
+import { renderSuperscriptText } from '../utils/formatters';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,6 +23,7 @@ export interface ParallaxGridProps {
   area?: string;
   floorsOrScale?: string;
   materialPalette?: string;
+  materialsUsed?: string;
   styleName?: string;
   statusName?: string;
   companyLogo?: string | null;
@@ -40,6 +41,7 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
   area = "",
   floorsOrScale = "",
   materialPalette = "",
+  materialsUsed = "",
   styleName = "",
   statusName = "",
   companyLogo = null,
@@ -52,13 +54,14 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
 
   const displayImages = parallaxImages;
   const resolvedLogo = resolveImageUrl(companyLogo, '/roha.png');
+  const effectivePalette = materialPalette?.trim() || materialsUsed?.trim() || "";
 
   const rawSpecs = [
     { label: "Location", value: location, icon: MapPin },
     { label: "Spatial Area", value: area, icon: Maximize2 },
     { label: "Scale / Levels", value: floorsOrScale, icon: Layers },
     { label: "Project Year", value: year, icon: Ruler },
-    { label: "Materiality", value: materialPalette, icon: Compass },
+    { label: "Materiality", value: effectivePalette, icon: Compass },
     { label: "Execution Status", value: statusName, icon: Sparkles },
   ];
 
@@ -168,7 +171,7 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
                                 {spec.label}
                               </p>
                               <p className="text-sm sm:text-base font-bold tracking-tight text-white line-clamp-2">
-                                {spec.value}
+                                {renderSuperscriptText(spec.value)}
                               </p>
                             </div>
                           </li>

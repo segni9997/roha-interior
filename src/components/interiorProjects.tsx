@@ -1,8 +1,23 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpRight, Building2, Home, Sparkles, Coffee, Store, Crown, Loader2 } from 'lucide-react';
+import { 
+  Building2, 
+  Home, 
+  Sparkles, 
+  Coffee, 
+  Store, 
+  Crown, 
+  Loader2, 
+  ChevronDown, 
+  ChevronUp, 
+  Layers,
+  TreePine,
+  GraduationCap,
+  HeartPulse
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { api, resolveImageUrl, type InteriorProjectItem } from '../services/api';
+import { api, resolveImageUrl, type InteriorProjectItem, type CategoryItem } from '../services/api';
+import { FloatingShape, SHAPES } from './FloatingShapes';
 
 // Fallback curated local projects if network is slow
 const fallbackProjects: InteriorProjectItem[] = [
@@ -112,26 +127,58 @@ const fallbackProjects: InteriorProjectItem[] = [
   }
 ];
 
-type InteriorType = "All" | "Residential" | "Commercial" | "Hospitality" | "Retail" | "Penthouse";
-
-const typeIcons: Record<InteriorType, ReactNode> = {
-  All: <Sparkles className="w-4 h-4" />,
-  Residential: <Home className="w-4 h-4" />,
-  Commercial: <Building2 className="w-4 h-4" />,
-  Hospitality: <Coffee className="w-4 h-4" />,
-  Retail: <Store className="w-4 h-4" />,
-  Penthouse: <Crown className="w-4 h-4" />
+const getCategoryIcon = (name: string): ReactNode => {
+  const lower = name.toLowerCase();
+  if (lower === 'all') return <Sparkles className="w-3.5 h-3.5" />;
+  if (lower.includes('resident') || lower.includes('home') || lower.includes('villa')) return <Home className="w-3.5 h-3.5" />;
+  if (lower.includes('commerc') || lower.includes('office') || lower.includes('headquarter') || lower.includes('architect')) return <Building2 className="w-3.5 h-3.5" />;
+  if (lower.includes('hospit') || lower.includes('hotel') || lower.includes('resort') || lower.includes('cafe')) return <Coffee className="w-3.5 h-3.5" />;
+  if (lower.includes('retail') || lower.includes('store') || lower.includes('shop') || lower.includes('mall') || lower.includes('showroom')) return <Store className="w-3.5 h-3.5" />;
+  if (lower.includes('penthouse') || lower.includes('luxury') || lower.includes('estate')) return <Crown className="w-3.5 h-3.5" />;
+  if (lower.includes('cultur') || lower.includes('art') || lower.includes('museum')) return <TreePine className="w-3.5 h-3.5" />;
+  if (lower.includes('educat') || lower.includes('school') || lower.includes('campus')) return <GraduationCap className="w-3.5 h-3.5" />;
+  if (lower.includes('health') || lower.includes('medic') || lower.includes('clinic')) return <HeartPulse className="w-3.5 h-3.5" />;
+  return <Layers className="w-3.5 h-3.5" />;
 };
 
-import { FloatingShape, SHAPES } from './FloatingShapes';
+const CARD_THEMES = [
+  {
+    bg: "from-[#1c2c30] via-[#142225] to-[#0d1618]",
+    fade: "from-[#1c2c30]",
+    border: "border-teal-500/20",
+    accent: "group-hover:text-teal-300",
+  },
+  {
+    bg: "from-[#242e22] via-[#1b2319] to-[#121811]",
+    fade: "from-[#242e22]",
+    border: "border-emerald-500/20",
+    accent: "group-hover:text-emerald-300",
+  },
+  {
+    bg: "from-[#2b2129] via-[#20181e] to-[#150f14]",
+    fade: "from-[#2b2129]",
+    border: "border-purple-500/20",
+    accent: "group-hover:text-purple-300",
+  },
+  {
+    bg: "from-[#2e261d] via-[#231c15] to-[#17120d]",
+    fade: "from-[#2e261d]",
+    border: "border-amber-500/20",
+    accent: "group-hover:text-amber-300",
+  },
+];
+
+const COLLAPSED_LIMIT = 5;
 
 export default function SubCategoryInteriorGrid() {
   const [activeType, setActiveType] = useState<string>('All');
   const [projects, setProjects] = useState<InteriorProjectItem[]>(fallbackProjects);
   const [categoriesList, setCategoriesList] = useState<string[]>(['All', 'Residential', 'Commercial', 'Hospitality', 'Retail', 'Penthouse']);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
+  // Load categories and projects directly from backend API
   useEffect(() => {
     let isMounted = true;
     async function fetchLiveInteriors() {
@@ -147,10 +194,12 @@ export default function SubCategoryInteriorGrid() {
           }
           const catNames = new Set<string>(['All']);
           if (liveCats && liveCats.length > 0) {
-            liveCats.forEach(c => catNames.add(c.name));
+            liveCats.forEach((c: CategoryItem) => {
+              if (c.name) catNames.add(c.name);
+            });
           }
           if (liveData && liveData.length > 0) {
-            liveData.forEach(p => {
+            liveData.forEach((p: InteriorProjectItem) => {
               if (p.category_name) catNames.add(p.category_name);
             });
           }
@@ -176,16 +225,25 @@ export default function SubCategoryInteriorGrid() {
     navigate(`/project-detail?id=${projectId}&type=interior`);
   };
 
+  const hasManyCategories = categoriesList.length > COLLAPSED_LIMIT;
+  const visibleCategories = isExpanded || !hasManyCategories
+    ? categoriesList
+    : categoriesList.slice(0, COLLAPSED_LIMIT);
+
   return (
-    <section className="bg-[#fcfcfc] py-20 px-6 min-h-screen font-sans text-slate-900 relative overflow-hidden">
-      {/* Floating 3D Geometric Architectural Shapes */}
+    <section className="bg-[#f8fafc] py-24 px-6 sm:px-10 lg:px-16 min-h-screen font-sans text-slate-900 relative overflow-hidden">
+      {/* Background Subtle Ambient Highlights */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(32,91,99,0.06)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(32,91,99,0.04)_0%,transparent_60%)] pointer-events-none" />
+
+      {/* Floating 3D Geometric Architectural Shapes (Clean on light background) */}
       <FloatingShape
         src={SHAPES.diamond}
         size={80}
         top="4%"
         left="2%"
         blur="1px"
-        opacity={0.3}
+        opacity={0.35}
         rotate={18}
         duration={7.5}
       />
@@ -195,7 +253,7 @@ export default function SubCategoryInteriorGrid() {
         top="18%"
         right="3%"
         blur="2px"
-        opacity={0.25}
+        opacity={0.3}
         rotate={-20}
         duration={8.5}
         delay={1}
@@ -223,89 +281,147 @@ export default function SubCategoryInteriorGrid() {
         delay={1.5}
       />
 
-      <div className="max-w-8xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col mb-12 space-y-6 w-full">
-          <div className="flex items-center justify-between">
-            <motion.h2 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-5xl font-light tracking-tighter text-slate-900"
-            >
-              INTERIOR & <span className="font-bold text-[#205b63]">ARCHITECTURAL DESIGN</span>
-            </motion.h2>
+        <div className="flex flex-col mb-14 space-y-6 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-widest text-[#205b63] font-bold mb-2 block">
+                • Spatial Curation Catalog
+              </span>
+              <motion.h2 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-4xl sm:text-5xl lg:text-6xl font-serif tracking-tight text-slate-900"
+              >
+                INTERIOR & <span className="italic font-light text-[#205b63]">ARCHITECTURAL DESIGN</span>
+              </motion.h2>
+            </div>
             {loading && (
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
                 <Loader2 className="w-4 h-4 animate-spin text-[#205b63]" />
                 <span>Syncing live backend...</span>
               </div>
             )}
           </div>
 
-          {/* Horizontal Scrollable Filter Bar */}
-          <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-            {categoriesList.map((type) => (
+          {/* Dynamic Backend Categories Bar with Expand / Collapse Option */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+            {visibleCategories.map((type) => {
+              const isActive = activeType.toLowerCase() === type.toLowerCase();
+              return (
+                <button
+                  key={type}
+                  onClick={() => setActiveType(type)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer whitespace-nowrap shadow-sm ${
+                    isActive 
+                      ? "bg-[#172a2b] text-white border-[#172a2b] shadow-lg shadow-black/15 scale-105" 
+                      : "bg-white text-slate-700 border-slate-200/90 hover:border-[#172a2b] hover:text-[#172a2b] hover:shadow"
+                  }`}
+                >
+                  {getCategoryIcon(type)}
+                  <span>{type}</span>
+                </button>
+              );
+            })}
+
+            {/* Expand / Collapse Button if Many Categories */}
+            {hasManyCategories && (
               <button
-                key={type}
-                onClick={() => setActiveType(type)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 border cursor-pointer whitespace-nowrap ${
-                  activeType.toLowerCase() === type.toLowerCase() 
-                  ? "bg-[#162e31] text-white border-[#162e31] shadow-xl" 
-                  : "bg-white text-slate-600 border-slate-200 hover:border-[#162e31] hover:text-[#162e31]"
-                }`}
+                type="button"
+                onClick={() => setIsExpanded(prev => !prev)}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 border bg-slate-200/80 hover:bg-slate-300 text-slate-800 border-slate-300 shadow-sm cursor-pointer hover:scale-105 active:scale-95"
+                title={isExpanded ? "Show fewer categories" : "Show all backend categories"}
               >
-                {(typeIcons as any)[type] || <Sparkles className="w-4 h-4" />}
-                {type}
+                <span>{isExpanded ? "Collapse" : `+${categoriesList.length - COLLAPSED_LIMIT} More`}</span>
+                {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
               </button>
-            ))}
+            )}
           </div>
         </div>
 
-        {/* Projects Grid */}
+        {/* Projects Grid (Exact Match to Reference Luxury Pill Design on Light Backdrop) */}
         <motion.div 
           layout
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10"
         >
           <AnimatePresence>
-            {filteredProjects.map((project) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                key={project.id}
-                onClick={() => handleProjectClick(project.id)}
-                className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-500 cursor-pointer flex flex-col justify-between"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                  <img
-                    src={resolveImageUrl(project.cover_image, '/tr/279A1756.JPG')}
-                    alt={project.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm group-hover:bg-[#205b63] group-hover:text-white transition-colors duration-300">
-                    <ArrowUpRight className="w-4 h-4" />
+            {filteredProjects.map((project, idx) => {
+              const theme = CARD_THEMES[idx % CARD_THEMES.length];
+              return (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 30, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.45, delay: idx * 0.05 }}
+                  key={project.id}
+                  onClick={() => handleProjectClick(project.id)}
+                  className={`group relative rounded-[34px] overflow-hidden bg-gradient-to-b ${theme.bg} border ${theme.border} shadow-[0_20px_50px_rgba(0,0,0,0.22)] hover:shadow-[0_28px_65px_rgba(0,0,0,0.35)] hover:-translate-y-2 transition-all duration-500 cursor-pointer flex flex-col justify-between`}
+                >
+                  {/* Top Image Section with Smooth Bottom Gradient Fade */}
+                  <div className="relative aspect-[16/11] sm:aspect-[4/3] w-full overflow-hidden bg-slate-950">
+                    <img
+                      src={resolveImageUrl(project.cover_image, '/tr/279A1756.JPG')}
+                      alt={project.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    />
+                    {/* Seamless atmospheric gradient fade into card surface */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent opacity-80" />
+                    <div className={`absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t ${theme.fade} via-${theme.fade}/85 to-transparent`} />
                   </div>
-                  <div className="absolute bottom-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md text-white text-[10px] font-mono rounded-full uppercase tracking-wider">
-                    {project.category_name}
-                  </div>
-                </div>
 
-                <div className="p-6 space-y-2">
-                  <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-                    <span>{project.location || "Addis Ababa, Ethiopia"}</span>
-                    <span>{project.year}</span>
+                  {/* Transition Indicator Dots (· · ·) */}
+                  <div className="relative z-10 flex items-center justify-center gap-1.5 -mt-3 mb-1 pointer-events-none">
+                    <span className="w-3.5 h-1 rounded-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
+                    <span className="w-1 h-1 rounded-full bg-white/40" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-[#205b63] transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-slate-500 line-clamp-2">
-                    {project.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+
+                  {/* Card Body Content */}
+                  <div className="p-6 sm:p-7 pt-2 flex flex-col justify-between flex-1">
+                    <div>
+                      {/* Title & Badge Row */}
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className={`text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug transition-colors ${theme.accent}`}>
+                          {project.title}
+                        </h3>
+                        <span className="shrink-0 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white font-mono text-xs font-semibold shadow-sm">
+                          {project.year || "2024"}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs sm:text-sm text-slate-300/85 leading-relaxed line-clamp-2 mt-2.5 font-light">
+                        {project.description}
+                      </p>
+
+                      {/* Tags Row */}
+                      <div className="flex flex-wrap items-center gap-2 mt-4">
+                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-white/90 text-xs font-medium border border-white/10 backdrop-blur-md">
+                          {project.category_name || "Interior"}
+                        </span>
+                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium border border-white/10 backdrop-blur-md">
+                          {project.location || "Addis Ababa"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Full-width Rounded Action Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleProjectClick(project.id);
+                      }}
+                      className="w-full mt-6 py-3.5 rounded-full bg-white hover:bg-slate-100 text-slate-950 font-bold text-sm tracking-wide text-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    >
+                      Reserve & Explore
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       </div>
