@@ -52,13 +52,16 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
   // Fullscreen preview lightbox
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
+  const isImageFile = (f: File) =>
+    f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|svg|gif|avif)$/i.test(f.name);
+
   /* -------------------------------------------------------------
      1. MAIN IMAGE HANDLERS (SUPPORTS MULTI-IMAGE FROM COMPUTER)
   ------------------------------------------------------------- */
   const handleMainFileUpload = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(filesList).filter(isImageFile);
     if (files.length === 0) {
-      setUploadError('Please select valid image files (JPG, PNG, WEBP).');
+      setUploadError('Please select valid image files (JPG, PNG, WebP, HEIC/HEIF).');
       return;
     }
 
@@ -117,9 +120,9 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
      2. MULTI-FILE GALLERY UPLOAD HANDLERS
   ------------------------------------------------------------- */
   const handleMultiFileUpload = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(filesList).filter(isImageFile);
     if (files.length === 0) {
-      setUploadError('Please select valid image files.');
+      setUploadError('Please select valid image files (JPG, PNG, WebP, HEIC/HEIF).');
       return;
     }
 
@@ -253,14 +256,14 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
         ref={mainFileInputRef}
         onChange={(e) => e.target.files && handleMainFileUpload(e.target.files)}
         multiple
-        accept="image/*"
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
         className="hidden"
       />
       <input
         type="file"
         ref={multiFileInputRef}
         onChange={(e) => e.target.files && handleMultiFileUpload(e.target.files)}
-        accept="image/*"
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
         multiple
         className="hidden"
       />

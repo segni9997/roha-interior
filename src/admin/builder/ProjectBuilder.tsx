@@ -388,13 +388,16 @@ export const ProjectBuilder: React.FC = () => {
     };
   }, [id, type, isModelMode]);
 
+  const isImageFile = (f: File) =>
+    f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|svg|gif|avif)$/i.test(f.name);
+
   // -------------------------------------------------------------
   // MULTI-IMAGE UPLOADING WITH LIVE PROGRESS TRACKING
   // -------------------------------------------------------------
   const handleMultiImageUpload = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(filesList).filter(isImageFile);
     if (files.length === 0) {
-      addToast('error', 'Invalid File Type', 'Please select JPG, PNG, or WEBP image files.');
+      addToast('error', 'Invalid File Type', 'Please select JPG, PNG, WEBP, or HEIC/HEIF image files.');
       return;
     }
 
@@ -474,9 +477,9 @@ export const ProjectBuilder: React.FC = () => {
           cover_image: project.cover_image,
           company_logo: project.company_logo || null,
           video_url: project.video_url,
-          scale_ratio: project.floorsOrScale,
-          year: project.year,
-          day: project.location,
+          scale_ratio: (project.floorsOrScale || '1:50').slice(0, 50),
+          year: (project.year || '2025').slice(0, 50),
+          day: (project.location || 'Architectural Scale Lab').slice(0, 250),
           dimensions_cm: project.area,
           illumination: project.lighting_design,
           category_id: selectedCatIds[0] || null,
@@ -682,9 +685,9 @@ export const ProjectBuilder: React.FC = () => {
   };
 
   const handleHeroFileUpload = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(filesList).filter(isImageFile);
     if (files.length === 0) {
-      addToast('error', 'Invalid File Type', 'Please select JPG, PNG, or WEBP image files.');
+      addToast('error', 'Invalid File Type', 'Please select JPG, PNG, WEBP, or HEIC/HEIF image files.');
       return;
     }
 
@@ -731,7 +734,7 @@ export const ProjectBuilder: React.FC = () => {
   };
 
   const handleLogoFileUpload = async (filesList: FileList | File[]) => {
-    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    const files = Array.from(filesList).filter(isImageFile);
     if (files.length === 0) return;
     try {
       const res = await api.uploadFile(files[0]);
@@ -773,14 +776,14 @@ export const ProjectBuilder: React.FC = () => {
         ref={heroFileInputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
         onChange={e => e.target.files && handleHeroFileUpload(e.target.files)}
         className="hidden"
       />
       <input
         ref={logoFileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
         onChange={e => e.target.files && handleLogoFileUpload(e.target.files)}
         className="hidden"
       />
@@ -1599,7 +1602,7 @@ export const ProjectBuilder: React.FC = () => {
                   ref={multiFileInputRef}
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/*,.heic,.HEIC,.heif,.HEIF"
                   onChange={e => e.target.files && handleMultiImageUpload(e.target.files)}
                   className="hidden"
                 />

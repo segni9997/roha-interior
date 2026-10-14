@@ -130,7 +130,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             <input
               ref={fileInputRef}
               type="file"
-              accept={acceptVideo ? "image/*,video/*" : "image/*"}
+              accept={acceptVideo ? "image/*,.heic,.HEIC,.heif,.HEIF,video/*" : "image/*,.heic,.HEIC,.heif,.HEIF"}
               onChange={onFileInputChange}
               className="hidden"
             />
@@ -247,8 +247,8 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                   </h4>
                   <p className="text-xs text-slate-400 max-w-sm mb-4">
                     {acceptVideo
-                      ? 'Supports high-res architectural images (JPG, PNG, WebP) and videos (MP4, WebM).'
-                      : 'Supports high-res architectural photography (JPG, PNG, WebP, SVG).'}
+                      ? 'Supports architectural imagery (JPG, PNG, WebP, HEIC/HEIF) and videos (MP4, WebM).'
+                      : 'Supports architectural photography (JPG, PNG, WebP, SVG, HEIC/HEIF).'}
                   </p>
 
                   <button

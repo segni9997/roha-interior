@@ -240,7 +240,7 @@ export const HeroSectionEditorModal: React.FC<HeroSectionEditorModalProps> = ({
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.HEIC,.heif,.HEIF"
                       onChange={handleFileUpload}
                       className="hidden"
                     />

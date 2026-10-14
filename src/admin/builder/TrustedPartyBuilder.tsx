@@ -124,8 +124,9 @@ export const TrustedPartyBuilder: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      addToast('error', 'Invalid File', 'Please select a valid image file (PNG, JPG, SVG, WEBP).');
+    const isImage = file.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|svg|gif|avif)$/i.test(file.name);
+    if (!isImage) {
+      addToast('error', 'Invalid File', 'Please select a valid image file (PNG, JPG, SVG, WEBP, HEIC/HEIF).');
       return;
     }
 
@@ -771,7 +772,7 @@ export const TrustedPartyBuilder: React.FC = () => {
                 <input
                   ref={logoInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.HEIC,.heif,.HEIF"
                   onChange={handleLogoFileUpload}
                   className="hidden"
                 />

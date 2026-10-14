@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -25,7 +25,9 @@ import {
   BookOpen,
   ArrowUpRight,
   Split,
-  Loader2
+  Loader2,
+  UploadCloud,
+  FolderPlus
 } from 'lucide-react';
 import {
   api,
@@ -193,8 +195,20 @@ export const BlogBuilder: React.FC = () => {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [imagePickerTarget, setImagePickerTarget] = useState<{
     blockId?: string;
-    field: 'cover' | 'image' | 'image1' | 'image2' | 'image3';
+    field: 'cover' | 'image' | 'image1' | 'image2' | 'image3' | 'gallery_item';
+    galleryIndex?: number;
   } | null>(null);
+
+  // Direct Device Upload State (supports HEIC/HEIF, JPG, PNG, WEBP)
+  const directFileInputRef = useRef<HTMLInputElement>(null);
+  const galleryMultiFileInputRef = useRef<HTMLInputElement>(null);
+  const [directUploadTarget, setDirectUploadTarget] = useState<{
+    field: 'cover' | 'image' | 'image1' | 'image2' | 'image3' | 'gallery_item';
+    blockId?: string;
+    galleryIndex?: number;
+  } | null>(null);
+  const [activeGalleryBlockId, setActiveGalleryBlockId] = useState<string | null>(null);
+  const [isDirectUploading, setIsDirectUploading] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -370,9 +384,16 @@ export const BlogBuilder: React.FC = () => {
     setMonograph(prev => ({ ...prev, blocks: updated }));
   };
 
-  // Image picking handler
-  const openImagePicker = (field: 'cover' | 'image' | 'image1' | 'image2' | 'image3', blockId?: string) => {
-    setImagePickerTarget({ field, blockId });
+  const isImageFile = (f: File) =>
+    f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|svg|gif|avif)$/i.test(f.name);
+
+  // Image picking handler (Studio DAM Modal)
+  const openImagePicker = (
+    field: 'cover' | 'image' | 'image1' | 'image2' | 'image3' | 'gallery_item',
+    blockId?: string,
+    galleryIndex?: number
+  ) => {
+    setImagePickerTarget({ field, blockId, galleryIndex });
     setImagePickerOpen(true);
   };
 
@@ -380,6 +401,13 @@ export const BlogBuilder: React.FC = () => {
     if (!imagePickerTarget) return;
     if (imagePickerTarget.field === 'cover') {
       setMonograph(prev => ({ ...prev, cover_image: url }));
+    } else if (imagePickerTarget.field === 'gallery_item' && imagePickerTarget.blockId && imagePickerTarget.galleryIndex !== undefined) {
+      const targetBlock = monograph.blocks.find(b => b.id === imagePickerTarget.blockId);
+      if (targetBlock && targetBlock.images) {
+        const updated = [...targetBlock.images];
+        updated[imagePickerTarget.galleryIndex] = { ...updated[imagePickerTarget.galleryIndex], url };
+        handleUpdateBlock(imagePickerTarget.blockId, { images: updated });
+      }
     } else if (imagePickerTarget.blockId) {
       handleUpdateBlock(imagePickerTarget.blockId, {
         [imagePickerTarget.field]: url
@@ -388,6 +416,96 @@ export const BlogBuilder: React.FC = () => {
     setImagePickerOpen(false);
     setImagePickerTarget(null);
     addToast('success', 'Image Applied', 'Selected image has been updated.');
+  };
+
+  // Direct Device File Upload Handlers (supports HEIC/HEIF)
+  const triggerDirectUpload = (
+    field: 'cover' | 'image' | 'image1' | 'image2' | 'image3' | 'gallery_item',
+    blockId?: string,
+    galleryIndex?: number
+  ) => {
+    setDirectUploadTarget({ field, blockId, galleryIndex });
+    if (directFileInputRef.current) {
+      directFileInputRef.current.value = '';
+      directFileInputRef.current.click();
+    }
+  };
+
+  const handleDirectFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !directUploadTarget) return;
+
+    if (!isImageFile(file)) {
+      addToast('error', 'Invalid File Type', 'Please select a valid image (JPG, PNG, WebP, HEIC/HEIF).');
+      return;
+    }
+
+    try {
+      setIsDirectUploading(true);
+      const res = await api.uploadFile(file);
+      if (directUploadTarget.field === 'cover') {
+        setMonograph(prev => ({ ...prev, cover_image: res.url }));
+      } else if (directUploadTarget.field === 'gallery_item' && directUploadTarget.blockId && directUploadTarget.galleryIndex !== undefined) {
+        const targetBlock = monograph.blocks.find(b => b.id === directUploadTarget.blockId);
+        if (targetBlock && targetBlock.images) {
+          const updated = [...targetBlock.images];
+          updated[directUploadTarget.galleryIndex] = { ...updated[directUploadTarget.galleryIndex], url: res.url };
+          handleUpdateBlock(directUploadTarget.blockId, { images: updated });
+        }
+      } else if (directUploadTarget.blockId) {
+        handleUpdateBlock(directUploadTarget.blockId, {
+          [directUploadTarget.field]: res.url,
+        });
+      }
+      addToast('success', 'Image Uploaded', `${file.name} uploaded and applied.`);
+    } catch (err: any) {
+      addToast('error', 'Upload Failed', err.message || 'Could not upload image.');
+    } finally {
+      setIsDirectUploading(false);
+      setDirectUploadTarget(null);
+      if (directFileInputRef.current) directFileInputRef.current.value = '';
+    }
+  };
+
+  const triggerGalleryAdd = (blockId: string) => {
+    setActiveGalleryBlockId(blockId);
+    if (galleryMultiFileInputRef.current) {
+      galleryMultiFileInputRef.current.value = '';
+      galleryMultiFileInputRef.current.click();
+    }
+  };
+
+  const handleGalleryMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !activeGalleryBlockId) return;
+    const files = Array.from(e.target.files).filter(isImageFile);
+    if (files.length === 0) {
+      addToast('error', 'Invalid Files', 'Please select JPG, PNG, WebP, or HEIC/HEIF image files.');
+      return;
+    }
+
+    try {
+      setIsDirectUploading(true);
+      const targetBlock = monograph.blocks.find(b => b.id === activeGalleryBlockId);
+      const existingImages = targetBlock?.images || [];
+      const newImages = [...existingImages];
+
+      for (const f of files) {
+        const res = await api.uploadFile(f);
+        newImages.push({
+          url: res.url,
+          caption: f.name.replace(/\.[^/.]+$/, ''),
+        });
+      }
+
+      handleUpdateBlock(activeGalleryBlockId, { images: newImages });
+      addToast('success', 'Gallery Updated', `${files.length} images uploaded to gallery.`);
+    } catch (err: any) {
+      addToast('error', 'Upload Failed', err.message || 'Could not upload images.');
+    } finally {
+      setIsDirectUploading(false);
+      setActiveGalleryBlockId(null);
+      if (galleryMultiFileInputRef.current) galleryMultiFileInputRef.current.value = '';
+    }
   };
 
   // Save / Publish to Backend API
@@ -740,26 +858,46 @@ export const BlogBuilder: React.FC = () => {
                     <ImageIcon size={20} />
                   </div>
                 )}
-                <button
-                  onClick={() => openImagePicker('image', block.id)}
-                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-mono uppercase font-bold transition-opacity"
-                >
-                  Change
-                </button>
+                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity p-1">
+                  <button
+                    type="button"
+                    onClick={() => triggerDirectUpload('image', block.id)}
+                    className="w-full py-0.5 rounded bg-cyan-500 text-slate-950 text-[9px] font-mono uppercase font-bold text-center cursor-pointer"
+                  >
+                    Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openImagePicker('image', block.id)}
+                    className="w-full py-0.5 rounded bg-white/20 text-white text-[9px] font-mono uppercase font-bold text-center cursor-pointer"
+                  >
+                    Library
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                   <input
                     type="text"
                     value={block.image || ''}
                     onChange={e => handleUpdateBlock(block.id, { image: e.target.value })}
                     placeholder="/tr/279A1756.JPG or image URL"
-                    className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
+                    className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none"
                   />
                   <button
+                    type="button"
+                    onClick={() => triggerDirectUpload('image', block.id)}
+                    className="px-2.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                    title="Upload photo from computer (JPG, PNG, HEIC)"
+                  >
+                    <UploadCloud size={12} />
+                    <span>Upload</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openImagePicker('image', block.id)}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold cursor-pointer shrink-0"
                   >
                     Select DAM
                   </button>
@@ -785,15 +923,42 @@ export const BlogBuilder: React.FC = () => {
               <div className="p-3 rounded-xl bg-black/30 border border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-cyan-300 font-bold uppercase">Image 1 (Left)</span>
-                  <button
-                    onClick={() => openImagePicker('image1', block.id)}
-                    className="text-[10px] font-mono text-cyan-400 underline cursor-pointer"
-                  >
-                    Choose Media
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectUpload('image1', block.id)}
+                      className="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <UploadCloud size={10} />
+                      <span>Upload</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker('image1', block.id)}
+                      className="text-[10px] font-mono text-cyan-400 hover:underline cursor-pointer"
+                    >
+                      Library
+                    </button>
+                  </div>
                 </div>
-                <div className="h-28 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative">
+                <div className="h-28 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative group">
                   <img src={resolveImageUrl(block.image1 || '/tr/279A1756.JPG')} alt="Left" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectUpload('image1', block.id)}
+                      className="px-2 py-1 rounded bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker('image1', block.id)}
+                      className="px-2 py-1 rounded bg-white/20 text-white text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Library
+                    </button>
+                  </div>
                 </div>
                 <input
                   type="text"
@@ -815,15 +980,42 @@ export const BlogBuilder: React.FC = () => {
               <div className="p-3 rounded-xl bg-black/30 border border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-cyan-300 font-bold uppercase">Image 2 (Right)</span>
-                  <button
-                    onClick={() => openImagePicker('image2', block.id)}
-                    className="text-[10px] font-mono text-cyan-400 underline cursor-pointer"
-                  >
-                    Choose Media
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectUpload('image2', block.id)}
+                      className="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <UploadCloud size={10} />
+                      <span>Upload</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker('image2', block.id)}
+                      className="text-[10px] font-mono text-cyan-400 hover:underline cursor-pointer"
+                    >
+                      Library
+                    </button>
+                  </div>
                 </div>
-                <div className="h-28 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative">
+                <div className="h-28 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative group">
                   <img src={resolveImageUrl(block.image2 || '/pexels-chudin-alexey-26964541.jpg')} alt="Right" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectUpload('image2', block.id)}
+                      className="px-2 py-1 rounded bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker('image2', block.id)}
+                      className="px-2 py-1 rounded bg-white/20 text-white text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Library
+                    </button>
+                  </div>
                 </div>
                 <input
                   type="text"
@@ -864,15 +1056,42 @@ export const BlogBuilder: React.FC = () => {
                 <div key={slot.key} className="p-3 rounded-xl bg-black/30 border border-white/10 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono text-cyan-300 font-bold uppercase">{slot.label}</span>
-                    <button
-                      onClick={() => openImagePicker(slot.key, block.id)}
-                      className="text-[10px] font-mono text-cyan-400 underline cursor-pointer"
-                    >
-                      Media
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => triggerDirectUpload(slot.key, block.id)}
+                        className="text-[10px] font-mono text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <UploadCloud size={10} />
+                        <span>Upload</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openImagePicker(slot.key, block.id)}
+                        className="text-[10px] font-mono text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        Media
+                      </button>
+                    </div>
                   </div>
-                  <div className="h-24 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative">
+                  <div className="h-24 rounded-lg overflow-hidden border border-white/10 bg-black/40 relative group">
                     <img src={resolveImageUrl((block as any)[slot.key] || '/tr/279A1756.JPG')} alt={slot.label} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => triggerDirectUpload(slot.key, block.id)}
+                        className="px-2 py-1 rounded bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        Upload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openImagePicker(slot.key, block.id)}
+                        className="px-2 py-1 rounded bg-white/20 text-white text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        Library
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="text"
@@ -908,6 +1127,7 @@ export const BlogBuilder: React.FC = () => {
             <div className="flex items-center gap-3">
               <span className="text-xs font-mono text-slate-400 font-semibold">Image Side:</span>
               <button
+                type="button"
                 onClick={() => handleUpdateBlock(block.id, { imagePosition: 'left' })}
                 className={`px-3 py-1 rounded text-xs font-mono font-bold ${
                   (block.imagePosition || 'left') === 'left'
@@ -918,6 +1138,7 @@ export const BlogBuilder: React.FC = () => {
                 Left
               </button>
               <button
+                type="button"
                 onClick={() => handleUpdateBlock(block.id, { imagePosition: 'right' })}
                 className={`px-3 py-1 rounded text-xs font-mono font-bold ${
                   block.imagePosition === 'right'
@@ -933,20 +1154,48 @@ export const BlogBuilder: React.FC = () => {
               <div className="md:col-span-4 space-y-2">
                 <div className="h-32 rounded-xl overflow-hidden border border-white/15 bg-black/40 relative group">
                   <img src={resolveImageUrl(block.image || '/tr/279A1756.JPG')} alt="Split" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectUpload('image', block.id)}
+                      className="px-2 py-1 rounded bg-cyan-500 text-slate-950 text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openImagePicker('image', block.id)}
+                      className="px-2 py-1 rounded bg-white/20 text-white text-[10px] font-mono font-bold cursor-pointer"
+                    >
+                      Library
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={block.image || ''}
+                    onChange={e => handleUpdateBlock(block.id, { image: e.target.value })}
+                    placeholder="Image path"
+                    className="flex-1 px-2.5 py-1 rounded bg-black/40 border border-white/10 text-xs text-white focus:border-cyan-400 focus:outline-none"
+                  />
                   <button
-                    onClick={() => openImagePicker('image', block.id)}
-                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-mono uppercase font-bold transition-opacity"
+                    type="button"
+                    onClick={() => triggerDirectUpload('image', block.id)}
+                    className="p-1.5 rounded bg-cyan-500 text-slate-950 hover:bg-cyan-400 cursor-pointer"
+                    title="Upload image directly (JPG, PNG, HEIC)"
                   >
-                    Change Image
+                    <UploadCloud size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openImagePicker('image', block.id)}
+                    className="p-1.5 rounded bg-white/10 text-cyan-300 hover:bg-white/20 border border-white/10 cursor-pointer"
+                    title="Studio Library"
+                  >
+                    <FolderPlus size={12} />
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={block.image || ''}
-                  onChange={e => handleUpdateBlock(block.id, { image: e.target.value })}
-                  placeholder="Image path"
-                  className="w-full px-2.5 py-1 rounded bg-black/40 border border-white/10 text-xs text-white focus:border-cyan-400 focus:outline-none"
-                />
                 <input
                   type="text"
                   value={block.caption || ''}
@@ -989,9 +1238,27 @@ export const BlogBuilder: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {(block.images || []).map((img, i) => (
-                <div key={i} className="p-2 rounded-xl bg-black/40 border border-white/10 relative space-y-1.5">
-                  <div className="h-20 rounded-lg overflow-hidden bg-black/60">
+                <div key={i} className="p-2 rounded-xl bg-black/40 border border-white/10 relative space-y-1.5 group">
+                  <div className="h-20 rounded-lg overflow-hidden bg-black/60 relative">
                     <img src={resolveImageUrl(img.url)} alt={`Gal ${i + 1}`} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => triggerDirectUpload('gallery_item', block.id, i)}
+                        className="px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950 text-[9px] font-mono font-bold cursor-pointer"
+                        title="Upload replacement"
+                      >
+                        Upload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openImagePicker('gallery_item', block.id, i)}
+                        className="px-1.5 py-0.5 rounded bg-white/20 text-white text-[9px] font-mono font-bold cursor-pointer"
+                        title="Library"
+                      >
+                        Library
+                      </button>
+                    </div>
                   </div>
                   <input
                     type="text"
@@ -1009,7 +1276,7 @@ export const BlogBuilder: React.FC = () => {
                       const updated = (block.images || []).filter((_, idx) => idx !== i);
                       handleUpdateBlock(block.id, { images: updated });
                     }}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-rose-950/80 text-rose-300 hover:text-white cursor-pointer"
+                    className="absolute top-1 right-1 p-1 rounded-full bg-rose-950/80 text-rose-300 hover:text-white cursor-pointer z-10"
                   >
                     <Trash2 size={11} />
                   </button>
@@ -1017,16 +1284,30 @@ export const BlogBuilder: React.FC = () => {
               ))}
             </div>
 
-            <button
-              onClick={() => {
-                const updated = [...(block.images || []), { url: '/tr/279A1756.JPG', caption: 'Detail sample' }];
-                handleUpdateBlock(block.id, { images: updated });
-              }}
-              className="px-3 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus size={13} />
-              <span>Add Image to Gallery</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => triggerGalleryAdd(block.id)}
+                disabled={isDirectUploading}
+                className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                title="Select multiple images from computer (JPG, PNG, HEIC)"
+              >
+                {isDirectUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+                <span>Upload Photos from Device (Multi-Select)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = [...(block.images || []), { url: '/tr/279A1756.JPG', caption: 'Detail sample' }];
+                  handleUpdateBlock(block.id, { images: updated });
+                }}
+                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10 text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus size={13} />
+                <span>Add Image Slot</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -1438,30 +1719,54 @@ export const BlogBuilder: React.FC = () => {
           <main className="lg:col-span-8 space-y-6">
             {/* 1. Hero Cover & Primary Monograph Header */}
             <div className="p-6 sm:p-8 rounded-3xl bg-[#132527]/90 border border-white/15 shadow-2xl space-y-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-300 flex items-center gap-2">
                   <BookOpen size={14} />
                   <span>Monograph Hero Cover & Title</span>
                 </span>
 
-                <button
-                  onClick={() => openImagePicker('cover')}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <ImageIcon size={13} />
-                  <span>Choose Cover</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => triggerDirectUpload('cover')}
+                    disabled={isDirectUploading}
+                    className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                    title="Upload photo directly from your device (JPG, PNG, HEIC)"
+                  >
+                    {isDirectUploading ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+                    <span>{isDirectUploading ? 'Uploading...' : 'Upload Device Image'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openImagePicker('cover')}
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-cyan-300 border border-white/20 text-xs font-mono font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
+                    title="Choose from studio DAM gallery"
+                  >
+                    <FolderPlus size={13} />
+                    <span>Studio Library</span>
+                  </button>
+                </div>
               </div>
 
               {/* Cover Image Preview */}
               <div className="relative h-64 sm:h-80 w-full rounded-2xl overflow-hidden border border-white/15 bg-black/50 group">
                 <img src={resolveImageUrl(monograph.cover_image)} alt="Cover" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity p-4">
                   <button
-                    onClick={() => openImagePicker('cover')}
-                    className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs uppercase font-mono shadow-lg cursor-pointer"
+                    type="button"
+                    onClick={() => triggerDirectUpload('cover')}
+                    className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase font-mono shadow-lg flex items-center gap-2 cursor-pointer transition-all"
                   >
-                    Change Cover Image
+                    <UploadCloud size={14} />
+                    <span>Upload from Device</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openImagePicker('cover')}
+                    className="px-4 py-2.5 rounded-xl bg-[#172a2b] hover:bg-[#205b63] text-white border border-white/20 font-bold text-xs uppercase font-mono shadow-lg flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    <FolderPlus size={14} />
+                    <span>Studio Library</span>
                   </button>
                 </div>
               </div>
@@ -1697,6 +2002,37 @@ export const BlogBuilder: React.FC = () => {
           </aside>
         </div>
       )}
+
+      {/* Hidden computer file upload inputs (supports HEIC/HEIF) */}
+      <input
+        ref={directFileInputRef}
+        type="file"
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
+        onChange={handleDirectFileUpload}
+        className="hidden"
+      />
+      <input
+        ref={galleryMultiFileInputRef}
+        type="file"
+        multiple
+        accept="image/*,.heic,.HEIC,.heif,.HEIF"
+        onChange={handleGalleryMultiUpload}
+        className="hidden"
+      />
+
+      {/* Studio Image Picker DAM Modal */}
+      <ImagePickerModal
+        isOpen={imagePickerOpen}
+        onClose={() => {
+          setImagePickerOpen(false);
+          setImagePickerTarget(null);
+        }}
+        onSelect={handleImageSelected}
+        title={imagePickerTarget?.field === 'cover' ? 'Select Monograph Hero Cover' : 'Select Architectural Figure Image'}
+      />
+
+      {/* Global Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={id => setToasts(prev => prev.filter(t => t.id !== id))} />
     </div>
   );
 };

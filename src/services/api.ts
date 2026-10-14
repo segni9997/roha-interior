@@ -283,8 +283,12 @@ export interface StudioMetricItem {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = typeof window !== 'undefined'
+    ? (localStorage.getItem('roha_admin_auth_token') || sessionStorage.getItem('roha_admin_auth_token'))
+    : null;
   const headers = {
     'Content-Type': 'application/json',
+    ...(token && token !== 'roha_studio_session_token' ? { 'Authorization': `Token ${token}` } : {}),
     ...(options.headers || {}),
   };
 
@@ -301,7 +305,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         errorDetail = `${response.statusText} (${response.status})`;
       }
     }
-    throw new Error(`API Error ${response.status} on ${endpoint}: ${errorDetail}`);
+    throw new Error(errorDetail || `API Error ${response.status} on ${endpoint}`);
   }
 
   if (response.status === 204) {

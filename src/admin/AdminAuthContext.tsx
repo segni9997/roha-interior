@@ -7,7 +7,7 @@ interface AdminAuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
 }
 
@@ -23,38 +23,49 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     try {
-      const savedUser = localStorage.getItem(STORAGE_KEY);
-      const savedToken = localStorage.getItem(TOKEN_KEY);
-      if (savedUser && savedToken) {
+      const savedUser = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+      const savedToken = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+
+      // Purge legacy mock token fallback so genuine admin authentication is enforced
+      if (savedToken === 'roha_studio_session_token') {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        setUser(null);
+        setToken(null);
+      } else if (savedUser && savedToken) {
         setUser(JSON.parse(savedUser));
         setToken(savedToken);
       } else {
-        // Provide studio session fallback so all builder & admin views load immediately
-        const defaultAdmin: AdminUser = {
-          id: 1,
-          username: 'Abeni Tessema',
-          email: 'studio@roha-architects.com',
-          is_staff: true,
-          is_superuser: true
-        };
-        setUser(defaultAdmin);
-        setToken('roha_studio_session_token');
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultAdmin));
-        localStorage.setItem(TOKEN_KEY, 'roha_studio_session_token');
+        setUser(null);
+        setToken(null);
       }
     } catch (e) {
       console.error('Failed to parse saved admin session', e);
+      setUser(null);
+      setToken(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, rememberMe: boolean = true) => {
     const res = await api.adminLogin(username, password);
     setUser(res.user);
     setToken(res.token);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
-    localStorage.setItem(TOKEN_KEY, res.token);
+
+    if (rememberMe) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
+      localStorage.setItem(TOKEN_KEY, res.token);
+      sessionStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+    } else {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(res.user));
+      sessionStorage.setItem(TOKEN_KEY, res.token);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+    }
   };
 
   const logout = () => {
@@ -62,6 +73,8 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setToken(null);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   };
 
   return (
@@ -94,9 +107,14 @@ export const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ c
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen bg-[#0c1214] flex flex-col items-center justify-center text-slate-400 font-mono text-xs">
-        <div className="w-8 h-8 border-2 border-[#205b63] border-t-transparent rounded-full animate-spin mb-4" />
-        <span>AUTHENTICATING STUDIO SESSION...</span>
+      <div className="h-screen w-screen bg-[#091113] flex flex-col items-center justify-center text-slate-400 font-mono text-xs select-none">
+        <div className="relative mb-5">
+          <div className="w-12 h-12 border-2 border-cyan-500/20 rounded-full" />
+          <div className="w-12 h-12 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin absolute inset-0" />
+        </div>
+        <span className="tracking-[0.25em] uppercase text-cyan-300 font-semibold text-[11px]">
+          Authenticating Studio Session...
+        </span>
       </div>
     );
   }

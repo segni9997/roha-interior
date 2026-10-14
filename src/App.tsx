@@ -135,6 +135,7 @@ function AnimatedRoutes() {
         />
 
         {/* Studio Administration & Content Management Portal */}
+        <Route path="/login" element={<AdminLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/admin"
