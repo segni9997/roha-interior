@@ -45,6 +45,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             exit={{ opacity: 0, scale: 0.96, y: 15 }}
             transition={{ duration: 0.2 }}
             className="relative w-full max-w-md bg-[#132527] border border-white/15 rounded-2xl p-6 sm:p-7 shadow-2xl z-10 text-white"
+            data-lenis-prevent="true"
           >
             <button
               onClick={onCancel}

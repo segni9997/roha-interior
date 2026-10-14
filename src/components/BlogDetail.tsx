@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Calendar, Loader2, Share2, Sparkles, BookOpen } from 'lucide-react';
-import { posts as fallbackPosts } from './datas/posts';
+import { ArrowLeft, Clock, Calendar, Loader2, Share2, Sparkles, BookOpen, Building2 } from 'lucide-react';
 import { api, resolveImageUrl, type BlogPostItem } from '../services/api';
 import { ResponsiveContentGallery } from './ResponsiveContentGallery';
 import { FloatingShape, SHAPES } from './FloatingShapes';
@@ -10,9 +9,10 @@ import { NavigationOverlay } from './NavBar';
 import Footer from './Footer';
 
 interface ContentBlock {
-  type: 'heading' | 'paragraph' | 'list' | 'quote';
+  type: 'heading' | 'paragraph' | 'list' | 'quote' | 'lead' | 'callout' | 'image_single' | 'two_images' | 'three_images' | 'image_text' | 'gallery' | 'divider';
   text?: string;
   items?: string[];
+  [key: string]: any;
 }
 
 const BlogDetail = () => {
@@ -39,25 +39,20 @@ const BlogDetail = () => {
           live = allPosts.find((p) => String(p.id) === id || p.slug === id) || null;
         }
 
-        if (isMounted && live) {
-          setPost(live);
-          setLoading(false);
-          return;
+        if (isMounted) {
+          if (live) {
+            setPost(live);
+          } else {
+            // No fallback blogs as explicitly requested
+            setPost(null);
+          }
         }
       } catch (err) {
-        console.warn('Backend detail unavailable, using fallback post:', err);
+        console.warn('Backend detail unavailable:', err);
+        if (isMounted) setPost(null);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-
-      const fb = fallbackPosts.find((p) => String(p.id) === id || (p as any).slug === id) || fallbackPosts[0];
-      if (isMounted && fb) {
-        setPost({
-          ...fb,
-          slug: String(fb.id),
-          image: fb.image,
-          content: fb.content as any
-        });
-      }
-      if (isMounted) setLoading(false);
     }
     loadPost();
     return () => {
@@ -89,30 +84,51 @@ const BlogDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#f8fafc] text-slate-900">
-        <Loader2 className="w-10 h-10 animate-spin text-[#205b63]" />
-        <span className="text-xs font-mono font-bold tracking-widest text-slate-600 uppercase">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#111f20] text-white">
+        <Loader2 className="w-10 h-10 animate-spin text-cyan-400" />
+        <span className="text-xs font-mono font-bold tracking-widest text-slate-300 uppercase">
           Loading Architectural Monograph...
         </span>
       </div>
     );
   }
 
+  // DEDICATED EMPTY / NOT FOUND STATE (MATCHING MAIN THEME)
   if (!post) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#f8fafc] text-slate-900 px-6 text-center">
-        <BookOpen className="w-12 h-12 text-[#205b63] opacity-70" />
-        <h2 className="text-3xl font-bold font-display tracking-tight text-slate-900">Article Not Found</h2>
-        <p className="text-sm text-slate-600 max-w-md">
-          The requested architectural story or research paper could not be located in our current studio archive.
-        </p>
-        <Link
-          to="/allblogs"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#205b63] hover:bg-[#172a2b] text-white text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-lg"
-        >
-          <ArrowLeft size={14} />
-          <span>Return to Articles Archive</span>
-        </Link>
+      <div className="min-h-screen flex flex-col justify-between bg-[#111f20] text-white font-sans">
+        <NavigationOverlay />
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 py-32 text-center max-w-xl mx-auto">
+          <div className="w-20 h-20 rounded-3xl bg-[#172a2b] border border-cyan-500/30 flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(32,91,99,0.3)]">
+            <BookOpen className="w-10 h-10 text-cyan-300" />
+          </div>
+          <span className="text-xs font-mono font-bold uppercase tracking-widest text-cyan-400">
+            • Archive Status
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white uppercase">
+            No Blog Available in Architectural Archive
+          </h2>
+          <p className="text-sm sm:text-base text-slate-300 max-w-md leading-relaxed font-light">
+            The requested architectural story could not be located in our current studio database. Check back soon for upcoming releases or explore our active portfolio.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link
+              to="/blog"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-lg"
+            >
+              <ArrowLeft size={14} />
+              <span>Return to Articles Archive</span>
+            </Link>
+            <Link
+              to="/interior"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-mono font-bold uppercase tracking-wider transition-all"
+            >
+              <Building2 size={14} />
+              <span>Architectural Projects</span>
+            </Link>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -120,13 +136,13 @@ const BlogDetail = () => {
   const categoryName = typeof post.category === 'object' ? (post.category as any)?.name : (post.category || 'Architecture');
   const authorName = typeof post.author === 'object' ? (post.author as any)?.name : (post.author || 'ROHA Studio Editorial');
   const authorAvatar = (post.author as any)?.avatar || (post as any)?.author_details?.avatar;
-  const coverImage = resolveImageUrl(post.cover_image || post.image, '/pexels-chudin-alexey-26964541.jpg');
+  const coverImage = resolveImageUrl(post.cover_image || post.image, '/tr/279A1756.JPG');
 
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
-      className="relative min-h-screen bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9] to-[#ffffff] text-slate-900 overflow-hidden"
+      className="relative min-h-screen bg-[#111f20] text-white font-sans overflow-hidden selection:bg-[#205b63] selection:text-white"
     >
       <NavigationOverlay />
 
@@ -137,7 +153,7 @@ const BlogDetail = () => {
         top="10%"
         left="5%"
         blur="1px"
-        opacity={0.25}
+        opacity={0.2}
         rotate={-15}
         duration={8}
       />
@@ -147,7 +163,7 @@ const BlogDetail = () => {
         top="22%"
         right="6%"
         blur="2px"
-        opacity={0.2}
+        opacity={0.18}
         rotate={25}
         duration={9.5}
         delay={0.8}
@@ -158,7 +174,7 @@ const BlogDetail = () => {
         top="55%"
         left="6%"
         blur="none"
-        opacity={0.25}
+        opacity={0.2}
         rotate={-25}
         duration={7}
         delay={1.5}
@@ -169,31 +185,31 @@ const BlogDetail = () => {
         top="75%"
         right="8%"
         blur="1px"
-        opacity={0.25}
+        opacity={0.2}
         rotate={15}
         duration={8.5}
         delay={2}
       />
 
       {/* Ambient Radial Lighting Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#205b63]/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#205b63]/10 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Sub-Header Breadcrumb & Navigation Bar */}
       <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 sm:pt-32 pb-6 flex items-center justify-between">
         <Link 
-          to="/allblogs" 
-          className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/90 shadow-sm transition-all duration-300 font-mono text-xs uppercase tracking-wider group"
+          to="/blog" 
+          className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-sm transition-all duration-300 font-mono text-xs uppercase tracking-wider group backdrop-blur-md"
         >
-          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform text-[#205b63]" />
+          <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform text-cyan-300" />
           <span>All Stories</span>
         </Link>
 
         <button
           onClick={handleShare}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200/90 shadow-sm transition-all font-mono text-xs uppercase tracking-wider cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-sm transition-all font-mono text-xs uppercase tracking-wider cursor-pointer backdrop-blur-md"
           title="Copy article URL"
         >
-          <Share2 size={13} className="text-[#205b63]" />
+          <Share2 size={13} className="text-cyan-300" />
           <span>{copied ? 'Link Copied!' : 'Share'}</span>
         </button>
       </div>
@@ -201,31 +217,31 @@ const BlogDetail = () => {
       {/* Article Header & Cover */}
       <header className="relative z-10 max-w-6xl mx-auto px-6 mb-12">
         <div className="flex flex-wrap items-center gap-2.5 mb-6">
-          <span className="px-3.5 py-1.5 bg-[#205b63]/10 text-[#205b63] border border-[#205b63]/25 text-[11px] font-mono font-bold uppercase tracking-wider rounded-full shadow-sm">
+          <span className="px-3.5 py-1.5 bg-[#205b63]/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono font-bold uppercase tracking-wider rounded-full shadow-sm">
             {categoryName}
           </span>
-          <span className="px-3.5 py-1.5 bg-slate-200/70 text-slate-700 border border-slate-300/60 text-[11px] font-mono font-bold uppercase tracking-wider rounded-full shadow-sm">
+          <span className="px-3.5 py-1.5 bg-white/10 text-slate-300 border border-white/15 text-[11px] font-mono font-bold uppercase tracking-wider rounded-full shadow-sm">
             {post.type || "Monograph"}
           </span>
           {post.year && (
-            <span className="px-3 py-1.5 text-slate-500 text-[11px] font-mono font-semibold uppercase tracking-wider">
+            <span className="px-3 py-1.5 text-slate-400 text-[11px] font-mono font-semibold uppercase tracking-wider">
               {post.year}
             </span>
           )}
         </div>
 
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 leading-[1.12] mb-8 tracking-tight uppercase font-display">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.12] mb-8 tracking-tight uppercase font-display">
           {post.title}
         </h1>
         
         {/* Featured Cover Image */}
-        <div className="relative h-[360px] sm:h-[480px] md:h-[580px] w-full rounded-3xl overflow-hidden mb-12 shadow-2xl border border-slate-200/80 bg-slate-100 group">
+        <div className="relative h-[360px] sm:h-[480px] md:h-[580px] w-full rounded-3xl overflow-hidden mb-12 shadow-2xl border border-white/15 bg-black/40 group">
           <img 
             src={coverImage} 
             alt={post.title} 
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111f20]/90 via-transparent to-transparent pointer-events-none" />
         </div>
       </header>
 
@@ -233,10 +249,10 @@ const BlogDetail = () => {
       <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col gap-10 sm:gap-12 mb-20">
         {/* Sidebar Info */}
         <aside className="lg:col-span-4 order-2 lg:order-1">
-          <div className="sticky top-28 p-6 sm:p-8 rounded-3xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-xl">
+          <div className="sticky top-28 p-6 sm:p-8 rounded-3xl border border-white/15 bg-[#142628]/85 backdrop-blur-xl shadow-xl">
             <div className="flex flex-col gap-6">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-black/40 overflow-hidden border border-white/15 shrink-0">
                   <img
                     src={authorAvatar ? resolveImageUrl(authorAvatar) : `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=205b63&color=fff`}
                     alt={authorName}
@@ -244,37 +260,37 @@ const BlogDetail = () => {
                   />
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#205b63] uppercase font-mono font-bold tracking-wider">Curated by</p>
-                  <p className="text-base font-bold text-slate-900">{authorName}</p>
+                  <p className="text-[10px] text-cyan-300 uppercase font-mono font-bold tracking-wider">Curated by</p>
+                  <p className="text-base font-bold text-white">{authorName}</p>
                 </div>
               </div>
 
-              <hr className="border-slate-200" />
+              <hr className="border-white/10" />
 
               <div className="grid grid-cols-2 gap-3.5">
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
-                  <p className="text-[10px] text-[#205b63] font-mono uppercase font-bold mb-1">Published</p>
-                  <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    <Calendar size={13} className="text-[#205b63]" /> {post.year || "2026"}
+                <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                  <p className="text-[10px] text-cyan-300 font-mono uppercase font-bold mb-1">Published</p>
+                  <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <Calendar size={13} className="text-cyan-300" /> {post.year || "2026"}
                   </p>
                 </div>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">
-                  <p className="text-[10px] text-[#205b63] font-mono uppercase font-bold mb-1">Reading Time</p>
-                  <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    <Clock size={13} className="text-[#205b63]" /> {post.readTime || "5 min"}
+                <div className="bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                  <p className="text-[10px] text-cyan-300 font-mono uppercase font-bold mb-1">Reading Time</p>
+                  <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                    <Clock size={13} className="text-cyan-300" /> {post.readTime || "5 min"}
                   </p>
                 </div>
               </div>
 
-              <div className="bg-[#205b63]/5 p-4 rounded-2xl border border-[#205b63]/20">
-                <div className="flex items-center gap-2 mb-1.5 text-[#205b63] font-mono text-[11px] uppercase font-bold tracking-wider">
+              <div className="bg-[#205b63]/20 p-4 rounded-2xl border border-cyan-500/20">
+                <div className="flex items-center gap-2 mb-1.5 text-cyan-300 font-mono text-[11px] uppercase font-bold tracking-wider">
                   <Sparkles size={13} />
                   <span>Studio Dialogue</span>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-slate-300 leading-relaxed">
                   Have spatial questions or looking to collaborate on bespoke interior or model projects?
                 </p>
-                <Link to="/contactus" className="inline-block mt-3 text-xs font-mono font-bold text-[#205b63] hover:text-[#172a2b] uppercase tracking-wider hover:underline">
+                <Link to="/contactus" className="inline-block mt-3 text-xs font-mono font-bold text-cyan-300 hover:text-white uppercase tracking-wider hover:underline">
                   Initiate Consultation →
                 </Link>
               </div>
@@ -282,11 +298,11 @@ const BlogDetail = () => {
           </div>
         </aside>
 
-        {/* Article Body */}
-        <main className="lg:col-span-8 order-1 lg:order-2 bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="prose lg:prose-lg max-w-none text-slate-800">
+        {/* Article Body (Main Theme Dark Aesthetic) */}
+        <main className="lg:col-span-8 order-1 lg:order-2 bg-[#142628]/60 p-8 sm:p-12 rounded-3xl border border-white/10 shadow-xl backdrop-blur-md">
+          <div className="prose lg:prose-lg max-w-none text-slate-200">
             {post.description && (
-              <p className="text-lg sm:text-xl text-slate-800 leading-relaxed mb-8 italic border-l-4 border-[#205b63] pl-5 py-3 font-medium bg-[#205b63]/5 rounded-r-xl">
+              <p className="text-lg sm:text-xl text-slate-100 leading-relaxed mb-8 italic border-l-4 border-cyan-400 pl-5 py-3 font-medium bg-[#205b63]/15 rounded-r-xl">
                 {post.description}
               </p>
             )}
@@ -298,25 +314,25 @@ const BlogDetail = () => {
                   return (
                     <div key={idx} className="my-8 first:mt-2">
                       {block.badge && (
-                        <span className="inline-block px-3 py-1 mb-2.5 rounded-full bg-[#205b63]/10 text-[#205b63] border border-[#205b63]/25 text-[10px] font-mono font-bold uppercase tracking-wider">
+                        <span className="inline-block px-3 py-1 mb-2.5 rounded-full bg-[#205b63]/25 text-cyan-300 border border-cyan-500/30 text-[10px] font-mono font-bold uppercase tracking-wider">
                           {block.badge}
                         </span>
                       )}
                       {level === 'h1' ? (
-                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight font-display uppercase mb-3">
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-display uppercase mb-3">
                           {block.text}
                         </h2>
                       ) : level === 'h3' ? (
-                        <h4 className="text-xl sm:text-2xl font-bold text-[#205b63] tracking-tight font-display mb-2">
+                        <h4 className="text-xl sm:text-2xl font-bold text-cyan-300 tracking-tight font-display mb-2">
                           {block.text}
                         </h4>
                       ) : (
-                        <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-display mb-3">
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight font-display mb-3">
                           {block.text}
                         </h3>
                       )}
                       {block.subtitle && (
-                        <p className="text-sm sm:text-base text-slate-600 font-light italic">
+                        <p className="text-sm sm:text-base text-slate-300 font-light italic">
                           {block.subtitle}
                         </p>
                       )}
@@ -326,8 +342,8 @@ const BlogDetail = () => {
 
                 if (block.type === 'lead') {
                   return (
-                    <div key={idx} className="my-6 p-6 rounded-2xl bg-[#205b63]/5 border-l-4 border-[#205b63] border border-[#205b63]/20">
-                      <p className="text-lg sm:text-xl text-slate-800 leading-relaxed font-serif italic">
+                    <div key={idx} className="my-6 p-6 rounded-2xl bg-[#205b63]/15 border-l-4 border-cyan-400 border border-cyan-500/25">
+                      <p className="text-lg sm:text-xl text-slate-100 leading-relaxed font-serif italic">
                         {block.text}
                       </p>
                     </div>
@@ -336,7 +352,7 @@ const BlogDetail = () => {
 
                 if (block.type === 'paragraph') {
                   return (
-                    <p key={idx} className="text-slate-700 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+                    <p key={idx} className="text-slate-200 text-base sm:text-lg leading-relaxed mb-6 font-normal">
                       {block.text}
                     </p>
                   );
@@ -344,15 +360,15 @@ const BlogDetail = () => {
 
                 if (block.type === 'quote') {
                   return (
-                    <figure key={idx} className="my-8 p-6 sm:p-8 rounded-2xl bg-amber-500/10 border-l-4 border-amber-500 border border-amber-200">
-                      <blockquote className="text-lg sm:text-xl font-serif italic text-amber-950 leading-relaxed">
+                    <figure key={idx} className="my-8 p-6 sm:p-8 rounded-2xl bg-amber-950/25 border-l-4 border-amber-400 border border-amber-500/30">
+                      <blockquote className="text-lg sm:text-xl font-serif italic text-amber-200 leading-relaxed">
                         &ldquo;{block.text}&rdquo;
                       </blockquote>
                       {(block.author || block.citation || block.role) && (
-                        <figcaption className="mt-4 flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-amber-800">
+                        <figcaption className="mt-4 flex items-center gap-2 text-xs font-mono font-semibold uppercase tracking-wider text-amber-300">
                           <span>— {block.author || 'Architectural Commentary'}</span>
                           {(block.role || block.citation) && (
-                            <span className="text-amber-700">({block.role || block.citation})</span>
+                            <span className="text-amber-400">({block.role || block.citation})</span>
                           )}
                         </figcaption>
                       )}
@@ -362,21 +378,21 @@ const BlogDetail = () => {
 
                 if (block.type === 'callout') {
                   return (
-                    <div key={idx} className="my-8 p-6 sm:p-7 rounded-2xl bg-slate-50 border border-slate-200/90 shadow-sm">
-                      <div className="flex items-center gap-2.5 mb-3 text-[#205b63] font-mono text-xs uppercase font-bold tracking-wider">
-                        <Sparkles size={15} className="text-[#205b63]" />
+                    <div key={idx} className="my-8 p-6 sm:p-7 rounded-2xl bg-white/5 border border-white/15 shadow-sm">
+                      <div className="flex items-center gap-2.5 mb-3 text-cyan-300 font-mono text-xs uppercase font-bold tracking-wider">
+                        <Sparkles size={15} className="text-cyan-300" />
                         <span>{block.title || 'Key Architectural Insights'}</span>
                       </div>
                       {block.text && (
-                        <p className="text-sm sm:text-base text-slate-700 mb-4 leading-relaxed">
+                        <p className="text-sm sm:text-base text-slate-200 mb-4 leading-relaxed">
                           {block.text}
                         </p>
                       )}
                       {block.items && block.items.length > 0 && (
-                        <ul className="space-y-2 text-sm sm:text-base text-slate-700">
+                        <ul className="space-y-2 text-sm sm:text-base text-slate-200">
                           {block.items.map((item: string, i: number) => (
                             <li key={i} className="flex items-start gap-2.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#205b63] shrink-0 mt-2" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 mt-2" />
                               <span>{item}</span>
                             </li>
                           ))}
@@ -392,7 +408,7 @@ const BlogDetail = () => {
                   return (
                     <ListTag
                       key={idx}
-                      className={`my-6 space-y-3 text-slate-700 text-base sm:text-lg leading-relaxed pl-6 ${
+                      className={`my-6 space-y-3 text-slate-200 text-base sm:text-lg leading-relaxed pl-6 ${
                         isNumbered ? 'list-decimal' : 'list-disc'
                       }`}
                     >
@@ -406,7 +422,7 @@ const BlogDetail = () => {
                 if (block.type === 'image_single') {
                   return (
                     <figure key={idx} className="my-8">
-                      <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-md">
+                      <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/40 shadow-md">
                         <img
                           src={resolveImageUrl(block.image)}
                           alt={block.alt || block.caption || 'Architectural monograph image'}
@@ -414,7 +430,7 @@ const BlogDetail = () => {
                         />
                       </div>
                       {block.caption && (
-                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-500">
+                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-400">
                           {block.caption}
                         </figcaption>
                       )}
@@ -426,33 +442,33 @@ const BlogDetail = () => {
                   return (
                     <figure key={idx} className="my-8">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                        <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/40 shadow-sm">
                           <img
                             src={resolveImageUrl(block.image1)}
                             alt={block.caption1 || 'Monograph image'}
                             className="w-full h-64 sm:h-72 object-cover hover:scale-105 transition-transform duration-500"
                           />
                           {block.caption1 && (
-                            <p className="p-2.5 text-[11px] font-mono text-slate-600 bg-white border-t border-slate-200">
+                            <p className="p-2.5 text-[11px] font-mono text-slate-300 bg-black/40 border-t border-white/10">
                               {block.caption1}
                             </p>
                           )}
                         </div>
-                        <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                        <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/40 shadow-sm">
                           <img
                             src={resolveImageUrl(block.image2)}
                             alt={block.caption2 || 'Monograph image'}
                             className="w-full h-64 sm:h-72 object-cover hover:scale-105 transition-transform duration-500"
                           />
                           {block.caption2 && (
-                            <p className="p-2.5 text-[11px] font-mono text-slate-600 bg-white border-t border-slate-200">
+                            <p className="p-2.5 text-[11px] font-mono text-slate-300 bg-black/40 border-t border-white/10">
                               {block.caption2}
                             </p>
                           )}
                         </div>
                       </div>
                       {block.subtitle && (
-                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-500">
+                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-400">
                           {block.subtitle}
                         </figcaption>
                       )}
@@ -469,14 +485,14 @@ const BlogDetail = () => {
                           { img: block.image2, cap: block.caption2 },
                           { img: block.image3, cap: block.caption3 },
                         ].map((item, i) => (
-                          <div key={i} className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                          <div key={i} className="rounded-2xl overflow-hidden border border-white/15 bg-black/40 shadow-sm">
                             <img
                               src={resolveImageUrl(item.img)}
                               alt={item.cap || `Gallery image ${i + 1}`}
                               className="w-full h-52 sm:h-60 object-cover hover:scale-105 transition-transform duration-500"
                             />
                             {item.cap && (
-                              <p className="p-2 text-[10px] font-mono text-slate-600 bg-white border-t border-slate-200 truncate">
+                              <p className="p-2 text-[10px] font-mono text-slate-300 bg-black/40 border-t border-white/10 truncate">
                                 {item.cap}
                               </p>
                             )}
@@ -484,7 +500,7 @@ const BlogDetail = () => {
                         ))}
                       </div>
                       {block.subtitle && (
-                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-500">
+                        <figcaption className="mt-2 text-center text-xs font-mono text-slate-400">
                           {block.subtitle}
                         </figcaption>
                       )}
@@ -497,7 +513,7 @@ const BlogDetail = () => {
                   return (
                     <div key={idx} className="my-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                       <div className={`md:col-span-6 ${isLeft ? 'order-1' : 'order-2'}`}>
-                        <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-md">
+                        <div className="rounded-2xl overflow-hidden border border-white/15 bg-black/40 shadow-md">
                           <img
                             src={resolveImageUrl(block.image)}
                             alt={block.title || 'Image'}
@@ -505,18 +521,18 @@ const BlogDetail = () => {
                           />
                         </div>
                         {block.caption && (
-                          <p className="mt-2 text-xs font-mono text-slate-500 text-center">
+                          <p className="mt-2 text-xs font-mono text-slate-400 text-center">
                             {block.caption}
                           </p>
                         )}
                       </div>
                       <div className={`md:col-span-6 ${isLeft ? 'order-2' : 'order-1'}`}>
                         {block.title && (
-                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3 font-display tracking-tight">
+                          <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 font-display tracking-tight">
                             {block.title}
                           </h3>
                         )}
-                        <p className="text-slate-700 text-base leading-relaxed">
+                        <p className="text-slate-200 text-base leading-relaxed">
                           {block.text}
                         </p>
                       </div>
@@ -526,22 +542,22 @@ const BlogDetail = () => {
 
                 if (block.type === 'gallery' && block.images && block.images.length > 0) {
                   return (
-                    <div key={idx} className="my-10 pt-4 border-t border-slate-200">
+                    <div key={idx} className="my-10 pt-4 border-t border-white/10">
                       {block.title && (
-                        <h4 className="text-lg font-bold font-display uppercase tracking-wider text-[#205b63] mb-4">
+                        <h4 className="text-lg font-bold font-display uppercase tracking-wider text-cyan-300 mb-4">
                           {block.title}
                         </h4>
                       )}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {block.images.map((img: any, i: number) => (
-                          <div key={i} className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group shadow-sm">
+                          <div key={i} className="rounded-xl overflow-hidden border border-white/15 bg-black/40 group shadow-sm">
                             <img
                               src={resolveImageUrl(img.url || img.image || img)}
                               alt={img.caption || `Gallery ${i + 1}`}
                               className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                             {img.caption && (
-                              <p className="p-2 text-[10px] font-mono text-slate-600 bg-white truncate">
+                              <p className="p-2 text-[10px] font-mono text-slate-300 bg-black/40 truncate">
                                 {img.caption}
                               </p>
                             )}
@@ -555,9 +571,9 @@ const BlogDetail = () => {
                 if (block.type === 'divider') {
                   return (
                     <div key={idx} className="my-10 flex items-center justify-center gap-4">
-                      <span className="h-px bg-slate-300 flex-1" />
-                      <span className="w-2.5 h-2.5 rotate-45 border border-[#205b63] bg-[#205b63]" />
-                      <span className="h-px bg-slate-300 flex-1" />
+                      <span className="h-px bg-white/15 flex-1" />
+                      <span className="w-2.5 h-2.5 rotate-45 border border-cyan-400 bg-cyan-400/40" />
+                      <span className="h-px bg-white/15 flex-1" />
                     </div>
                   );
                 }
@@ -566,13 +582,13 @@ const BlogDetail = () => {
               })
             ) : (
               <>
-                <h2 className="text-2xl sm:text-3xl font-bold mb-4 mt-8 text-slate-900 tracking-tight font-display">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4 mt-8 text-white tracking-tight font-display">
                   Architectural Intent & Spatial Harmony
                 </h2>
-                <p className="text-slate-700 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+                <p className="text-slate-200 text-base sm:text-lg leading-relaxed mb-6 font-normal">
                   In contemporary spatial curation, the dialogue between tectonic materials, natural light, and functional volumes establishes the atmosphere of enduring architecture.
                 </p>
-                <p className="text-slate-700 text-base sm:text-lg leading-relaxed mb-6 font-normal">
+                <p className="text-slate-200 text-base sm:text-lg leading-relaxed mb-6 font-normal">
                   Our studio balances raw tactile honesty with fine digital manufacturing tolerances, ensuring each residential commission or scaled physical model exemplifies precision.
                 </p>
               </>
@@ -583,12 +599,12 @@ const BlogDetail = () => {
 
       {/* Supplemental High-Res Gallery Images */}
       {post.gallery_images && post.gallery_images.length > 0 && (
-        <section className="relative z-10 max-w-5xl mx-auto px-6 mb-20 pt-12 border-t border-slate-200">
+        <section className="relative z-10 max-w-5xl mx-auto px-6 mb-20 pt-12 border-t border-white/10">
           <ResponsiveContentGallery
             images={post.gallery_images}
             title={`${post.type || 'Architectural'} Visual Gallery`}
             subtitle="Explore high-resolution spatial photography, material samples, and construction details"
-            theme="light"
+            theme="dark"
             columns={3}
           />
         </section>

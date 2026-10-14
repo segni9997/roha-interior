@@ -62,9 +62,12 @@ export interface InteriorProjectItem {
   id: number;
   title: string;
   slug: string;
-  category: number;
+  category: number | CategoryItem;
   category_id?: number;
   category_name: string;
+  categories?: CategoryItem[];
+  category_ids?: number[];
+  category_names?: string[];
   location: string;
   year: string;
   description: string;
@@ -111,9 +114,12 @@ export interface ModelProjectItem {
   id: number;
   title: string;
   slug: string;
-  category: number;
+  category: number | CategoryItem;
   category_id?: number;
   category_name: string;
+  categories?: CategoryItem[];
+  category_ids?: number[];
+  category_names?: string[];
   scale_ratio: string;
   year: string;
   day: string;

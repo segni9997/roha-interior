@@ -10,7 +10,8 @@ import {
   Plus,
   Loader2,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import {
   api,
@@ -204,6 +205,13 @@ export const AdminDashboard: React.FC = () => {
           >
             <Sparkles size={13} className="text-cyan-400" />
             <span>Blog Builder →</span>
+          </Link>
+          <Link
+            to="/admin/trusted-party-builder"
+            className="secondary-button text-xs py-2 px-3.5 bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border-cyan-500/40 shadow-xs"
+          >
+            <ShieldCheck size={13} className="text-cyan-400" />
+            <span>Trusted Parties Builder →</span>
           </Link>
         </div>
       </section>

@@ -86,7 +86,7 @@ export const AdminPages: React.FC = () => {
     setFormHeading('');
     setFormSubheading('');
     setFormBodyText('');
-    setFormBackgroundImage('/tr/279A1756.JPG');
+    setFormBackgroundImage(selectedSlug === 'model-making' ? '/as.png' : '/tr/279A1756.JPG');
     setFormCtaText('');
     setFormCtaLink('');
     setFormOrder(sections.length + 1);
@@ -99,7 +99,7 @@ export const AdminPages: React.FC = () => {
     setFormHeading(sec.heading || '');
     setFormSubheading(sec.subheading || '');
     setFormBodyText(sec.body_text || '');
-    setFormBackgroundImage(sec.background_image || '/tr/279A1756.JPG');
+    setFormBackgroundImage(sec.background_image || (selectedSlug === 'model-making' ? '/as.png' : '/tr/279A1756.JPG'));
     setFormCtaText(sec.cta_text || '');
     setFormCtaLink(sec.cta_link || '');
     setFormOrder(sec.order || 1);
@@ -308,8 +308,8 @@ export const AdminPages: React.FC = () => {
             onClick={() => !saving && setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-2xl bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden max-h-[90vh] backdrop-blur-xl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d]">
+          <div className="relative w-full max-w-2xl bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden max-h-[90vh] backdrop-blur-xl" data-lenis-prevent="true">
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d] shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
                   <FileText size={18} />
@@ -333,7 +333,7 @@ export const AdminPages: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveSection} className="flex-1 overflow-y-auto p-6 space-y-4">
+            <form onSubmit={handleSaveSection} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 custom-scrollbar" data-lenis-prevent="true">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">

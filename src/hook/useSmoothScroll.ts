@@ -32,33 +32,49 @@ export const resetSmoothScroll = () => {
   }, 50);
 };
 
-export const useSmoothScroll = () => {
+export const isAdminOrBuilderRoute = (path?: string) => {
+  const p = path || (typeof window !== 'undefined' ? window.location.pathname : '');
+  return (
+    p.startsWith('/admin') ||
+    p.startsWith('/builder') ||
+    p.startsWith('/trusted-party-builder')
+  );
+};
+
+export const useSmoothScroll = (currentPath?: string) => {
   useEffect(() => {
-    // 1. Initialize Lenis
-    const lenis = new Lenis({
-      lerp: 0.1, // Smoothness (0.1 is standard)
-      duration: 1.2,
-      smoothWheel: true,
-    });
-    lenisInstance = lenis;
+    // 1. Initialize Lenis if not already initialized
+    if (!lenisInstance) {
+      const lenis = new Lenis({
+        lerp: 0.1, // Smoothness (0.1 is standard)
+        duration: 1.2,
+        smoothWheel: true,
+      });
+      lenisInstance = lenis;
 
-    // 2. Synchronize ScrollTrigger with Lenis
-    lenis.on('scroll', ScrollTrigger.update);
+      // 2. Synchronize ScrollTrigger with Lenis
+      lenis.on('scroll', ScrollTrigger.update);
 
-    // 3. Connect GSAP ticker to Lenis
-    const gsapTicker = (time: number) => {
-      lenis.raf(time * 1000); // Lenis expects milliseconds
-    };
+      // 3. Connect GSAP ticker to Lenis
+      const gsapTicker = (time: number) => {
+        lenis.raf(time * 1000); // Lenis expects milliseconds
+      };
 
-    gsap.ticker.add(gsapTicker);
-    gsap.ticker.lagSmoothing(0);
+      gsap.ticker.add(gsapTicker);
+      gsap.ticker.lagSmoothing(0);
+    }
+
+    // Check if the current route is an administrative CMS or Visual Builder workspace
+    const path = currentPath || (typeof window !== 'undefined' ? window.location.pathname : '');
+    if (isAdminOrBuilderRoute(path)) {
+      lenisInstance?.stop();
+    } else {
+      lenisInstance?.start();
+    }
 
     // 4. Cleanup function
     return () => {
-      lenis.destroy();
-      lenisInstance = null;
-      gsap.ticker.remove(gsapTicker);
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      // Don't kill global instance across re-renders; maintain clean ticker on unmount
     };
-  }, []);
+  }, [currentPath]);
 };

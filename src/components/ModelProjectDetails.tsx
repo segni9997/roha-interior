@@ -188,7 +188,9 @@ export function ModelProjectDetails() {
     ? [
         {
           icon: Building2,
-          name: (project as any).category_name || "Scale Model",
+          name: (project.category_names && project.category_names.length > 0)
+            ? project.category_names.join(' · ')
+            : ((project as any).category_name || "Scale Model"),
         },
         {
           icon: Home,
@@ -408,7 +410,7 @@ export function ModelProjectDetails() {
         area={project?.dimensions_cm || ""}
         floorsOrScale={project?.scale_ratio || ""}
         materialPalette={project?.materials_used || ""}
-        styleName={project?.category_name || ""}
+        styleName={project?.category_names?.join(' · ') || project?.category_name || ""}
         statusName={project?.specifications?.status || ""}
         companyLogo={project?.company_logo}
         clientName={clientName}

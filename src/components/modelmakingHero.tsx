@@ -27,7 +27,7 @@ const DEFAULT_HERO = {
   subheading: "Modeling Making & Precision Fabrication",
   body_text:
     "Translating visionary blueprints into tangible, high-fidelity physical realities. Combining laser micro-cutting, high-resolution stereolithography, and artisanal hand-finishing with 0.1mm tolerance.",
-  background_image: bg,
+  background_image: model,
   cta_text: "Explore Physical Archive",
   cta_link: "#models-archive",
 };
@@ -201,7 +201,7 @@ export function ModelHero() {
     return text;
   };
 
-  const bgImageSrc = resolveImageUrl(heroData.background_image, bg);
+  const modelImageSrc = resolveImageUrl(heroData.background_image, model);
 
   return (
     <>
@@ -215,7 +215,7 @@ export function ModelHero() {
         {/* 1. Background Visuals & Atmospheric Scrims */}
         <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
           <img
-            src={bgImageSrc}
+            src={bg}
             alt="Architectural Blueprint Background"
             className="w-full h-full object-cover opacity-20"
           />
@@ -263,14 +263,14 @@ export function ModelHero() {
           delay={1.5}
         />
 
-        {/* 2. CENTERED SHOWCASE IMAGE STARTING FROM THE BOTTOM */}
+        {/* 2. CENTERED SHOWCASE IMAGE STARTING FROM THE BOTTOM (DYNAMIC FROM BACKEND) */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 w-full max-w-5xl h-[65vh] sm:h-[75vh] md:h-[84vh] flex items-end justify-center pointer-events-none px-4">
           <motion.img
             initial={{ opacity: 0, y: 60, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-            src={model}
-            alt="Physical Scale Model Prototype"
+            src={modelImageSrc}
+            alt={heroData.heading || "Physical Scale Model Prototype"}
             className="w-auto h-full max-h-[84vh] object-contain object-bottom filter drop-shadow-[0_0_60px_rgba(57,94,99,0.45)] select-none"
           />
         </div>

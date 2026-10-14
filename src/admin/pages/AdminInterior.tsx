@@ -13,7 +13,8 @@ import {
   Building2,
   MapPin,
   Calendar,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 import {
   api,
@@ -25,6 +26,7 @@ import {
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ToastContainer, type ToastMessage } from '../components/Toast';
 import { MediaGalleryManager } from '../components/MediaGalleryManager';
+import { HeroSectionEditorModal } from '../components/HeroSectionEditorModal';
 
 export const AdminInterior: React.FC = () => {
   const [projects, setProjects] = useState<InteriorProjectItem[]>([]);
@@ -42,10 +44,13 @@ export const AdminInterior: React.FC = () => {
 
   // Category Manager Modal State
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
   const [creatingCat, setCreatingCat] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
+  const [isAddingModalCat, setIsAddingModalCat] = useState(false);
+  const [modalCatName, setModalCatName] = useState('');
 
   // Delete Project Modal
   const [deleteTarget, setDeleteTarget] = useState<InteriorProjectItem | null>(null);
@@ -115,12 +120,63 @@ export const AdminInterior: React.FC = () => {
     }
   };
 
+  const handleQuickAddCategory = async () => {
+    const trimmed = modalCatName.trim();
+    if (!trimmed) {
+      setIsAddingModalCat(false);
+      return;
+    }
+    const existing = categories.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      if (editingProject) {
+        const currentIds = editingProject.category_ids && editingProject.category_ids.length > 0
+          ? editingProject.category_ids
+          : (editingProject.category ? [Number(editingProject.category)] : []);
+        if (!currentIds.includes(existing.id)) {
+          const updated = [...currentIds, existing.id];
+          setEditingProject({
+            ...editingProject,
+            category_ids: updated,
+            category: updated[0]
+          });
+        }
+      }
+      setModalCatName('');
+      setIsAddingModalCat(false);
+      addToast('success', 'Category Selected', `"${existing.name}" is already available.`);
+      return;
+    }
+
+    try {
+      const created = await api.createInteriorCategory(trimmed);
+      setCategories(prev => [...prev, created]);
+      if (editingProject) {
+        const currentIds = editingProject.category_ids && editingProject.category_ids.length > 0
+          ? editingProject.category_ids
+          : (editingProject.category ? [Number(editingProject.category)] : []);
+        const updated = [...currentIds, created.id];
+        setEditingProject({
+          ...editingProject,
+          category_ids: updated,
+          category: updated[0]
+        });
+      }
+      setModalCatName('');
+      setIsAddingModalCat(false);
+      addToast('success', 'Category Created', `"${created.name}" created and selected.`);
+    } catch (err: any) {
+      addToast('error', 'Category Creation Failed', err.message);
+    }
+  };
+
   const handleOpenCreate = () => {
+    const firstCatId = categories[0]?.id || 1;
     setEditingProject({
       title: '',
       subtitle: '',
       description: '',
-      category: categories[0]?.id || 1,
+      category: firstCatId,
+      category_ids: [firstCatId],
       cover_image: '',
       gallery_images: [],
       location: 'Addis Ababa',
@@ -144,8 +200,16 @@ export const AdminInterior: React.FC = () => {
     try {
       setSaving(true);
       const full = await api.getInteriorProject(proj.id);
+      const rawCatIds = full.category_ids && full.category_ids.length > 0
+        ? full.category_ids
+        : (full.categories && full.categories.length > 0
+            ? full.categories.map((c: any) => c.id)
+            : [typeof full.category === 'object' ? (full.category as any).id : Number(full.category || 1)]);
+
       setEditingProject({
         ...full,
+        category: rawCatIds[0] || (typeof full.category === 'object' ? (full.category as any).id : Number(full.category || 1)),
+        category_ids: rawCatIds,
         gallery_images: full.gallery_images || [],
         specifications: full.specifications || {
           area: '450 m²',
@@ -176,9 +240,14 @@ export const AdminInterior: React.FC = () => {
 
     try {
       setSaving(true);
+      const chosenCatIds = editingProject.category_ids && editingProject.category_ids.length > 0
+        ? editingProject.category_ids
+        : (editingProject.category ? [typeof editingProject.category === 'object' ? (editingProject.category as any).id : Number(editingProject.category)] : [categories[0]?.id || 1]);
+
       const payload: Partial<InteriorProjectDetailItem> = {
         ...editingProject,
-        category: editingProject.category ? Number(editingProject.category) : undefined,
+        category: chosenCatIds[0],
+        category_ids: chosenCatIds,
       };
 
       if (editingProject.id) {
@@ -223,8 +292,13 @@ export const AdminInterior: React.FC = () => {
         (item.location && item.location.toLowerCase().includes(search.toLowerCase())) ||
         (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
 
+      const names = item.category_names && item.category_names.length > 0
+        ? item.category_names
+        : (item.category_name ? [item.category_name] : []);
+
       const matchesCat =
-        selectedCat === 'All' || item.category_name === selectedCat;
+        selectedCat === 'All' ||
+        names.some(n => n.toLowerCase() === selectedCat.toLowerCase());
 
       return matchesSearch && matchesCat;
     });
@@ -247,6 +321,15 @@ export const AdminInterior: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsHeroModalOpen(true)}
+            className="secondary-button text-xs border-cyan-500/30 text-cyan-200 hover:text-white"
+            title="Change Architectural Hero Section images, heading, subheading, body text, and CTA"
+          >
+            <Sparkles size={14} className="text-cyan-400" />
+            <span>Hero Section</span>
+          </button>
+
           <button
             onClick={() => setIsCatModalOpen(true)}
             className="secondary-button text-xs"
@@ -358,9 +441,11 @@ export const AdminInterior: React.FC = () => {
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
 
                   {/* Badges */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap max-w-[85%]">
                     <span className="text-[10px] font-mono uppercase px-2.5 py-1 rounded-full bg-cyan-950/90 text-cyan-300 font-semibold backdrop-blur-xs border border-cyan-500/30 shadow-xs">
-                      {project.category_name || 'Interior'}
+                      {project.category_names && project.category_names.length > 0
+                        ? project.category_names.join(', ')
+                        : (project.category_name || 'Interior')}
                     </span>
                     {project.is_featured && (
                       <span className="status-pill featured shadow-xs">
@@ -457,7 +542,9 @@ export const AdminInterior: React.FC = () => {
                     )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5 truncate">
-                    {project.category_name} · {project.location} · {project.year}
+                    {(project.category_names && project.category_names.length > 0
+                      ? project.category_names.join(', ')
+                      : project.category_name)} · {project.location} · {project.year}
                   </p>
                 </div>
               </div>
@@ -500,9 +587,9 @@ export const AdminInterior: React.FC = () => {
             onClick={() => !saving && setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl">
+          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl" data-lenis-prevent="true">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d]">
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d] shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
                   <Building2 size={18} />
@@ -528,7 +615,7 @@ export const AdminInterior: React.FC = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30">
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30 shrink-0">
               {[
                 { id: 'details', label: '1. Basic Details' },
                 { id: 'media', label: '2. Media & Gallery Archive' },
@@ -550,7 +637,7 @@ export const AdminInterior: React.FC = () => {
             </div>
 
             {/* Modal Form Content */}
-            <form onSubmit={handleSaveProject} className="flex-1 overflow-y-auto p-6 space-y-6">
+            <form onSubmit={handleSaveProject} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar" data-lenis-prevent="true">
               {/* TAB 1: BASIC DETAILS */}
               {activeTab === 'details' && (
                 <div className="space-y-4 animate-in fade-in">
@@ -570,20 +657,102 @@ export const AdminInterior: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Category
-                      </label>
-                      <select
-                        value={editingProject.category || categories[0]?.id || 1}
-                        onChange={(e) => setEditingProject({ ...editingProject, category: Number(e.target.value) })}
-                        className="w-full px-3.5 py-2.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-400"
-                      >
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id} className="bg-[#132527] text-white">
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                          Categories (Multi-Select) *
+                        </label>
+                        <span className="text-[10px] font-mono text-cyan-400">
+                          {editingProject.category_ids?.length || (editingProject.category ? 1 : 0)} selected
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 flex flex-wrap gap-2 min-h-[46px] items-center">
+                        {categories.map((cat) => {
+                          const currentIds = editingProject.category_ids && editingProject.category_ids.length > 0
+                            ? editingProject.category_ids
+                            : (editingProject.category ? [Number(editingProject.category)] : []);
+                          const isSelected = currentIds.includes(cat.id);
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                let updated: number[];
+                                if (isSelected) {
+                                  if (currentIds.length <= 1) return;
+                                  updated = currentIds.filter(id => id !== cat.id);
+                                } else {
+                                  updated = [...currentIds, cat.id];
+                                }
+                                setEditingProject({
+                                  ...editingProject,
+                                  category_ids: updated,
+                                  category: updated[0]
+                                });
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#205b63] text-white border border-cyan-400/50 shadow-sm'
+                                  : 'bg-white/5 text-slate-400 hover:text-white border border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-cyan-300' : 'bg-slate-600'}`} />
+                              <span>{cat.name}</span>
+                            </button>
+                          );
+                        })}
+
+                        {/* Quick Add Category if not available */}
+                        {isAddingModalCat ? (
+                          <div className="inline-flex items-center gap-1.5 bg-black/60 border border-cyan-400 rounded-lg px-2 py-1 shadow-sm">
+                            <input
+                              type="text"
+                              value={modalCatName}
+                              onChange={e => setModalCatName(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleQuickAddCategory();
+                                } else if (e.key === 'Escape') {
+                                  setIsAddingModalCat(false);
+                                  setModalCatName('');
+                                }
+                              }}
+                              placeholder="New category..."
+                              autoFocus
+                              className="bg-transparent py-0.5 text-xs font-mono text-white placeholder-slate-400 focus:outline-none w-28"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleQuickAddCategory}
+                              className="p-1 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 cursor-pointer"
+                              title="Save & Add Category"
+                            >
+                              <Check size={11} className="stroke-[3]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsAddingModalCat(false);
+                                setModalCatName('');
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-white cursor-pointer"
+                              title="Cancel"
+                            >
+                              <X size={11} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsAddingModalCat(true)}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-400 transition-all cursor-pointer flex items-center gap-1"
+                            title="Add a new category if not available in the list"
+                          >
+                            <Plus size={12} />
+                            <span>New Category</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -893,7 +1062,7 @@ export const AdminInterior: React.FC = () => {
             </form>
 
             {/* Categories List */}
-            <div className="mt-5 space-y-2 max-h-60 overflow-y-auto">
+            <div className="mt-5 space-y-2 max-h-60 overflow-y-auto custom-scrollbar" data-lenis-prevent="true">
               {categories.map((cat) => (
                 <div
                   key={cat.id}
@@ -944,6 +1113,14 @@ export const AdminInterior: React.FC = () => {
         isLoading={deleting}
         onConfirm={handleDeleteConfirmed}
         onCancel={() => setDeleteTarget(null)}
+      />
+      {/* -------------------- HERO SECTION EDITOR MODAL -------------------- */}
+      <HeroSectionEditorModal
+        isOpen={isHeroModalOpen}
+        onClose={() => setIsHeroModalOpen(false)}
+        pageSlug="interior"
+        title="Architectural Hero Section Editor"
+        onSaved={() => addToast('success', 'Hero Section Updated', 'Changes are live on the public interior page.')}
       />
     </div>
   );

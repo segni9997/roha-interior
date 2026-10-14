@@ -26,7 +26,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ post, featured = false }) =>
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`group relative overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-100 cursor-pointer 
+      className={`group relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-slate-900/80 cursor-pointer 
         ${featured ? "h-[400px] sm:h-[500px] md:h-full" : "h-[350px] sm:h-[400px]"}`}
     >
       {/* Image Layer */}

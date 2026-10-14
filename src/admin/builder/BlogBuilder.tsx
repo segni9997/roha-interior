@@ -1319,7 +1319,7 @@ export const BlogBuilder: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1415] text-white flex flex-col font-sans-ui selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#0b1415] text-white flex flex-col font-sans-ui selection:bg-cyan-500 selection:text-black" data-lenis-prevent="true">
       {/* Toast Feedback */}
       <ToastContainer toasts={toasts} onDismiss={id => setToasts(prev => prev.filter(t => t.id !== id))} />
 

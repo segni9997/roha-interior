@@ -12,7 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
   Store,
-  Crown
+  Crown,
+  ArrowUpRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api, resolveImageUrl, type ModelProjectItem, type CategoryItem } from '../services/api';
@@ -171,39 +172,12 @@ const getCategoryIcon = (name: string): ReactNode => {
   return <Layers className="w-3.5 h-3.5" />;
 };
 
-const CARD_THEMES = [
-  {
-    bg: "from-[#1c2c30] via-[#142225] to-[#0d1618]",
-    fade: "from-[#1c2c30]",
-    border: "border-cyan-500/20",
-    accent: "group-hover:text-cyan-300",
-  },
-  {
-    bg: "from-[#242e22] via-[#1b2319] to-[#121811]",
-    fade: "from-[#242e22]",
-    border: "border-emerald-500/20",
-    accent: "group-hover:text-emerald-300",
-  },
-  {
-    bg: "from-[#2b2129] via-[#20181e] to-[#150f14]",
-    fade: "from-[#2b2129]",
-    border: "border-purple-500/20",
-    accent: "group-hover:text-purple-300",
-  },
-  {
-    bg: "from-[#2e261d] via-[#231c15] to-[#17120d]",
-    fade: "from-[#2e261d]",
-    border: "border-amber-500/20",
-    accent: "group-hover:text-amber-300",
-  },
-];
-
 const COLLAPSED_LIMIT = 5;
 
 export default function SubCategoryModelGrid() {
   const [activeType, setActiveType] = useState<string>('All');
   const [projects, setProjects] = useState<ModelProjectItem[]>(fallbackModelProjects);
-  const [categoriesList, setCategoriesList] = useState<string[]>(['All', 'Architecture', 'Commercial', 'Cultural', 'Hospitality', 'Educational', 'Healthcare', 'Mixed-Use']);
+  const [categoriesList, setCategoriesList] = useState<string[]>(['All']);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -222,18 +196,19 @@ export default function SubCategoryModelGrid() {
           if (liveModels && liveModels.length > 0) {
             setProjects(liveModels);
           }
-          const catNames = new Set<string>(['All']);
           if (liveCats && liveCats.length > 0) {
-            liveCats.forEach((c: CategoryItem) => {
-              if (c.name) catNames.add(c.name);
-            });
-          }
-          if (liveModels && liveModels.length > 0) {
+            setCategoriesList(['All', ...liveCats.map((c: CategoryItem) => c.name)]);
+          } else if (liveModels && liveModels.length > 0) {
+            const catNames = new Set<string>(['All']);
             liveModels.forEach((p: ModelProjectItem) => {
-              if (p.category_name) catNames.add(p.category_name);
+              if (p.category_names && p.category_names.length > 0) {
+                p.category_names.forEach(n => catNames.add(n));
+              } else if (p.category_name) {
+                catNames.add(p.category_name);
+              }
             });
+            setCategoriesList(Array.from(catNames));
           }
-          setCategoriesList(Array.from(catNames));
         }
       } catch (err) {
         console.warn('Backend unavailable, using local model archive:', err);
@@ -249,7 +224,12 @@ export default function SubCategoryModelGrid() {
 
   const filteredProjects = activeType === 'All'
     ? projects
-    : projects.filter(p => p.category_name?.toLowerCase() === activeType.toLowerCase());
+    : projects.filter(p => {
+        const names = p.category_names && p.category_names.length > 0
+          ? p.category_names
+          : (p.category_name ? [p.category_name] : []);
+        return names.some(n => n.toLowerCase() === activeType.toLowerCase());
+      });
 
   const handleProjectClick = (projectId: number) => {
     navigate(`/project-detail?id=${projectId}&type=model`);
@@ -371,92 +351,64 @@ export default function SubCategoryModelGrid() {
           </div>
         </div>
 
-        {/* Project Grid (Exact Match to Reference Luxury Pill Design on Light Backdrop) */}
-        <motion.div 
-          layout 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10"
-        >
+        {/* Project Grid */}
+        <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence mode="popLayout">
-            {filteredProjects.map((project, idx) => {
-              const theme = CARD_THEMES[idx % CARD_THEMES.length];
-              const methodTag = project.fabrication_methods
-                ? project.fabrication_methods.split(',')[0].trim()
-                : `±${project.precision_tolerance || "0.1mm"}`;
+            {filteredProjects.map((project) => (
+              <motion.div
+                layout
+                key={project.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={() => handleProjectClick(project.id)}
+                className="group relative h-[420px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500"
+              >
+                {/* Image Layer */}
+                <img 
+                  src={resolveImageUrl(project.cover_image, '/tr/279A1812.JPG')} 
+                  alt={project.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity"></div>
 
-              return (
-                <motion.div
-                  layout
-                  key={project.id}
-                  initial={{ opacity: 0, y: 30, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.45, delay: idx * 0.05 }}
-                  onClick={() => handleProjectClick(project.id)}
-                  className={`group relative rounded-[34px] overflow-hidden bg-gradient-to-b ${theme.bg} border ${theme.border} shadow-[0_20px_50px_rgba(0,0,0,0.22)] hover:shadow-[0_28px_65px_rgba(0,0,0,0.35)] hover:-translate-y-2 transition-all duration-500 cursor-pointer flex flex-col justify-between`}
-                >
-                  {/* Top Image Section with Smooth Bottom Gradient Fade */}
-                  <div className="relative aspect-[16/11] sm:aspect-[4/3] w-full overflow-hidden bg-slate-950">
-                    <img 
-                      src={resolveImageUrl(project.cover_image, '/tr/279A1812.JPG')} 
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
-                    {/* Seamless atmospheric gradient fade into card surface */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent opacity-80" />
-                    <div className={`absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t ${theme.fade} via-${theme.fade}/85 to-transparent`} />
-                  </div>
+                {/* Floating Scale & Tolerance Badges */}
+                <div className="absolute top-4 left-4 flex gap-2">
+                  <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/20 text-[10px] text-white font-mono uppercase rounded-md tracking-wider">
+                    SCALE {project.scale_ratio}
+                  </span>
+                  <span className="px-2.5 py-1 bg-[#395e63]/90 backdrop-blur-md border border-white/20 text-[10px] text-white font-mono uppercase rounded-md">
+                    ±{project.precision_tolerance || "0.1mm"}
+                  </span>
+                </div>
 
-                  {/* Transition Indicator Dots (· · ·) */}
-                  <div className="relative z-10 flex items-center justify-center gap-1.5 -mt-3 mb-1 pointer-events-none">
-                    <span className="w-3.5 h-1 rounded-full bg-white/90 shadow-[0_0_8px_rgba(255,255,255,0.7)]" />
-                    <span className="w-1 h-1 rounded-full bg-white/40" />
-                    <span className="w-1 h-1 rounded-full bg-white/40" />
-                  </div>
+                <div className="absolute top-4 right-4">
+                  <span className="px-2 py-1 bg-white/20 backdrop-blur-md text-[10px] text-white font-mono rounded">
+                    {project.year}
+                  </span>
+                </div>
 
-                  {/* Card Body Content */}
-                  <div className="p-6 sm:p-7 pt-2 flex flex-col justify-between flex-1">
-                    <div>
-                      {/* Title & Scale Badge Row */}
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className={`text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug transition-colors ${theme.accent}`}>
-                          {project.title}
-                        </h3>
-                        <span className="shrink-0 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-white font-mono text-xs font-semibold shadow-sm">
-                          {project.scale_ratio ? `1:${project.scale_ratio.replace('1:', '')}` : "1:50"}
-                        </span>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-xs sm:text-sm text-slate-300/85 leading-relaxed line-clamp-2 mt-2.5 font-light">
-                        {project.description}
-                      </p>
-
-                      {/* Tags Row */}
-                      <div className="flex flex-wrap items-center gap-2 mt-4">
-                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-white/90 text-xs font-medium border border-white/10 backdrop-blur-md">
-                          {project.category_name || "Architecture"}
-                        </span>
-                        <span className="px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-xs font-medium border border-white/10 backdrop-blur-md">
-                          {methodTag}
-                        </span>
-                      </div>
+                {/* Glass Content Card */}
+                <div className="absolute inset-x-3 bottom-3">
+                  <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-xl transition-all duration-500 group-hover:bg-white/20">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-black text-[#7db3b8] uppercase tracking-wider">
+                        {project.category_names && project.category_names.length > 0
+                          ? project.category_names.join(' · ')
+                          : (project.category_name || "Model")}
+                      </span>
+                      <ArrowUpRight className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
-
-                    {/* Full-width Rounded Action Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProjectClick(project.id);
-                      }}
-                      className="w-full mt-6 py-3.5 rounded-full bg-white hover:bg-slate-100 text-slate-950 font-bold text-sm tracking-wide text-center transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.35)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                    >
-                      Reserve & Explore
-                    </button>
+                    <h3 className="text-white font-bold text-lg leading-tight mb-2 truncate">
+                      {project.title}
+                    </h3>
+                    <p className="text-white/70 text-[11px] leading-relaxed line-clamp-2">
+                      {project.description}
+                    </p>
                   </div>
-                </motion.div>
-              );
-            })}
+                </div>
+              </motion.div>
+            ))}
           </AnimatePresence>
         </motion.div>
       </div>

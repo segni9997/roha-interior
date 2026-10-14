@@ -202,7 +202,7 @@ export const ParallaxGrid: React.FC<ParallaxGridProps> = ({
           <div className="w-full px-6 sm:px-10 md:px-16 pt-16 pb-10 relative z-20">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-mono uppercase tracking-widest text-[#205b63] font-bold">
-                VISUAL ARCHIVE // SPATIAL PERSPECTIVES
+                {subtitle?.trim() ? `VISUAL ARCHIVE // ${subtitle.trim().toUpperCase()}` : "VISUAL ARCHIVE"}
               </span>
             </div>
             <h3 className="text-2xl sm:text-3xl md:text-5xl font-black text-[#172a2b] uppercase tracking-tight">

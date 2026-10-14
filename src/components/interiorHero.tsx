@@ -8,13 +8,27 @@ import {
   X,
   Loader2,
 } from "lucide-react";
+import * as THREE from "three";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion } from "framer-motion";
+
+import { fragmentShader, vertexShader } from "../utils/shaders";
 import SubCategoryInteriorGrid from "./interiorProjects";
 import { NavigationOverlay } from "./NavBar";
+import { FloatingShape, SHAPES } from "./FloatingShapes";
 import { api, resolveImageUrl, type PageSectionItem } from "../services/api";
+
+gsap.registerPlugin(ScrollTrigger);
+
+interface Config {
+  color: string;
+  spread: number;
+}
 
 const DEFAULT_HERO = {
   heading: "Art That Transforms Spaces",
-  subheading: "Elevate Your Space",
+  subheading: "",
   body_text:
     "Premium 3D wall art and bespoke architectural interior designs that bring life, elegance, and creativity to your spaces.",
   background_image: "/tr/279A1756.JPG",
@@ -24,6 +38,9 @@ const DEFAULT_HERO = {
 
 export function InteriorHero() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [heroData, setHeroData] = useState<PageSectionItem | typeof DEFAULT_HERO>(DEFAULT_HERO);
   const [loading, setLoading] = useState(false);
@@ -40,7 +57,7 @@ export function InteriorHero() {
           if (heroSec) {
             setHeroData({
               heading: heroSec.heading || DEFAULT_HERO.heading,
-              subheading: heroSec.subheading || DEFAULT_HERO.subheading,
+              subheading: heroSec.subheading && heroSec.subheading !== "Elevate Your Space" ? heroSec.subheading : "",
               body_text: heroSec.body_text || DEFAULT_HERO.body_text,
               background_image: heroSec.background_image || DEFAULT_HERO.background_image,
               cta_text: heroSec.cta_text || DEFAULT_HERO.cta_text,
@@ -60,6 +77,94 @@ export function InteriorHero() {
     loadHeroContent();
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  /* ===========================
+     SHADER SETUP (MATCHING MODEL MAKING)
+  ============================ */
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+
+    const CONFIG: Config = {
+      color: "#ffffff",
+      spread: 0.55,
+    };
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasRef.current,
+      alpha: true,
+      antialias: true,
+    });
+
+    const hexToRgb = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      return new THREE.Vector3(r, g, b);
+    };
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      transparent: true,
+      uniforms: {
+        uProgress: { value: 0 },
+        uResolution: {
+          value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+        },
+        uColor: { value: hexToRgb(CONFIG.color) },
+        uSpread: { value: CONFIG.spread },
+      },
+    });
+
+    materialRef.current = material;
+
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const resize = () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      material.uniforms.uResolution.value.set(
+        window.innerWidth,
+        window.innerHeight
+      );
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    let rafId: number;
+    const render = () => {
+      renderer.render(scene, camera);
+      rafId = requestAnimationFrame(render);
+    };
+    render();
+
+    const tween = gsap.to(material.uniforms.uProgress, {
+      value: 1.2,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: true,
+      },
+    });
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(rafId);
+      tween.kill();
+      tween.scrollTrigger?.kill();
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
   }, []);
 
@@ -110,6 +215,7 @@ export function InteriorHero() {
   };
 
   const bgImageSrc = resolveImageUrl(heroData.background_image, DEFAULT_HERO.background_image);
+  const showCustomSubheading = Boolean(heroData.subheading && heroData.subheading.trim() && heroData.subheading.trim() !== "Elevate Your Space");
 
   return (
     <>
@@ -121,7 +227,7 @@ export function InteriorHero() {
         className="relative min-h-screen w-full bg-[#0b1718] overflow-hidden flex flex-col justify-between pt-24 sm:pt-28 pb-12 px-6 sm:px-12 lg:px-20"
       >
         {/* ========================================================================= */}
-        {/* 1. FULL-BLEED SCREEN-FILLING HERO IMAGE BACKGROUND (SINGLE IMAGE)         */}
+        {/* 1. FULL-BLEED SCREEN-FILLING HERO IMAGE BACKGROUND                        */}
         {/* ========================================================================= */}
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
           {loading ? (
@@ -141,6 +247,40 @@ export function InteriorHero() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b1718] via-transparent to-[#0b1718]/85 z-10 pointer-events-none" />
           <div className="absolute inset-0 bg-radial from-white/[0.08] via-transparent to-transparent z-10 pointer-events-none" />
         </div>
+
+        {/* Floating 3D Geometric Architectural Shapes (Matching Model Making Page) */}
+        <FloatingShape
+          src={SHAPES.cone}
+          size={85}
+          top="14%"
+          left="4%"
+          blur="1px"
+          opacity={0.35}
+          rotate={-15}
+          duration={7.5}
+        />
+        <FloatingShape
+          src={SHAPES.cubeAlt2}
+          size={95}
+          top="22%"
+          right="5%"
+          blur="2px"
+          opacity={0.3}
+          rotate={20}
+          duration={8.5}
+          delay={0.8}
+        />
+        <FloatingShape
+          src={SHAPES.diamond}
+          size={60}
+          bottom="24%"
+          left="6%"
+          blur="none"
+          opacity={0.35}
+          rotate={30}
+          duration={6.5}
+          delay={1.5}
+        />
 
         {/* ========================================================================= */}
         {/* 2. ARCHITECTURAL WHITISH LIGHTING & ROOM ACCENTS (Z-INDEX 20)             */}
@@ -171,68 +311,73 @@ export function InteriorHero() {
 
         {/* Right Floating Shelves with Whitish LED Underglow */}
         <div className="hidden lg:flex flex-col gap-14 absolute right-8 sm:right-14 top-24 pointer-events-none z-20 w-44">
-          {/* Top shelf */}
           <div className="relative w-full h-2.5 bg-black/70 backdrop-blur-md rounded-sm border-t border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
             <div className="absolute inset-x-0 -bottom-3 h-4 bg-white/25 blur-md" />
             <div className="absolute -top-7 right-4 flex items-end gap-2 opacity-90">
               <div className="w-4 h-6 rounded-t-lg bg-emerald-900/80 border border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.2)]" />
             </div>
           </div>
-          {/* Middle shelf */}
           <div className="relative w-full h-2.5 bg-black/70 backdrop-blur-md rounded-sm border-t border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
             <div className="absolute inset-x-0 -bottom-3 h-4 bg-white/25 blur-md" />
             <div className="absolute -top-6 right-8 flex items-end gap-1.5 opacity-85">
               <div className="w-3.5 h-5 rounded-sm bg-slate-800/80 border border-white/30 shadow-[0_0_10px_rgba(255,255,255,0.15)]" />
             </div>
           </div>
-          {/* Bottom shelf */}
           <div className="relative w-full h-2.5 bg-black/70 backdrop-blur-md rounded-sm border-t border-white/30 shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
             <div className="absolute inset-x-0 -bottom-3 h-4 bg-white/25 blur-md" />
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. MAIN FOREGROUND CONTENT (Z-INDEX 30 - EDITORIAL LUXURY DESIGN)         */}
+        {/* 3. MAIN FOREGROUND CONTENT (WITH MODEL-MAKING MOTION ANIMATIONS)          */}
         {/* ========================================================================= */}
         <div className="relative z-30 max-w-7xl mx-auto w-full my-auto flex flex-col items-start justify-center">
           <div className="max-w-2xl space-y-5 sm:space-y-6">
             
-            {/* Pill & ROHA Studio Badges */}
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Pill Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)] text-xs font-mono uppercase tracking-widest text-white">
-                <span className="relative flex h-2 w-2">
+            {/* Pill Badge (Optional custom subheading only, without pulse, Elevate Your Space & Roha studio removed) */}
+            {showCustomSubheading && (
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)] text-xs font-mono uppercase tracking-widest text-white"
+              >
+                {/* Pulse dot commented out as requested */}
+                {/* <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_8px_#ffffff]" />
-                </span>
-                <span>{heroData.subheading || "Elevate Your Space"}</span>
-              </div>
+                </span> */}
+                <span>{heroData.subheading}</span>
+              </motion.div>
+            )}
 
-              {/* ROHA Studio Monograph Badge */}
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)]">
-                <img
-                  src="/roha.png"
-                  alt="ROHA Studio"
-                  className="w-4 h-4 object-contain rounded-sm"
-                />
-                <span className="text-[10px] font-mono tracking-widest text-white uppercase font-bold">
-                  ROHA Studio
-                </span>
-              </div>
-            </div>
-
-            {/* Grand Editorial Headline */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif tracking-tight text-white leading-[1.05] drop-shadow-[0_4px_28px_rgba(0,0,0,0.95)]">
+            {/* Grand Editorial Headline with Motion (Matching Model Making Stagger) */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.15 }}
+              className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-serif tracking-tight text-white leading-[1.05] drop-shadow-[0_4px_28px_rgba(0,0,0,0.95)]"
+            >
               {renderHeading(heroData.heading)}
-            </h1>
+            </motion.h1>
 
-            {/* Narrative Subtitle / Description */}
-            <p className="text-base sm:text-lg text-slate-100/95 max-w-xl leading-relaxed font-sans drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)]">
+            {/* Narrative Subtitle / Description with Motion */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-base sm:text-lg text-slate-100/95 max-w-xl leading-relaxed font-sans drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)]"
+            >
               {heroData.body_text || DEFAULT_HERO.body_text}
-            </p>
+            </motion.p>
 
-            {/* Call To Action Buttons (Explore Collection + Watch Video) */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            {/* Call To Action Buttons (Explore Collection + Watch Video) with Motion */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.45 }}
+              className="flex flex-wrap items-center gap-4 pt-2"
+            >
               {/* Primary CTA: Crisp White Luxury Pill Button */}
               <button
                 type="button"
@@ -257,10 +402,15 @@ export function InteriorHero() {
                 </div>
                 <span>Watch Video</span>
               </button>
-            </div>
+            </motion.div>
 
-            {/* FLOATING GLASSMORPHIC STATS CARD (With Whitish Glow Accents) */}
-            <div className="mt-8 sm:mt-10 backdrop-blur-2xl bg-black/60 border border-white/20 rounded-2xl p-4 sm:p-5 shadow-[0_16px_40px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.08)] flex items-center justify-between gap-3 sm:gap-6 w-full max-w-lg">
+            {/* FLOATING STATS CARD (Blackish background removed, with Motion) */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.55 }}
+              className="mt-8 sm:mt-10 bg-transparent border border-white/20 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 sm:gap-6 w-full max-w-lg backdrop-blur-xs"
+            >
               {/* Stat 1: 500+ Unique Designs */}
               <div className="flex flex-col items-start gap-1 pr-3 sm:pr-5 border-r border-white/15 flex-1">
                 <div className="flex items-center gap-1.5 text-white">
@@ -299,10 +449,36 @@ export function InteriorHero() {
                   Premium Quality
                 </div>
               </div>
-            </div>
+            </motion.div>
 
           </div>
         </div>
+
+        {/* Floating Particles (Matching Model Making Page) */}
+        <div className="absolute inset-0 pointer-events-none z-30">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-cyan-400/60 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{ y: [-20, -120], opacity: [0, 1, 0] }}
+              transition={{
+                duration: Math.random() * 3 + 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Three.js Shader Canvas Layer (Matching Model Making Page) */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none z-50"
+        />
       </section>
 
       {/* ========================================================================= */}

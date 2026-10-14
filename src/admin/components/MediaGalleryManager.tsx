@@ -9,12 +9,10 @@ import {
   X,
   Loader2,
   AlertCircle,
-  FolderPlus,
   RefreshCw,
   Layers
 } from 'lucide-react';
 import { api, resolveImageUrl, type GalleryImageItem } from '../../services/api';
-import { ImagePickerModal } from './ImagePickerModal';
 
 export interface MediaGalleryManagerProps {
   mainImage: string | null;
@@ -51,31 +49,56 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; filename: string } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // Studio Asset Picker modal state
-  const [pickerTarget, setPickerTarget] = useState<'main' | 'gallery' | null>(null);
-
   // Fullscreen preview lightbox
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   /* -------------------------------------------------------------
-     1. MAIN IMAGE HANDLERS
+     1. MAIN IMAGE HANDLERS (SUPPORTS MULTI-IMAGE FROM COMPUTER)
   ------------------------------------------------------------- */
-  const handleMainFileUpload = async (files: FileList | File[]) => {
-    const file = files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Please select a valid image file (JPG, PNG, WEBP).');
+  const handleMainFileUpload = async (filesList: FileList | File[]) => {
+    const files = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+    if (files.length === 0) {
+      setUploadError('Please select valid image files (JPG, PNG, WEBP).');
       return;
     }
 
     try {
       setUploadingMain(true);
       setUploadError(null);
-      const res = await api.uploadFile(file);
-      onMainImageChange(res.url);
+
+      if (files.length === 1) {
+        const res = await api.uploadFile(files[0]);
+        onMainImageChange(res.url);
+      } else {
+        // Multi-image upload: first becomes main cover, rest are added to gallery!
+        const resFirst = await api.uploadFile(files[0]);
+        onMainImageChange(resFirst.url);
+
+        const newItems: GalleryImageItem[] = [];
+        for (let i = 1; i < files.length; i++) {
+          const file = files[i];
+          const res = await api.uploadFile(file);
+          if (onAddServerImage) {
+            const created = await onAddServerImage({
+              image: res.url,
+              caption: file.name.replace(/\.[^/.]+$/, ''),
+              order: galleryImages.length + i,
+            });
+            newItems.push(created);
+          } else {
+            newItems.push({
+              id: Date.now() + i,
+              image: res.url,
+              caption: file.name.replace(/\.[^/.]+$/, ''),
+              subtitle: '',
+              order: galleryImages.length + i,
+            });
+          }
+        }
+        onGalleryImagesChange([...galleryImages, ...newItems]);
+      }
     } catch (err: any) {
-      setUploadError(err.message || 'Failed to upload Main Image.');
+      setUploadError(err.message || 'Failed to upload image(s).');
     } finally {
       setUploadingMain(false);
       if (mainFileInputRef.current) mainFileInputRef.current.value = '';
@@ -229,6 +252,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
         type="file"
         ref={mainFileInputRef}
         onChange={(e) => e.target.files && handleMainFileUpload(e.target.files)}
+        multiple
         accept="image/*"
         className="hidden"
       />
@@ -271,7 +295,7 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                The key visual for {contentTypeLabel.toLowerCase()} showcase cards, grids, and header banners.
+                The key visual for {contentTypeLabel.toLowerCase()} showcase cards, grids, and header banners. Select multiple to add to gallery at once.
               </p>
             </div>
           </div>
@@ -282,17 +306,10 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
               onClick={() => mainFileInputRef.current?.click()}
               disabled={uploadingMain}
               className="secondary-button text-xs"
+              title="Select one or multiple images from your computer"
             >
               {uploadingMain ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
-              <span>{mainImage ? 'Replace Cover' : 'Upload Cover'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPickerTarget('main')}
-              className="secondary-button text-xs"
-            >
-              <FolderPlus size={13} />
-              <span>Studio Assets</span>
+              <span>{mainImage ? 'Replace Cover from Computer' : 'Upload Cover from Computer'}</span>
             </button>
           </div>
         </div>
@@ -402,17 +419,10 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
               onClick={() => multiFileInputRef.current?.click()}
               disabled={uploadingGallery}
               className="primary-button text-xs shadow-xs"
+              title="Select multiple images from your computer to upload"
             >
               {uploadingGallery ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
-              <span>Upload Multiple Photos</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPickerTarget('gallery')}
-              className="secondary-button text-xs"
-            >
-              <FolderPlus size={13} />
-              <span>Studio Assets</span>
+              <span>Upload from Computer (Multi-Select)</span>
             </button>
           </div>
         </div>
@@ -580,33 +590,6 @@ export const MediaGalleryManager: React.FC<MediaGalleryManagerProps> = ({
           </div>
         )}
       </div>
-
-      {/* -------------------------------------------------------------
-          STUDIO ASSET PICKER MODAL
-      ------------------------------------------------------------- */}
-      {pickerTarget && (
-        <ImagePickerModal
-          isOpen={true}
-          onClose={() => setPickerTarget(null)}
-          onSelect={(url) => {
-            if (pickerTarget === 'main') {
-              onMainImageChange(url);
-            } else if (pickerTarget === 'gallery') {
-              const newItem: GalleryImageItem = {
-                id: Date.now(),
-                image: url,
-                caption: '',
-                subtitle: 'Studio Asset',
-                order: galleryImages.length + 1,
-              };
-              onGalleryImagesChange([...galleryImages, newItem]);
-            }
-            setPickerTarget(null);
-          }}
-          currentValue={pickerTarget === 'main' ? (mainImage || '') : ''}
-          title={pickerTarget === 'main' ? 'Select Main Cover Photo' : 'Add Photo to Gallery'}
-        />
-      )}
 
       {/* -------------------------------------------------------------
           LIGHTBOX MODAL

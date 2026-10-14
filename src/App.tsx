@@ -28,6 +28,7 @@ import { AdminInquiries } from "./admin/pages/AdminInquiries";
 import { AdminSettings } from "./admin/pages/AdminSettings";
 import { ProjectBuilder } from "./admin/builder/ProjectBuilder";
 import { BlogBuilder } from "./admin/builder/BlogBuilder";
+import { TrustedPartyBuilder } from "./admin/builder/TrustedPartyBuilder";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -195,6 +196,22 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/admin/trusted-party-builder"
+          element={
+            <ProtectedAdminRoute>
+              <TrustedPartyBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/trusted-party-builder"
+          element={
+            <ProtectedAdminRoute>
+              <TrustedPartyBuilder />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
           path="/admin/builder/:type"
           element={
             <ProtectedAdminRoute>
@@ -239,12 +256,17 @@ function AnimatedRoutes() {
   );
 }
 
-function App() {
-  useSmoothScroll();
+function SmoothScrollController() {
+  const location = useLocation();
+  useSmoothScroll(location.pathname);
+  return null;
+}
 
+function App() {
   return (
     <AdminAuthProvider>
       <BrowserRouter>
+        <SmoothScrollController />
         <ScrollToTop />
         <div id="main" className="min-h-screen bg-black text-white">
           <AnimatedRoutes />

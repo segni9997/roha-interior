@@ -346,8 +346,8 @@ export const AdminBlog: React.FC = () => {
             onClick={() => !saving && setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl">
-            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d]">
+          <div className="relative w-full max-w-4xl max-h-[92vh] bg-[#132527] border border-white/15 rounded-2xl shadow-2xl flex flex-col z-10 text-white overflow-hidden backdrop-blur-xl" data-lenis-prevent="true">
+            <div className="flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1c1d] shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
                   <BookOpen size={18} />
@@ -371,7 +371,7 @@ export const AdminBlog: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30">
+            <div className="flex items-center gap-2 px-6 pt-3 border-b border-white/10 bg-black/30 shrink-0">
               {[
                 { id: 'content', label: '1. Article Narrative' },
                 { id: 'media', label: '2. Cover & Photography' },
@@ -392,7 +392,7 @@ export const AdminBlog: React.FC = () => {
               ))}
             </div>
 
-            <form onSubmit={handleSaveBlog} className="flex-1 overflow-y-auto p-6 space-y-6">
+            <form onSubmit={handleSaveBlog} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar" data-lenis-prevent="true">
               {activeTab === 'content' && (
                 <div className="space-y-4 animate-in fade-in">
                   <div>

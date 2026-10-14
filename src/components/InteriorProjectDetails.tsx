@@ -242,18 +242,22 @@ export function InteriorProjectDetails() {
             
             {/* Pill & Studio/Company Logo Badges */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* Pill Badge (• Elevate Your Space / Category) */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)] text-xs font-mono uppercase tracking-widest text-white">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_8px_#ffffff]" />
-                </span>
-                <span>
-                  {project?.category_name
-                    ? `${project.category_name} Collection`
-                    : "Elevate Your Space"}
-                </span>
-              </div>
+              {/* Pill Badge (Category) */}
+              {((project?.category_names && project.category_names.length > 0) || project?.category_name) && (
+                <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)] text-xs font-mono uppercase tracking-widest text-white">
+                  {/* Pulse dot commented out */}
+                  {/* <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_8px_#ffffff]" />
+                  </span> */}
+                  <span>
+                    {project.category_names && project.category_names.length > 0
+                      ? project.category_names.join(' · ')
+                      : project.category_name}{' '}
+                    Collection
+                  </span>
+                </div>
+              )}
 
               {/* Commissioned Client Logo or ROHA Studio Logo Badge */}
               <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/25 shadow-[0_0_20px_rgba(255,255,255,0.15)]">
@@ -324,8 +328,8 @@ export function InteriorProjectDetails() {
               </button>
             </div>
 
-            {/* FLOATING GLASSMORPHIC STATS CARD (With Whitish Glow Accents) */}
-            <div className="mt-8 sm:mt-10 backdrop-blur-2xl bg-black/60 border border-white/20 rounded-2xl p-4 sm:p-5 shadow-[0_16px_40px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.08)] flex items-center justify-between gap-3 sm:gap-6 w-full max-w-lg">
+            {/* FLOATING STATS CARD (Blackish background removed) */}
+            <div className="mt-8 sm:mt-10 bg-transparent border border-white/20 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 sm:gap-6 w-full max-w-lg backdrop-blur-xs">
               {/* Stat 1: Area / Unique Designs */}
               <div className="flex flex-col items-start gap-1 pr-3 sm:pr-5 border-r border-white/15 flex-1">
                 <div className="flex items-center gap-1.5 text-white">

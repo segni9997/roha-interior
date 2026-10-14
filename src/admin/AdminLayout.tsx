@@ -20,7 +20,8 @@ import {
   Database,
   CheckCircle2,
   Sparkles,
-  Ruler
+  Ruler,
+  ShieldCheck
 } from 'lucide-react';
 import { useAdminAuth } from './AdminAuthContext';
 import { api } from '../services/api';
@@ -50,6 +51,7 @@ const navGroups: NavGroup[] = [
       { to: '/admin/builder/interior', label: 'Project Builder (Editorial)', icon: Sparkles, hasDot: true },
       { to: '/admin/builder/model', label: 'Scale Model Builder', icon: Ruler },
       { to: '/admin/blog-builder', label: 'Blog & Story Builder', icon: FileText, hasDot: true },
+      { to: '/admin/trusted-party-builder', label: 'Trusted Parties Builder', icon: ShieldCheck, hasDot: true },
     ],
   },
   {
@@ -176,11 +178,14 @@ export const AdminLayout: React.FC = () => {
   );
 
   return (
-    <div className="admin-portal min-h-screen bg-[#0b1415] text-slate-100">
+    <div className="admin-portal min-h-screen bg-[#0b1415] text-slate-100" data-lenis-prevent="true">
       {/* -------------------- DESKTOP SIDEBAR -------------------- */}
-      <aside className={`admin-sidebar bg-[#0f1c1d] border-r border-white/10 shadow-2xl ${collapsed ? 'admin-sidebar-collapsed' : ''}`}>
+      <aside
+        className={`admin-sidebar bg-[#0f1c1d] border-r border-white/10 shadow-2xl flex flex-col h-full overflow-hidden ${collapsed ? 'admin-sidebar-collapsed' : ''}`}
+        data-lenis-prevent="true"
+      >
         {/* Studio Branding */}
-        <div className="flex items-center justify-between px-5 py-6 border-b border-white/10">
+        <div className="flex items-center justify-between px-5 py-6 border-b border-white/10 shrink-0">
           {collapsed ? (
             <button
               onClick={() => setCollapsed(false)}
@@ -219,11 +224,11 @@ export const AdminLayout: React.FC = () => {
           </button>
         </div>
 
-        {/* Quick Action: New Project */}
-        <div className="px-3 pt-5 pb-2">
+        {/* Middle Scrollable Section: New Project Button + Navigation Groups */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4 custom-scrollbar" data-lenis-prevent="true">
           <button
             onClick={() => navigate('/admin/builder/interior')}
-            className="primary-button w-full justify-center mb-5 shadow-lg flex items-center gap-2"
+            className="primary-button w-full justify-center mb-2 shadow-lg flex items-center gap-2 shrink-0"
             title="Create new project in Visual Studio"
           >
             <Plus size={15} className="stroke-[3]" />
@@ -231,7 +236,7 @@ export const AdminLayout: React.FC = () => {
           </button>
 
           {/* Navigation Groups */}
-          <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
+          <div className="space-y-6">
             {navGroups.map((group) => (
               <div key={group.group}>
                 {!collapsed && (
@@ -277,7 +282,7 @@ export const AdminLayout: React.FC = () => {
         </div>
 
         {/* Bottom Utility Bar */}
-        <div className="mt-auto border-t border-white/10 p-3 space-y-1 bg-[#0b1516]">
+        <div className="mt-auto shrink-0 border-t border-white/10 p-3 space-y-1 bg-[#0b1516]" data-lenis-prevent="true">
           <a
             href="/"
             target="_blank"
@@ -318,64 +323,68 @@ export const AdminLayout: React.FC = () => {
             className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative w-72 bg-[#0f1c1d] text-white h-full p-5 flex flex-col justify-between z-10 border-r border-white/10 shadow-2xl">
-            <div>
-              <div className="flex justify-between items-center pb-5 mb-5 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="logo-mark" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  <div>
-                    <p className="font-display text-base font-bold leading-none text-white">ROHA</p>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-cyan-400 mt-0.5 font-mono">Admin Workspace</p>
-                  </div>
+          <div
+            className="relative w-72 bg-[#0f1c1d] text-white h-full flex flex-col z-10 border-r border-white/10 shadow-2xl overflow-hidden"
+            data-lenis-prevent="true"
+          >
+            {/* Mobile Header (shrink-0) */}
+            <div className="flex justify-between items-center p-5 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="logo-mark" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
                 </div>
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  className="icon-button text-slate-300 hover:text-white"
-                  aria-label="Close menu"
-                >
-                  <X size={18} />
-                </button>
+                <div>
+                  <p className="font-display text-base font-bold leading-none text-white">ROHA</p>
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-cyan-400 mt-0.5 font-mono">Admin Workspace</p>
+                </div>
               </div>
-
-              <div className="space-y-5">
-                {navGroups.map((group) => (
-                  <div key={group.group}>
-                    <p className="eyebrow px-2 pb-1.5 text-cyan-400 font-mono text-[10px]">{group.group}</p>
-                    <nav className="space-y-1">
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        const countVal = item.countKey ? counts[item.countKey] : undefined;
-                        return (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end={item.exact}
-                            onClick={() => setMobileOpen(false)}
-                            className={({ isActive }) =>
-                              `admin-nav-item ${isActive ? 'admin-nav-item-active' : 'text-slate-300 hover:text-white'}`
-                            }
-                          >
-                            <Icon size={17} className="text-cyan-300" />
-                            <span className="flex-1">{item.label}</span>
-                            {countVal !== undefined && (
-                              <span className="text-[11px] font-mono text-cyan-200/70">
-                                {countVal}
-                              </span>
-                            )}
-                          </NavLink>
-                        );
-                      })}
-                    </nav>
-                  </div>
-                ))}
-              </div>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="icon-button text-slate-300 hover:text-white"
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="pt-4 border-t border-white/10 space-y-2">
+            {/* Mobile Navigation List (flex-1 min-h-0 overflow-y-auto) */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 custom-scrollbar" data-lenis-prevent="true">
+              {navGroups.map((group) => (
+                <div key={group.group}>
+                  <p className="eyebrow px-2 pb-1.5 text-cyan-400 font-mono text-[10px]">{group.group}</p>
+                  <nav className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const countVal = item.countKey ? counts[item.countKey] : undefined;
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          end={item.exact}
+                          onClick={() => setMobileOpen(false)}
+                          className={({ isActive }) =>
+                            `admin-nav-item ${isActive ? 'admin-nav-item-active' : 'text-slate-300 hover:text-white'}`
+                          }
+                        >
+                          <Icon size={17} className="text-cyan-300" />
+                          <span className="flex-1">{item.label}</span>
+                          {countVal !== undefined && (
+                            <span className="text-[11px] font-mono text-cyan-200/70">
+                              {countVal}
+                            </span>
+                          )}
+                        </NavLink>
+                      );
+                    })}
+                  </nav>
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile Bottom Bar (shrink-0 mt-auto) */}
+            <div className="p-4 border-t border-white/10 space-y-2 shrink-0 bg-[#0b1516]" data-lenis-prevent="true">
               <a
                 href="/"
                 target="_blank"
@@ -398,7 +407,7 @@ export const AdminLayout: React.FC = () => {
       )}
 
       {/* -------------------- MAIN APP SHELL -------------------- */}
-      <div className={`admin-main-shell ${collapsed ? 'admin-main-shell-collapsed' : ''}`}>
+      <div className={`admin-main-shell ${collapsed ? 'admin-main-shell-collapsed' : ''}`} data-lenis-prevent="true">
         {/* TOPBAR */}
         <header className="admin-topbar bg-[#0f1c1d]/90 backdrop-blur-xl border-b border-white/10">
           <div className="flex items-center gap-3 lg:hidden">
@@ -571,7 +580,7 @@ export const AdminLayout: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-3 max-h-80 overflow-y-auto space-y-1">
+            <div className="p-3 max-h-80 overflow-y-auto space-y-1 custom-scrollbar" data-lenis-prevent="true">
               {filteredCommands.length > 0 ? (
                 filteredCommands.map((item) => {
                   const Icon = item.icon;

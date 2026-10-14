@@ -124,6 +124,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 15 }}
             className="relative w-full max-w-4xl max-h-[90vh] bg-[#132527] border border-white/15 rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col z-10 text-white backdrop-blur-xl"
+            data-lenis-prevent="true"
           >
             {/* Hidden device file input */}
             <input
@@ -135,7 +136,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
             />
 
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-xs">
                   {acceptVideo ? <Film size={18} /> : <ImageIcon size={18} />}
@@ -319,7 +320,7 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
                 </div>
 
                 {/* Grid of Images */}
-                <div className="mt-3 flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 min-h-[280px]">
+                <div className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 min-h-[280px] custom-scrollbar" data-lenis-prevent="true">
                   {filteredAssets.map((asset) => {
                     const isSelected = currentValue === asset.path;
                     return (

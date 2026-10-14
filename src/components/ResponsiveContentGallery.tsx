@@ -190,7 +190,7 @@ export const ResponsiveContentGallery: React.FC<ResponsiveContentGalleryProps> =
                   {String(activeLightboxIndex + 1).padStart(2, '0')} / {String(validImages.length).padStart(2, '0')}
                 </span>
                 <span className="text-xs font-mono text-slate-400 hidden sm:inline">
-                  {validImages[activeLightboxIndex].caption || 'Spatial Perspective Frame'}
+                  {validImages[activeLightboxIndex].caption || validImages[activeLightboxIndex].subtitle || ''}
                 </span>
               </div>
 

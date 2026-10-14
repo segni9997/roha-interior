@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Plus,
   Edit3,
@@ -7,7 +8,8 @@ import {
   Loader2,
   Check,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 import {
   api,
@@ -418,20 +420,29 @@ export const AdminSettings: React.FC = () => {
                 Relationships and institutions featured in the studio partner grid
               </p>
             </div>
-            <button
-              onClick={() => {
-                setEditingClient(null);
-                setClientName('');
-                setClientIndustry('Real Estate & Development');
-                setClientUrl('');
-                setClientFeatured(true);
-                setIsClientModalOpen(true);
-              }}
-              className="primary-button text-xs"
-            >
-              <Plus size={14} />
-              <span>Add Client / Partner</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/admin/trusted-party-builder"
+                className="secondary-button text-xs py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <Sparkles size={13} className="text-cyan-300" />
+                <span>Open Visual Builder</span>
+              </Link>
+              <button
+                onClick={() => {
+                  setEditingClient(null);
+                  setClientName('');
+                  setClientIndustry('Real Estate & Development');
+                  setClientUrl('');
+                  setClientFeatured(true);
+                  setIsClientModalOpen(true);
+                }}
+                className="primary-button text-xs"
+              >
+                <Plus size={14} />
+                <span>Add Client / Partner</span>
+              </button>
+            </div>
           </div>
 
           <div className="panel divide-y divide-white/10">
