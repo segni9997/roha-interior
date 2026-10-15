@@ -25,77 +25,26 @@ export interface TestimonialSlide {
   tint: string;
 }
 
-const DEFAULT_TESTIMONIALS: TestimonialSlide[] = [
-  {
-    id: 1,
-    clientName: "Ethiopian Airlines Group",
-    industry: "Aviation & Infrastructure",
-    location: "Bole International, Addis Ababa",
-    projectScope: "Corporate HQ & VIP Skylight Lounges",
-    quote: "ROHA transformed our executive VIP skylight lounges into spaces of monumental architectural serenity and elegance.",
-    spokesperson: "Director of Infrastructure & VIP Services",
-    rating: 5,
-    logo: "/roha.png",
-    backgroundImage: "/tr/279A1756.JPG",
-    tint: "from-[#0c1f21]/85 via-[#172a2b]/60 to-transparent",
-  },
-  {
-    id: 2,
-    clientName: "Commercial Bank of Ethiopia",
-    industry: "Banking & Financial Real Estate",
-    location: "Finbarr Plaza, Addis Ababa",
-    projectScope: "Headquarters Model & Executive Suites",
-    quote: "The physical scale model and executive boardroom interiors delivered far beyond all architectural expectations with millimeter precision.",
-    spokesperson: "Head of Real Estate & Facilities Strategy",
-    rating: 5,
-    logo: "/roha.png",
-    backgroundImage: "/tr/279A1760.JPG",
-    tint: "from-[#0d1c22]/85 via-[#18323a]/60 to-transparent",
-  },
-  {
-    id: 3,
-    clientName: "Marriott Executive Apartments",
-    industry: "Luxury Hospitality & Living",
-    location: "Kazanchis, Addis Ababa",
-    projectScope: "Bespoke Suites & Atrium Spatial Curation",
-    quote: "Bespoke craftsmanship, acoustic harmony, and biophilic lighting tailored seamlessly to world-class hospitality standards.",
-    spokesperson: "Regional General Manager",
-    rating: 5,
-    logo: "/roha.png",
-    backgroundImage: "/tr/279A1768.JPG",
-    tint: "from-[#112325]/85 via-[#1d3d41]/60 to-transparent",
-  },
-  {
-    id: 4,
-    clientName: "MIDROC Investment Group",
-    industry: "Real Estate & Monolithic Dev.",
-    location: "Addis Ababa, Ethiopia",
-    projectScope: "Multi-acre Masterplan & Luxury Residences",
-    quote: "A masterful synthesis of modern materiality, fluted precision, and monumental spatial flow across our developments.",
-    spokesperson: "Chief Development Officer",
-    rating: 5,
-    logo: "/roha.png",
-    backgroundImage: "/tr/279A1771.JPG",
-    tint: "from-[#0e2124]/85 via-[#1b3a3e]/60 to-transparent",
-  },
-  {
-    id: 5,
-    clientName: "Noah Real Estate",
-    industry: "Residential High-Rise Developments",
-    location: "Bole Atlas, Addis Ababa",
-    projectScope: "Flagship Residential Towers & Scale Exhibits",
-    quote: "Exemplary attention to micro-tolerances, material palettes, and spatial detailing that captivates our clients instantly.",
-    spokesperson: "Lead Project Architect",
-    rating: 5,
-    logo: "/roha.png",
-    backgroundImage: "/home1.png",
-    tint: "from-[#0a181a]/85 via-[#162e31]/60 to-transparent",
-  },
+const PROJECT_FALLBACK_IMAGES = [
+  "/tr/279A1756.JPG",
+  "/tr/279A1760.JPG",
+  "/tr/279A1768.JPG",
+  "/tr/279A1771.JPG",
+  "/home1.png"
+];
+
+const TINTS = [
+  "from-[#0c1f21]/85 via-[#172a2b]/60 to-transparent",
+  "from-[#0d1c22]/85 via-[#18323a]/60 to-transparent",
+  "from-[#112325]/85 via-[#1d3d41]/60 to-transparent",
+  "from-[#0e2124]/85 via-[#1b3a3e]/60 to-transparent",
+  "from-[#0a181a]/85 via-[#162e31]/60 to-transparent",
 ];
 
 export const ClientsSection: React.FC<{ className?: string }> = ({ className = '' }) => {
   const [active, setActive] = useState<number>(0);
-  const [testimonials, setTestimonials] = useState<TestimonialSlide[]>(DEFAULT_TESTIMONIALS);
+  const [testimonials, setTestimonials] = useState<TestimonialSlide[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
 
   // Load backend trusted clients and map to testimonial slides if available
@@ -103,26 +52,33 @@ export const ClientsSection: React.FC<{ className?: string }> = ({ className = '
     let isMounted = true;
     async function fetchClients() {
       try {
+        setLoading(true);
         const liveClients: TrustedClientItem[] = await api.getTrustedClients();
-        if (isMounted && liveClients && liveClients.length > 0) {
-          const projectImages = ["/tr/279A1756.JPG", "/tr/279A1760.JPG", "/tr/279A1768.JPG", "/tr/279A1771.JPG", "/home1.png"];
-          const mapped = liveClients.map((client, idx) => ({
-            id: client.id,
-            clientName: client.name,
-            industry: client.industry || "Architectural Enterprise",
-            location: "Addis Ababa, Ethiopia",
-            projectScope: client.project_count || "Executive Architectural Commission",
-            quote: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].quote,
-            spokesperson: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].spokesperson,
-            rating: 5,
-            logo: resolveImageUrl(client.logo, '/roha.png'),
-            backgroundImage: projectImages[idx % projectImages.length],
-            tint: DEFAULT_TESTIMONIALS[idx % DEFAULT_TESTIMONIALS.length].tint,
-          }));
-          setTestimonials(mapped);
+        if (isMounted) {
+          if (liveClients && liveClients.length > 0) {
+            const mapped: TestimonialSlide[] = liveClients.map((client, idx) => ({
+              id: client.id,
+              clientName: client.name,
+              industry: client.industry || "Architectural Enterprise",
+              location: client.location || "Addis Ababa, Ethiopia",
+              projectScope: client.project_count || "Executive Architectural Commission",
+              quote: client.quote || "ROHA transformed our spaces with monumental architectural serenity and uncompromising precision.",
+              spokesperson: client.spokesperson || "Client Representative",
+              rating: client.rating || 5,
+              logo: resolveImageUrl(client.logo, '/roha.png'),
+              backgroundImage: resolveImageUrl(client.background_image, PROJECT_FALLBACK_IMAGES[idx % PROJECT_FALLBACK_IMAGES.length]),
+              tint: TINTS[idx % TINTS.length],
+            }));
+            setTestimonials(mapped);
+          } else {
+            setTestimonials([]);
+          }
         }
       } catch (err) {
-        console.warn("Using default testimonial monograph:", err);
+        console.warn("Could not fetch trusted client monograph:", err);
+        if (isMounted) setTestimonials([]);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
     fetchClients();
@@ -131,17 +87,28 @@ export const ClientsSection: React.FC<{ className?: string }> = ({ className = '
     };
   }, []);
 
-  const next = () => setActive((current) => (current + 1) % testimonials.length);
-  const previous = () => setActive((current) => (current - 1 + testimonials.length) % testimonials.length);
+  const next = () => {
+    if (testimonials.length === 0) return;
+    setActive((current) => (current + 1) % testimonials.length);
+  };
 
-  // Auto-advance every 6 seconds unless paused
+  const previous = () => {
+    if (testimonials.length === 0) return;
+    setActive((current) => (current - 1 + testimonials.length) % testimonials.length);
+  };
+
+  // Auto-advance every 6.5 seconds unless paused
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || testimonials.length <= 1) return;
     const timer = window.setInterval(next, 6500);
     return () => window.clearInterval(timer);
   }, [testimonials.length, isPaused]);
 
-  const slide = testimonials[active] || DEFAULT_TESTIMONIALS[0];
+  if (loading || testimonials.length === 0) {
+    return null;
+  }
+
+  const slide = testimonials[active] || testimonials[0];
 
   return (
     <section 

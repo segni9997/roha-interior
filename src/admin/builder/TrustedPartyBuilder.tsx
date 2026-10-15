@@ -39,11 +39,19 @@ export const TrustedPartyBuilder: React.FC = () => {
 
   // Logo Image Picker
   const [isLogoPickerOpen, setIsLogoPickerOpen] = useState<boolean>(false);
-
-  // Direct logo file upload state
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState<boolean>(false);
   const [logoUploadProgress, setLogoUploadProgress] = useState<number>(0);
+
+  // Background Image Picker
+  const [isBackgroundPickerOpen, setIsBackgroundPickerOpen] = useState<boolean>(false);
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingBg, setIsUploadingBg] = useState<boolean>(false);
+  const [bgUploadProgress, setBgUploadProgress] = useState<number>(0);
+
+  // Clear All Modal State
+  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState<boolean>(false);
+  const [clearingAll, setClearingAll] = useState<boolean>(false);
 
   // Delete Target
   const [deleteTarget, setDeleteTarget] = useState<TrustedClientItem | null>(null);
@@ -66,50 +74,15 @@ export const TrustedPartyBuilder: React.FC = () => {
     }, 4000);
   };
 
-  // Load clients
+  // Load clients from API (no dummy fallback)
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await api.getTrustedClients().catch(() => []);
-      if (data && data.length > 0) {
-        setClients(data);
-      } else {
-        // Fallback default sample if DB is completely fresh
-        setClients([
-          {
-            id: 1,
-            name: "Ethiopian Airlines Group",
-            industry: "Aviation & Infrastructure",
-            project_count: "Corporate HQ & VIP Skylight Lounges",
-            logo: "/roha.png",
-            featured: true,
-            order: 1,
-            website_url: "https://www.ethiopianairlines.com"
-          },
-          {
-            id: 2,
-            name: "Commercial Bank of Ethiopia",
-            industry: "Banking & Financial Real Estate",
-            project_count: "Headquarters Model & Executive Suites",
-            logo: "/roha.png",
-            featured: true,
-            order: 2,
-            website_url: "https://www.combanketh.et"
-          },
-          {
-            id: 3,
-            name: "Marriott Executive Apartments",
-            industry: "Luxury Hospitality & Living",
-            project_count: "Bespoke Suites & Atrium Spatial Curation",
-            logo: "/roha.png",
-            featured: true,
-            order: 3,
-            website_url: "https://www.marriott.com"
-          }
-        ]);
-      }
+      setClients(data || []);
     } catch (err: any) {
       addToast('error', 'Failed to load trusted clients', err.message);
+      setClients([]);
     } finally {
       setLoading(false);
     }
@@ -156,24 +129,90 @@ export const TrustedPartyBuilder: React.FC = () => {
     }
   };
 
+  // Handle Background Upload via direct file selection
+  const handleBgFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp|svg|gif|avif)$/i.test(file.name);
+    if (!isImage) {
+      addToast('error', 'Invalid File', 'Please select a valid image file (PNG, JPG, WEBP, HEIC).');
+      return;
+    }
+
+    try {
+      setIsUploadingBg(true);
+      setBgUploadProgress(25);
+      const timer = setInterval(() => {
+        setBgUploadProgress(prev => (prev < 85 ? prev + 15 : prev));
+      }, 150);
+
+      const res = await api.uploadFile(file);
+      clearInterval(timer);
+      setBgUploadProgress(100);
+
+      setEditingClient(prev => ({
+        ...prev,
+        background_image: res.url
+      }));
+
+      addToast('success', 'Background Uploaded', 'Commission background image uploaded.');
+    } catch (err: any) {
+      addToast('error', 'Upload Failed', err.message || 'Could not upload background image.');
+    } finally {
+      setIsUploadingBg(false);
+      setBgUploadProgress(0);
+      if (bgInputRef.current) bgInputRef.current.value = '';
+    }
+  };
+
   // Open Edit Modal
   const handleOpenEdit = (client: TrustedClientItem) => {
     setEditingClient({ ...client });
     setIsModalOpen(true);
   };
 
-  // Open Create Modal
+  // Open Create Modal from scratch
   const handleOpenCreate = () => {
     setEditingClient({
       name: '',
       industry: 'Real Estate & Commercial Architecture',
       project_count: 'Executive Architectural Commission',
-      logo: '/roha.png',
+      quote: '',
+      spokesperson: '',
+      location: 'Addis Ababa, Ethiopia',
+      rating: 5,
+      logo: null,
+      background_image: null,
       featured: true,
       order: clients.length + 1,
       website_url: ''
     });
     setIsModalOpen(true);
+  };
+
+  // Clear All Clients Handler
+  const handleClearAll = async () => {
+    try {
+      setClearingAll(true);
+      await api.clearAllTrustedClients();
+      setClients([]);
+      setActiveSlideIndex(0);
+      setIsClearAllModalOpen(false);
+      addToast('success', 'All Cleared', 'All trusted partners and testimonials have been cleared.');
+    } catch (err: any) {
+      try {
+        await Promise.all(clients.map(c => api.deleteTrustedClient(c.id).catch(() => {})));
+        setClients([]);
+        setActiveSlideIndex(0);
+        setIsClearAllModalOpen(false);
+        addToast('success', 'All Cleared', 'All trusted partners and testimonials have been cleared.');
+      } catch (e: any) {
+        addToast('error', 'Clear Failed', e.message || 'Could not clear partners.');
+      }
+    } finally {
+      setClearingAll(false);
+    }
   };
 
   // Save Client
@@ -316,6 +355,18 @@ export const TrustedPartyBuilder: React.FC = () => {
             </button>
           </div>
 
+          {clients.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsClearAllModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-xs font-mono font-bold uppercase transition-all shadow-md cursor-pointer"
+              title="Clear all trusted partners"
+            >
+              <Trash2 size={13} />
+              <span className="hidden sm:inline">Clear All</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleOpenCreate}
@@ -380,7 +431,7 @@ export const TrustedPartyBuilder: React.FC = () => {
               </div>
               <div className="text-right shrink-0">
                 <span className="text-[11px] font-mono text-slate-400">
-                  Slide {activeSlideIndex + 1} of {clients.length}
+                  {clients.length > 0 ? `Slide ${activeSlideIndex + 1} of ${clients.length}` : '0 Partners'}
                 </span>
               </div>
             </div>
@@ -405,6 +456,12 @@ export const TrustedPartyBuilder: React.FC = () => {
                 {/* Interactive Card Canvas */}
                 {activeClient ? (
                   <div className="relative rounded-3xl overflow-hidden border border-white/20 bg-gradient-to-br from-[#172a2b] to-[#0e1819] shadow-2xl p-8 sm:p-14">
+                    {activeClient.background_image && (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center opacity-20 pointer-events-none"
+                        style={{ backgroundImage: `url(${resolveImageUrl(activeClient.background_image, '')})` }}
+                      />
+                    )}
                     <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
                       <button
                         type="button"
@@ -421,14 +478,16 @@ export const TrustedPartyBuilder: React.FC = () => {
                       {/* Left Details */}
                       <div className="lg:col-span-8 space-y-6">
                         <div className="flex items-center gap-2">
-                          {[...Array(5)].map((_, i) => (
+                          {[...Array(activeClient.rating || 5)].map((_, i) => (
                             <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
                           ))}
-                          <span className="text-xs font-mono text-slate-400 ml-2">5.0 Certified Commission</span>
+                          <span className="text-xs font-mono text-slate-400 ml-2">
+                            {(activeClient.rating || 5).toFixed(1)} Certified Review
+                          </span>
                         </div>
 
                         <blockquote className="text-xl sm:text-3xl font-serif italic text-slate-100 leading-snug">
-                          &ldquo;ROHA transformed our corporate executive facilities with immaculate spatial balance, monolithic material tactility, and uncompromising craftsmanship.&rdquo;
+                          &ldquo;{activeClient.quote || "ROHA transformed our corporate executive facilities with immaculate spatial balance, monolithic material tactility, and uncompromising craftsmanship."}&rdquo;
                         </blockquote>
 
                         <div className="pt-4 border-t border-white/10 flex flex-wrap items-center gap-6">
@@ -439,6 +498,11 @@ export const TrustedPartyBuilder: React.FC = () => {
                             <p className="text-xs font-mono text-cyan-300 mt-0.5">
                               {activeClient.industry}
                             </p>
+                            {activeClient.spokesperson && (
+                              <p className="text-[11px] font-mono text-slate-400 mt-0.5">
+                                {activeClient.spokesperson} · {activeClient.location || 'Addis Ababa'}
+                              </p>
+                            )}
                           </div>
 
                           <div className="h-8 w-px bg-white/10 hidden sm:block" />
@@ -489,73 +553,95 @@ export const TrustedPartyBuilder: React.FC = () => {
                     </div>
 
                     {/* Slider Navigation Dots */}
-                    <div className="flex items-center justify-between pt-10 mt-8 border-t border-white/10">
-                      <div className="flex items-center gap-2">
-                        {clients.map((_, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setActiveSlideIndex(idx)}
-                            className={`transition-all duration-300 rounded-full cursor-pointer ${
-                              activeSlideIndex === idx
-                                ? 'w-8 h-2.5 bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)]'
-                                : 'w-2.5 h-2.5 bg-white/20 hover:bg-white/50'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                    {clients.length > 1 && (
+                      <div className="flex items-center justify-between pt-10 mt-8 border-t border-white/10">
+                        <div className="flex items-center gap-2">
+                          {clients.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveSlideIndex(idx)}
+                              className={`transition-all duration-300 rounded-full cursor-pointer ${
+                                activeSlideIndex === idx
+                                  ? 'w-8 h-2.5 bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)]'
+                                  : 'w-2.5 h-2.5 bg-white/20 hover:bg-white/50'
+                              }`}
+                            />
+                          ))}
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setActiveSlideIndex(prev => (prev - 1 + clients.length) % clients.length)}
-                          className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono transition-all cursor-pointer"
-                        >
-                          ← Previous
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveSlideIndex(prev => (prev + 1) % clients.length)}
-                          className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono transition-all cursor-pointer"
-                        >
-                          Next →
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setActiveSlideIndex(prev => (prev - 1 + clients.length) % clients.length)}
+                            className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono transition-all cursor-pointer"
+                          >
+                            ← Previous
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveSlideIndex(prev => (prev + 1) % clients.length)}
+                            className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono transition-all cursor-pointer"
+                          >
+                            Next →
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="p-16 text-center text-slate-400 border border-white/10 rounded-2xl bg-white/5">
-                    No clients currently configured. Click &quot;Add Partner&quot; above to create one.
+                  <div className="p-16 sm:p-20 text-center border border-white/10 rounded-3xl bg-black/40 backdrop-blur-md max-w-2xl mx-auto space-y-6">
+                    <div className="w-16 h-16 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto shadow-inner">
+                      <ShieldCheck size={32} />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-xl sm:text-2xl font-bold font-mono text-white">
+                        All Trusted Parties Cleared
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-md mx-auto">
+                        Your client and testimonial roster is completely clear. Add your verified institutional partners, commission scopes, custom quotes, and logos from scratch.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenCreate}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#205b63] to-[#395e63] hover:from-[#286f78] hover:to-[#457277] text-white text-xs font-mono font-bold uppercase transition-all shadow-lg hover:shadow-cyan-500/20 cursor-pointer"
+                    >
+                      <Plus size={16} />
+                      <span>Add First Partner & Testimonial</span>
+                    </button>
                   </div>
                 )}
 
                 {/* Partner Logos Strip Preview */}
-                <div className="mt-16 pt-10 border-t border-white/10">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 text-center mb-6">
-                    Institutional Collaborator Roster ({clients.length})
-                  </p>
-                  <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 opacity-70">
-                    {clients.map((client) => (
-                      <div
-                        key={client.id}
-                        onClick={() => {
-                          const idx = clients.findIndex(c => c.id === client.id);
-                          if (idx !== -1) setActiveSlideIndex(idx);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all cursor-pointer"
-                      >
-                        <img
-                          src={resolveImageUrl(client.logo, '/roha.png')}
-                          alt={client.name}
-                          className="w-5 h-5 object-contain"
-                        />
-                        <span className="text-xs font-mono text-slate-300 font-bold">
-                          {client.name}
-                        </span>
-                      </div>
-                    ))}
+                {clients.length > 0 && (
+                  <div className="mt-16 pt-10 border-t border-white/10">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 text-center mb-6">
+                      Institutional Collaborator Roster ({clients.length})
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 opacity-70">
+                      {clients.map((client) => (
+                        <div
+                          key={client.id}
+                          onClick={() => {
+                            const idx = clients.findIndex(c => c.id === client.id);
+                            if (idx !== -1) setActiveSlideIndex(idx);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all cursor-pointer"
+                        >
+                          <img
+                            src={resolveImageUrl(client.logo, '/roha.png')}
+                            alt={client.name}
+                            className="w-5 h-5 object-contain"
+                          />
+                          <span className="text-xs font-mono text-slate-300 font-bold">
+                            {client.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
             </div>
@@ -584,93 +670,123 @@ export const TrustedPartyBuilder: React.FC = () => {
               </button>
             </div>
 
-            <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-[#132527] overflow-hidden">
-              {clients.map((client, index) => (
-                <div
-                  key={client.id}
-                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+            {clients.length === 0 ? (
+              <div className="p-16 text-center border border-white/10 rounded-2xl bg-[#132527] space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-cyan-400 mx-auto">
+                  <Building2 size={24} />
+                </div>
+                <h3 className="font-mono text-base font-bold text-white">No Partners in Registry</h3>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Your trusted partners list is currently empty. Click below to add your first partner and testimonial from scratch.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleOpenCreate}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#205b63] hover:bg-[#286f78] text-white text-xs font-mono font-bold uppercase transition-all shadow-md cursor-pointer"
                 >
-                  <div className="flex items-center gap-4 min-w-0">
-                    {/* Logo / Avatar */}
-                    <div className="w-14 h-14 rounded-xl bg-black/40 border border-white/10 p-2 flex items-center justify-center shrink-0">
-                      {client.logo ? (
-                        <img
-                          src={resolveImageUrl(client.logo, '/roha.png')}
-                          alt={client.name}
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      ) : (
-                        <Building2 size={24} className="text-cyan-400 opacity-60" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-base text-white truncate">
-                          {client.name}
-                        </h3>
-                        {client.featured && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                            Featured
-                          </span>
+                  <Plus size={14} />
+                  <span>Create First Partner</span>
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-[#132527] overflow-hidden">
+                {clients.map((client, index) => (
+                  <div
+                    key={client.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Logo / Avatar */}
+                      <div className="w-14 h-14 rounded-xl bg-black/40 border border-white/10 p-2 flex items-center justify-center shrink-0">
+                        {client.logo ? (
+                          <img
+                            src={resolveImageUrl(client.logo, '/roha.png')}
+                            alt={client.name}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        ) : (
+                          <Building2 size={24} className="text-cyan-400 opacity-60" />
                         )}
                       </div>
-                      <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">
-                        {client.industry || 'Commercial Architecture'} • {client.project_count || 'Commission'}
-                      </p>
-                      {client.website_url && (
-                        <p className="text-[11px] font-mono text-cyan-400 truncate mt-0.5">
-                          {client.website_url}
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-base text-white truncate">
+                            {client.name}
+                          </h3>
+                          {client.featured && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              Featured
+                            </span>
+                          )}
+                          <div className="flex items-center gap-0.5 text-amber-400">
+                            {[...Array(client.rating || 5)].map((_, i) => (
+                              <Star key={i} size={11} className="fill-amber-400" />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">
+                          {client.industry || 'Commercial Architecture'} • {client.project_count || 'Commission'}
                         </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions & Reordering */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    {/* Order Controls */}
-                    <div className="flex items-center bg-black/30 rounded-lg border border-white/10 p-1 mr-2">
-                      <button
-                        type="button"
-                        onClick={() => handleMoveOrder(index, 'up')}
-                        disabled={index === 0}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                        title="Move Up"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMoveOrder(index, 'down')}
-                        disabled={index === clients.length - 1}
-                        className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                        title="Move Down"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
+                        {client.quote && (
+                          <p className="text-[11px] font-serif italic text-slate-300 truncate mt-0.5 max-w-xl">
+                            &ldquo;{client.quote}&rdquo;
+                          </p>
+                        )}
+                        {client.spokesperson && (
+                          <p className="text-[10px] font-mono text-cyan-400/80 truncate mt-0.5">
+                            By {client.spokesperson} · {client.location || 'Addis Ababa'}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(client)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono font-bold transition-all cursor-pointer"
-                    >
-                      <Edit3 size={13} />
-                      <span>Edit</span>
-                    </button>
+                    {/* Actions & Reordering */}
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      {/* Order Controls */}
+                      <div className="flex items-center bg-black/30 rounded-lg border border-white/10 p-1 mr-2">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveOrder(index, 'up')}
+                          disabled={index === 0}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveOrder(index, 'down')}
+                          disabled={index === clients.length - 1}
+                          className="p-1 text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(client)}
-                      className="p-2 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/40 transition-all cursor-pointer"
-                      title="Delete partner"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(client)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono font-bold transition-all cursor-pointer"
+                      >
+                        <Edit3 size={13} />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(client)}
+                        className="p-2 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/40 transition-all cursor-pointer"
+                        title="Delete partner"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -154,8 +154,13 @@ export interface TrustedClientItem {
   id: number;
   name: string;
   logo: string | null;
+  background_image?: string | null;
   industry: string;
   project_count?: string;
+  quote?: string;
+  spokesperson?: string;
+  location?: string;
+  rating?: number;
   featured: boolean;
   order: number;
   website_url?: string;
@@ -748,5 +753,9 @@ export const api = {
 
   async deleteTrustedClient(id: number): Promise<void> {
     return request<void>(`/api/v1/core/clients/${id}/`, { method: 'DELETE' });
+  },
+
+  async clearAllTrustedClients(): Promise<void> {
+    return request<void>(`/api/v1/core/clients/`, { method: 'DELETE' });
   },
 };
