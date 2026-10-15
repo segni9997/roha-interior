@@ -866,6 +866,65 @@ export const TrustedPartyBuilder: React.FC = () => {
                 </div>
               </div>
 
+              {/* Testimonial Quote */}
+              <div>
+                <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
+                  Testimonial Quote / Statement
+                </label>
+                <textarea
+                  rows={3}
+                  value={editingClient.quote || ''}
+                  onChange={(e) => setEditingClient({ ...editingClient, quote: e.target.value })}
+                  placeholder="e.g. ROHA transformed our executive VIP skylight lounges into spaces of monumental architectural serenity and elegance."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 font-sans"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
+                    Spokesperson / Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editingClient.spokesperson || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, spokesperson: e.target.value })}
+                    placeholder="e.g. Director of Infrastructure"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
+                    Location / City
+                  </label>
+                  <input
+                    type="text"
+                    value={editingClient.location || ''}
+                    onChange={(e) => setEditingClient({ ...editingClient, location: e.target.value })}
+                    placeholder="e.g. Addis Ababa, Ethiopia"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
+                    Rating (1-5 Stars)
+                  </label>
+                  <select
+                    value={editingClient.rating || 5}
+                    onChange={(e) => setEditingClient({ ...editingClient, rating: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  >
+                    <option value={5}>5 Stars (★★★★★)</option>
+                    <option value={4}>4 Stars (★★★★☆)</option>
+                    <option value={3}>3 Stars (★★★☆☆)</option>
+                    <option value={2}>2 Stars (★★☆☆☆)</option>
+                    <option value={1}>1 Star (★☆☆☆☆)</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
                   Website URL
@@ -954,6 +1013,81 @@ export const TrustedPartyBuilder: React.FC = () => {
                 )}
               </div>
 
+              {/* Commission / Showcase Background Image */}
+              <div>
+                <label className="block text-xs font-mono uppercase font-bold text-slate-300 mb-1.5">
+                  Hero Background / Project Showcase Photo
+                </label>
+                
+                <input
+                  ref={bgInputRef}
+                  type="file"
+                  accept="image/*,.heic,.HEIC,.heif,.HEIF"
+                  onChange={handleBgFileUpload}
+                  className="hidden"
+                />
+
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-xl bg-black/50 border border-white/15 overflow-hidden flex items-center justify-center shrink-0">
+                    {editingClient.background_image ? (
+                      <img
+                        src={resolveImageUrl(editingClient.background_image, '')}
+                        alt="Background Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <ImageIcon size={24} className="text-slate-500" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isUploadingBg}
+                      onClick={() => bgInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold transition-all cursor-pointer"
+                    >
+                      {isUploadingBg ? <Loader2 size={13} className="animate-spin" /> : <UploadCloud size={13} />}
+                      <span>Upload Photo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsBackgroundPickerOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-mono font-bold transition-all cursor-pointer"
+                    >
+                      <ImageIcon size={13} />
+                      <span>Studio Library</span>
+                    </button>
+
+                    {editingClient.background_image && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingClient({ ...editingClient, background_image: null })}
+                        className="p-2 rounded-xl hover:bg-white/10 text-rose-400 transition-all cursor-pointer"
+                        title="Remove background"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {isUploadingBg && (
+                  <div className="mt-2 space-y-1">
+                    <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-400 transition-all duration-300"
+                        style={{ width: `${bgUploadProgress}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono text-cyan-300">
+                      Uploading background... {bgUploadProgress}%
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Featured Checkbox */}
               <div className="flex items-center gap-3 p-3.5 rounded-xl bg-black/30 border border-white/10">
                 <input
@@ -1005,6 +1139,19 @@ export const TrustedPartyBuilder: React.FC = () => {
         title="Select Institutional Partner Logo"
       />
 
+      {/* -------------------- BACKGROUND IMAGE PICKER MODAL -------------------- */}
+      <ImagePickerModal
+        isOpen={isBackgroundPickerOpen}
+        onClose={() => setIsBackgroundPickerOpen(false)}
+        onSelect={(url) => {
+          setEditingClient(prev => ({ ...prev, background_image: url }));
+          setIsBackgroundPickerOpen(false);
+          addToast('success', 'Background Selected', 'Commission showcase photo updated.');
+        }}
+        currentValue={editingClient?.background_image || undefined}
+        title="Select Commission Showcase Background Photo"
+      />
+
       {/* -------------------- CONFIRM DELETE MODAL -------------------- */}
       <ConfirmModal
         isOpen={Boolean(deleteTarget)}
@@ -1015,8 +1162,20 @@ export const TrustedPartyBuilder: React.FC = () => {
         onCancel={() => setDeleteTarget(null)}
         isLoading={deleting}
       />
+
+      {/* -------------------- CONFIRM CLEAR ALL MODAL -------------------- */}
+      <ConfirmModal
+        isOpen={isClearAllModalOpen}
+        title="Clear All Trusted Partners & Testimonials?"
+        message="Are you sure you want to clear all trusted partners and testimonials? You can add fresh ones from scratch at any time."
+        confirmLabel="Clear All Partners"
+        onConfirm={handleClearAll}
+        onCancel={() => setIsClearAllModalOpen(false)}
+        isLoading={clearingAll}
+      />
     </div>
   );
 };
+
 
 export default TrustedPartyBuilder;
